@@ -4,6 +4,7 @@ import { loadDB, saveDB, slugify } from '../../../services/dataStore';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminCategoriesPage() {
+  const [mounted, setMounted] = useState(false);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -31,17 +32,31 @@ export default function AdminCategoriesPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     refreshData();
   }, []);
-
-  const getProductCount = (catId) => {
-    return products.filter(p => p.categoryId === catId).length;
-  };
 
   const getCatChildren = (parentId) => {
     return categories
       .filter(c => (c.parentId || null) === (parentId || null))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  };
+
+  const getCatDescendants = (catId) => {
+    const out = [];
+    const walk = (pid) => {
+      getCatChildren(pid).forEach(c => {
+        out.push(c.id);
+        walk(c.id);
+      });
+    };
+    walk(catId);
+    return out;
+  };
+
+  const productCountInCat = (catId, includeChildren) => {
+    const ids = [catId, ...(includeChildren ? getCatDescendants(catId) : [])];
+    return products.filter(p => ids.includes(p.categoryId)).length;
   };
 
   const getCatFlat = () => {
@@ -98,7 +113,11 @@ export default function AdminCategoriesPage() {
 
   const handleNameChange = (val) => {
     const autoSlug = slugify ? slugify(val) : val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    setFormData(prev => ({ ...prev, name: val, slug: autoSlug }));
+    setFormData(prev => ({
+      ...prev,
+      name: val,
+      slug: editingCat ? prev.slug : autoSlug
+    }));
   };
 
   const handleMove = (id, dir) => {
@@ -113,6 +132,10 @@ export default function AdminCategoriesPage() {
     const tmp = a.sortOrder || 0;
     a.sortOrder = b.sortOrder || 0;
     b.sortOrder = tmp;
+    if (a.sortOrder === b.sortOrder) {
+      a.sortOrder = idx;
+      b.sortOrder = targetIdx;
+    }
     
     const db = loadDB();
     db.categories = db.categories.map(c => {
@@ -129,15 +152,18 @@ export default function AdminCategoriesPage() {
     if (!formData.name.trim()) return;
     const db = loadDB();
     const list = db.categories || [];
+    const parentVal = formData.parentId || null;
+
     if (editingCat) {
       const idx = list.findIndex(c => c.id === editingCat.id);
       if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData };
+        list[idx] = { ...list[idx], ...formData, parentId: parentVal };
       }
     } else {
       const newCat = {
         id: 'c_' + Date.now().toString(36),
-        ...formData
+        ...formData,
+        parentId: parentVal
       };
       list.push(newCat);
     }
@@ -148,15 +174,16 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = (id) => {
-    const used = getProductCount(id);
+    const used = productCountInCat(id, true);
     let msg = 'Delete this category?';
-    if (used) msg += `\n${used} product(s) will become uncategorised.`;
+    if (used) msg += `\n${used} product(s) in this branch will become uncategorised.`;
     if (!confirm(msg)) return;
+    const descendants = [id, ...getCatDescendants(id)];
     const db = loadDB();
-    db.categories = (db.categories || []).filter(c => c.id !== id);
+    db.categories = (db.categories || []).filter(c => !descendants.includes(c.id));
     if (db.products) {
       db.products.forEach(p => {
-        if (p.categoryId === id) p.categoryId = null;
+        if (descendants.includes(p.categoryId)) p.categoryId = null;
       });
     }
     saveDB(db);
@@ -164,10 +191,20 @@ export default function AdminCategoriesPage() {
   };
 
   const exportCsv = () => {
-    const headers = ['ID', 'Name', 'Slug', 'Parent ID', 'Products', 'Featured', 'Visible', 'Status'];
+    const headers = ['Category', 'Slug', 'Products (Direct)', 'Products (Total)', 'Featured', 'Visibility', 'Status'];
     const rows = getCatFlat().map(n => {
       const c = n.cat;
-      return [c.id, `"${c.name}"`, c.slug, c.parentId || '', getProductCount(c.id), c.featured ? 'Yes' : 'No', c.visible ? 'Yes' : 'No', c.status];
+      const own = productCountInCat(c.id, false);
+      const deep = productCountInCat(c.id, true);
+      return [
+        `"${'  '.repeat(n.depth)}${c.name}"`,
+        c.slug,
+        own,
+        deep,
+        c.featured ? 'Yes' : 'No',
+        c.visible !== false ? 'Yes' : 'No',
+        c.status
+      ];
     });
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -180,12 +217,13 @@ export default function AdminCategoriesPage() {
   };
 
   const flatList = getCatFlat();
+  const blockedIds = editingCat ? [editingCat.id, ...getCatDescendants(editingCat.id)] : [];
 
   return (
     <div>
       <div className="page-head">
         <h1>Categories</h1>
-        <p>Category tree structure. Organize hierarchy for storefront navigation.</p>
+        <p>Unlimited-depth tree. Drag order with the arrows; the storefront nav follows this structure.</p>
       </div>
 
       <div className="toolbar">
@@ -206,44 +244,75 @@ export default function AdminCategoriesPage() {
               <th>Featured</th>
               <th>Visibility</th>
               <th>Status</th>
-              <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+              <th style={{ width: '140px', textAlign: 'right' }}></th>
             </tr>
           </thead>
           <tbody>
             {flatList.length > 0 ? (
               flatList.map(n => {
                 const c = n.cat;
-                const indent = n.depth * 20;
-                const count = getProductCount(c.id);
+                const indent = n.depth * 22;
+                const own = productCountInCat(c.id, false);
+                const deep = productCountInCat(c.id, true);
+
                 return (
                   <tr key={c.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', paddingLeft: `${indent}px` }}>
-                        {n.depth > 0 && <span style={{ color: 'var(--muted-foreground)', marginRight: '8px' }}>↳</span>}
+                        {n.depth > 0 && (
+                          <span style={{ color: 'var(--muted-foreground)', marginRight: '8px', fontSize: '13px', fontFamily: 'monospace' }}>
+                            └
+                          </span>
+                        )}
                         <span style={{ fontWeight: 500 }}>{c.name}</span>
                       </div>
                     </td>
-                    <td style={{ color: 'var(--muted-foreground)' }}><code>{c.slug}</code></td>
-                    <td className="num">{count}</td>
-                    <td>{c.featured ? <span className="badge badge-accent">featured</span> : <span style={{ color: 'var(--muted-foreground)' }}>—</span>}</td>
-                    <td>{c.visible ? <span className="badge badge-success">visible</span> : <span className="badge badge-muted">hidden</span>}</td>
+                    <td style={{ color: 'var(--muted-foreground)' }}>{c.slug}</td>
+                    <td className="num">
+                      {own}
+                      {deep !== own && (
+                        <span style={{ color: 'var(--muted-foreground)' }}> ({deep})</span>
+                      )}
+                    </td>
+                    <td>
+                      {c.featured ? (
+                        <span className="badge badge-accent">featured</span>
+                      ) : (
+                        <span style={{ color: 'var(--muted-foreground)' }}>&mdash;</span>
+                      )}
+                    </td>
+                    <td>
+                      {c.visible !== false ? (
+                        <span className="badge badge-success">visible</span>
+                      ) : (
+                        <span className="badge badge-muted">hidden</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`badge ${c.status === 'active' ? 'badge-success' : 'badge-muted'}`}>
                         {c.status}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button className="icon-btn" title="Move up" onClick={() => handleMove(c.id, -1)}><Icon name="arrowUp" size={14} /></button>
-                      <button className="icon-btn" title="Move down" onClick={() => handleMove(c.id, 1)}><Icon name="arrowDown" size={14} /></button>
-                      <button className="icon-btn" title="Edit" onClick={() => openEditCategoryModal(c)}><Icon name="edit" size={14} /></button>
-                      <button className="icon-btn" title="Delete" onClick={() => handleDelete(c.id)}><Icon name="trash" size={14} /></button>
+                      <button className="icon-btn" title="Move up" onClick={() => handleMove(c.id, -1)}>
+                        <Icon name="arrowUp" size={14} />
+                      </button>
+                      <button className="icon-btn" title="Move down" onClick={() => handleMove(c.id, 1)}>
+                        <Icon name="arrowDown" size={14} />
+                      </button>
+                      <button className="icon-btn" title="Edit" onClick={() => openEditCategoryModal(c)}>
+                        <Icon name="edit" size={14} />
+                      </button>
+                      <button className="icon-btn" title="Delete" onClick={() => handleDelete(c.id)}>
+                        <Icon name="trash" size={14} />
+                      </button>
                     </td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="7"><div className="empty-state">No categories yet.</div></td>
+                <td colSpan="7"><div className="empty-state">{mounted ? 'No categories yet.' : 'Loading categories...'}</div></td>
               </tr>
             )}
           </tbody>
@@ -253,7 +322,7 @@ export default function AdminCategoriesPage() {
       {modalOpen && (
         <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
           <div className="modal">
-            <h2>{editingCat ? 'Edit Category' : 'New Category'}</h2>
+            <h2>{editingCat ? 'Edit category' : 'New category'}</h2>
             <form onSubmit={handleSave}>
               <div className="form-grid-2">
                 <div className="field">
@@ -281,9 +350,13 @@ export default function AdminCategoriesPage() {
                     onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
                   >
                     <option value="">None (top level)</option>
-                    {categories.filter(c => !editingCat || c.id !== editingCat.id).map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    {flatList
+                      .filter(n => !blockedIds.includes(n.cat.id))
+                      .map(n => (
+                        <option key={n.cat.id} value={n.cat.id}>
+                          {'\u2014 '.repeat(n.depth)}{n.cat.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="field">
@@ -292,6 +365,30 @@ export default function AdminCategoriesPage() {
                     type="number"
                     value={formData.sortOrder}
                     onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="field">
+                  <label>Category image URL</label>
+                  <input
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="field">
+                  <label>Banner image URL</label>
+                  <input
+                    value={formData.banner}
+                    onChange={(e) => setFormData({ ...formData, banner: e.target.value })}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="field">
+                  <label>Icon</label>
+                  <input
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    placeholder="Optional"
                   />
                 </div>
                 <div className="field">
@@ -305,29 +402,17 @@ export default function AdminCategoriesPage() {
                   </select>
                 </div>
                 <div className="field">
-                  <label>Icon URL / Class</label>
+                  <label>Meta title</label>
                   <input
-                    value={formData.icon}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    placeholder="Optional icon"
-                  />
-                </div>
-              </div>
-              <div className="form-grid-2">
-                <div className="field">
-                  <label>Image URL</label>
-                  <input
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="https://..."
+                    value={formData.metaTitle}
+                    onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
                   />
                 </div>
                 <div className="field">
-                  <label>Banner URL</label>
+                  <label>Meta description</label>
                   <input
-                    value={formData.banner}
-                    onChange={(e) => setFormData({ ...formData, banner: e.target.value })}
-                    placeholder="https://..."
+                    value={formData.metaDesc}
+                    onChange={(e) => setFormData({ ...formData, metaDesc: e.target.value })}
                   />
                 </div>
               </div>
@@ -338,22 +423,6 @@ export default function AdminCategoriesPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
-              </div>
-              <div className="form-grid-2">
-                <div className="field">
-                  <label>Meta Title (SEO)</label>
-                  <input
-                    value={formData.metaTitle}
-                    onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                  />
-                </div>
-                <div className="field">
-                  <label>Meta Description (SEO)</label>
-                  <input
-                    value={formData.metaDesc}
-                    onChange={(e) => setFormData({ ...formData, metaDesc: e.target.value })}
-                  />
-                </div>
               </div>
               <div className="checkbox-row" style={{ marginBottom: '16px' }}>
                 <label>
