@@ -4,6 +4,7 @@ import { loadDB, saveDB, money } from '../../../services/dataStore';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminInventoryPage() {
+  const [mounted, setMounted] = useState(false);
   const [db, setDb] = useState(null);
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
@@ -35,18 +36,28 @@ export default function AdminInventoryPage() {
   const refreshData = () => {
     const loaded = loadDB();
     if (!loaded.inventory) loaded.inventory = [];
-    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Main Warehouse' }, { id: 'w2', name: 'Secondary Store' }];
+    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
     if (!loaded.stockMoves) loaded.stockMoves = [];
     setDb(loaded);
   };
 
   useEffect(() => {
+    setMounted(true);
     refreshData();
   }, []);
 
-  if (!db) return <div>Loading inventory...</div>;
+  if (!db || !mounted) {
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Inventory</h1>
+          <p>Loading inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const warehouses = db.warehouses || [{ id: 'w1', name: 'Main Warehouse' }];
+  const warehouses = db.warehouses || [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
   const products = db.products || [];
   const variants = db.variants || [];
   const inventoryList = db.inventory || [];
@@ -285,32 +296,34 @@ export default function AdminInventoryPage() {
     <div>
       <div className="page-head">
         <h1>Inventory</h1>
-        <p>Variant-level stock across warehouses.</p>
+        <p suppressHydrationWarning>
+          {filtered.length} records across {warehouses.length} warehouses
+        </p>
       </div>
 
-      <div className="metric-grid">
+      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="metric">
           <div className="label">Stock records</div>
-          <div className="value">{filtered.length}</div>
+          <div className="value" suppressHydrationWarning>{filtered.length}</div>
         </div>
         <div className="metric">
           <div className="label">Units available</div>
-          <div className="value">{totalUnits.toLocaleString('en-IN')}</div>
+          <div className="value" suppressHydrationWarning>{totalUnits.toLocaleString('en-IN')}</div>
         </div>
         <div className="metric">
           <div className="label">Low stock</div>
-          <div className="value">{lowStockCount}</div>
+          <div className="value" suppressHydrationWarning>{lowStockCount}</div>
         </div>
         <div className="metric">
           <div className="label">Out of stock</div>
-          <div className="value">{outOfStockCount}</div>
+          <div className="value" suppressHydrationWarning>{outOfStockCount}</div>
         </div>
       </div>
 
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search product, variant or SKU..."
+          placeholder="Search product, variant or SKU"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: '240px' }}
@@ -329,7 +342,7 @@ export default function AdminInventoryPage() {
         </select>
         <div className="spacer" />
         <button className="btn" onClick={exportCsv}>Export CSV</button>
-        <button className="btn btn-primary" onClick={() => openInvRecord(null)}>+ Add record</button>
+        <button className="btn btn-primary" onClick={() => openInvRecord(null)}>+ Add inventory</button>
       </div>
 
       <div className="card table-wrap">
@@ -347,16 +360,16 @@ export default function AdminInventoryPage() {
               <th className="num">Returned</th>
               <th className="num">Reorder</th>
               <th>Status</th>
-              <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+              <th style={{ width: '140px', textAlign: 'right' }}></th>
             </tr>
           </thead>
           <tbody>
             {filtered.length > 0 ? (
               filtered.map(r => (
                 <tr key={r.id}>
-                  <td><strong>{r.m.name}</strong></td>
+                  <td style={{ fontWeight: 500 }}>{r.m.name}</td>
                   <td style={{ color: 'var(--muted-foreground)' }}>{getVariantLabel(r.v)}</td>
-                  <td style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}><code>{r.v.sku}</code></td>
+                  <td style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>{r.v.sku}</td>
                   <td>{r.w.name}</td>
                   <td className="num" style={{ fontWeight: 500 }}>{r.available}</td>
                   <td className="num">{r.reserved || ''}</td>

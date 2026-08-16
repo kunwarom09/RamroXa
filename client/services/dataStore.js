@@ -185,8 +185,8 @@ export var DEFAULTS = {
   },
   warehouses: function () {
     return [
-      { id: "w1", name: "Main Warehouse (Kathmandu)", code: "WH-KTM" },
-      { id: "w2", name: "Secondary Store (Pokhara)", code: "WH-PKR" }
+      { id: "w1", name: "Kathmandu DC", code: "WH-KTM" },
+      { id: "w2", name: "Pokhara Store", code: "WH-PKR" }
     ];
   },
   pages: function () {
@@ -314,6 +314,11 @@ export function loadDB() {
       if (!db.warehouses || !db.warehouses.length) {
         db.warehouses = DEFAULTS.warehouses();
         modified = true;
+      } else {
+        db.warehouses.forEach(function (w) {
+          if (w.id === 'w1' && (w.name.includes('Main') || w.name !== 'Kathmandu DC')) { w.name = 'Kathmandu DC'; modified = true; }
+          if (w.id === 'w2' && (w.name.includes('Secondary') || w.name !== 'Pokhara Store')) { w.name = 'Pokhara Store'; modified = true; }
+        });
       }
       if (!db.pages || !db.pages.length) {
         db.pages = DEFAULTS.pages();
