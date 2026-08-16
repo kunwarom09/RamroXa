@@ -337,10 +337,14 @@ export function loadDB() {
       if (db.products && db.products.length) {
         var defProds = DEFAULTS.products();
         db.products.forEach(function (p) {
-          if (!p.images || !p.images.length) {
+          if (!p.images || !p.images.length || !p.images[0] || !p.images[0].url) {
             var def = defProds.find(function (dp) { return dp.id === p.id || dp.sku === p.sku || dp.slug === p.slug; });
             if (def && def.images && def.images.length) {
               p.images = def.images;
+              modified = true;
+            } else {
+              var thumb = getProductThumbnail(p);
+              p.images = [{ url: thumb, alt: p.name || 'Product', isFeatured: true, format: 'webp' }];
               modified = true;
             }
           }

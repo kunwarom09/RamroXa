@@ -241,18 +241,15 @@ export default function AdminProductsListPage() {
                           border: '1px solid var(--border)'
                         }}
                       >
-                        {imgUrl ? (
-                          <img
-                            src={imgUrl}
-                            alt={p.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <Icon name="camera" size={14} />
-                        )}
+                        <img
+                          src={imgUrl || '/assets/ea97fe30fd8d1dfc.q.jpg'}
+                          alt={p.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/assets/ea97fe30fd8d1dfc.q.jpg';
+                          }}
+                        />
                       </div>
                     </td>
                     <td>
