@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { loadDB, saveDB, money } from '../../../services/dataStore';
 
 export default function AdminPublishedPage() {
+  const [mounted, setMounted] = useState(false);
   const [db, setDb] = useState(null);
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
@@ -11,23 +12,33 @@ export default function AdminPublishedPage() {
   const refreshData = () => {
     const loaded = loadDB();
     if (!loaded.inventory) loaded.inventory = [];
-    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Main Warehouse' }];
+    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
     setDb(loaded);
   };
 
   useEffect(() => {
+    setMounted(true);
     refreshData();
   }, []);
 
-  if (!db) return <div>Loading published inventory...</div>;
+  if (!db || !mounted) {
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Published inventory</h1>
+          <p>Loading published inventory...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const warehouses = db.warehouses || [{ id: 'w1', name: 'Main Warehouse' }];
+  const warehouses = db.warehouses || [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
   const products = db.products || [];
   const variants = db.variants || [];
   const inventoryList = db.inventory || [];
 
   const masterById = (id) => products.find(p => p.id === id);
-  const warehouseById = (id) => warehouses.find(w => w.id === id) || { name: 'Main Warehouse' };
+  const warehouseById = (id) => warehouses.find(w => w.id === id) || { name: 'Kathmandu DC' };
 
   const getVariantLabel = (v) => {
     if (!v || !v.options) return 'Default';
@@ -41,6 +52,11 @@ export default function AdminPublishedPage() {
     return m ? m.price : 0;
   };
 
+  const toDisplayPrice = (val) => {
+    const n = Number(val) || 0;
+    return n >= 10000 ? Math.round(n / 100) : n;
+  };
+
   const stockState = (invRecord) => {
     if (!invRecord || invRecord.available <= 0) return 'out';
     if (invRecord.reorderLevel && invRecord.available <= invRecord.reorderLevel) return 'low';
@@ -51,16 +67,6 @@ export default function AdminPublishedPage() {
     ok: <span className="badge badge-success">in stock</span>,
     low: <span className="badge badge-warning">low stock</span>,
     out: <span className="badge badge-danger">out of stock</span>
-  };
-
-  const VARIANT_STATUS_BADGE = {
-    active: 'badge-success',
-    published: 'badge-success',
-    draft: 'badge-muted',
-    hidden: 'badge-muted',
-    out_of_stock: 'badge-warning',
-    discontinued: 'badge-danger',
-    archived: 'badge-danger'
   };
 
   // Published variant rows
@@ -90,8 +96,9 @@ export default function AdminPublishedPage() {
     const v = variants.find(x => x.id === variantId);
     if (!v) return;
     const m = masterById(v.productId);
-    const val = Number(newPrice) || 0;
-    v.price = (m && val === m.price) ? null : val;
+    const entered = Number(newPrice) || 0;
+    const valInPaisa = entered < 10000 ? entered * 100 : entered;
+    v.price = (m && valInPaisa === m.price) ? null : valInPaisa;
     saveDB(db);
     refreshData();
   };
@@ -123,41 +130,59 @@ export default function AdminPublishedPage() {
 
   const toggleSelectAll = (checked) => {
     if (checked) {
-      setSelectedVariantIds(filtered.map(x => x.v.id));
+      setSelectedVariantIds(filtered.map(x => x.v.id + '_' + (x.r ? x.r.id : 'none')));
     } else {
       setSelectedVariantIds([]);
     }
   };
 
-  const toggleSelect = (id) => {
-    if (selectedVariantIds.includes(id)) {
-      setSelectedVariantIds(selectedVariantIds.filter(i => i !== id));
+  const toggleSelect = (rowKey) => {
+    if (selectedVariantIds.includes(rowKey)) {
+      setSelectedVariantIds(selectedVariantIds.filter(i => i !== rowKey));
     } else {
-      setSelectedVariantIds([...selectedVariantIds, id]);
+      setSelectedVariantIds([...selectedVariantIds, rowKey]);
     }
   };
 
   const handleBulkAction = (action) => {
     if (!selectedVariantIds.length) return;
     if (action === 'price') {
-      const valStr = prompt(`Set price for ${selectedVariantIds.length} variant(s), in NPR Paisa:`);
+      const valStr = prompt(`Set price for selected variant(s), in NPR:`);
       if (valStr === null) return;
       const val = Number(valStr) || 0;
+      const valInPaisa = val < 10000 ? val * 100 : val;
       db.variants.forEach(v => {
-        if (selectedVariantIds.includes(v.id)) v.price = val;
+        if (selectedVariantIds.some(key => key.startsWith(v.id))) v.price = valInPaisa;
       });
     } else if (action === 'stock') {
-      const valStr = prompt(`Set available stock for ${selectedVariantIds.length} variant(s):`);
+      const valStr = prompt(`Set available stock for selected variant(s):`);
       if (valStr === null) return;
       const q = Number(valStr) || 0;
-      selectedVariantIds.forEach(id => {
-        db.inventory.filter(r => r.variantId === id).forEach(r => {
+      db.inventory.forEach(r => {
+        if (selectedVariantIds.some(key => key.endsWith('_' + r.id))) {
+          const b = r.available;
           r.available = q;
-        });
+          if (b !== q && db.stockMoves) {
+            db.stockMoves.push({
+              id: 'mv_' + Date.now().toString(36),
+              date: new Date().toISOString().slice(0, 10),
+              variantId: r.variantId,
+              warehouseId: r.warehouseId,
+              type: 'correction',
+              change: q - b,
+              reason: 'Bulk stock update',
+              reference: '',
+              before: b,
+              after: q,
+              user: 'Zylo Super Admin',
+              at: new Date().toISOString()
+            });
+          }
+        }
       });
     } else if (action === 'unpublish') {
       db.variants.forEach(v => {
-        if (selectedVariantIds.includes(v.id)) v.published = false;
+        if (selectedVariantIds.some(key => key.startsWith(v.id))) v.published = false;
       });
     }
     saveDB(db);
@@ -166,12 +191,18 @@ export default function AdminPublishedPage() {
   };
 
   const exportCsv = () => {
-    const headers = ['Product', 'Variant', 'SKU', 'Warehouse', 'Price', 'Stock', 'Stock Status', 'Variant Status'];
+    const headers = ['Product', 'Variant', 'SKU', 'Warehouse', 'Price (NPR)', 'Stock', 'Status', 'Published'];
     const rows = filtered.map(x => {
       const w = x.r ? warehouseById(x.r.warehouseId) : null;
       return [
-        `"${x.m.name}"`, `"${getVariantLabel(x.v)}"`, x.v.sku, `"${w ? w.name : 'no record'}"`,
-        getVariantPrice(x.v), x.r ? x.r.available : 0, stockState(x.r), x.v.status
+        `"${x.m.name}"`,
+        `"${getVariantLabel(x.v)}"`,
+        x.v.sku,
+        `"${w ? w.name : 'no record'}"`,
+        toDisplayPrice(getVariantPrice(x.v)),
+        x.r ? x.r.available : 0,
+        stockState(x.r),
+        x.r && x.r.available <= 0 ? 'Out of stock' : 'Active'
       ];
     });
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -187,17 +218,17 @@ export default function AdminPublishedPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Published stock</h1>
-        <p>Operational sell-side inventory live on the storefront. Edit prices and stock inline.</p>
+        <h1>Published inventory</h1>
+        <p>Every published sellable variant. Edit price and stock inline.</p>
       </div>
 
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search product, variant or SKU"
+          placeholder="Search product or SKU"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: '250px' }}
+          style={{ width: '240px' }}
         />
         <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)}>
           <option value="">All warehouses</option>
@@ -234,45 +265,73 @@ export default function AdminPublishedPage() {
               <th>Variant</th>
               <th>SKU</th>
               <th>Warehouse</th>
-              <th className="num" style={{ width: '110px' }}>Price</th>
-              <th className="num" style={{ width: '90px' }}>Stock</th>
-              <th>Stock Status</th>
-              <th>Variant Status</th>
+              <th style={{ width: '90px', textAlign: 'center' }}>Price</th>
+              <th style={{ width: '80px', textAlign: 'center' }}>Stock</th>
+              <th>Status</th>
+              <th>Published</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length > 0 ? (
               filtered.map((x, idx) => {
+                const rowKey = x.v.id + '_' + (x.r ? x.r.id : 'none_' + idx);
                 const w = x.r ? warehouseById(x.r.warehouseId) : null;
                 const st = stockState(x.r);
+                const displayPrice = toDisplayPrice(getVariantPrice(x.v));
+                const isOutOfStock = x.r && x.r.available <= 0;
+
                 return (
-                  <tr key={x.v.id + '_' + (x.r ? x.r.id : idx)}>
+                  <tr key={rowKey}>
                     <td>
                       <input
                         type="checkbox"
-                        checked={selectedVariantIds.includes(x.v.id)}
-                        onChange={() => toggleSelect(x.v.id)}
+                        checked={selectedVariantIds.includes(rowKey)}
+                        onChange={() => toggleSelect(rowKey)}
                       />
                     </td>
-                    <td><strong>{x.m.name}</strong></td>
+                    <td style={{ fontWeight: 500 }}>{x.m.name}</td>
                     <td style={{ color: 'var(--muted-foreground)' }}>{getVariantLabel(x.v)}</td>
-                    <td style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}><code>{x.v.sku}</code></td>
+                    <td style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>{x.v.sku}</td>
                     <td>{w ? w.name : <span style={{ color: 'var(--muted-foreground)' }}>no record</span>}</td>
-                    <td className="num">
+                    <td style={{ textAlign: 'center' }}>
                       <input
                         type="number"
-                        defaultValue={getVariantPrice(x.v)}
+                        defaultValue={displayPrice}
                         onBlur={(e) => handleInlinePriceChange(x.v.id, e.target.value)}
-                        style={{ height: '28px', width: '92px', textAlign: 'right', fontSize: '12px', padding: '0 6px', border: '1px solid var(--border)', borderRadius: '6px' }}
+                        style={{
+                          height: '28px',
+                          width: '72px',
+                          textAlign: 'center',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          padding: '0 4px',
+                          background: '#ffffff',
+                          color: '#000000',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          outline: 'none'
+                        }}
                       />
                     </td>
-                    <td className="num">
+                    <td style={{ textAlign: 'center' }}>
                       {x.r ? (
                         <input
                           type="number"
                           defaultValue={x.r.available}
                           onBlur={(e) => handleInlineStockChange(x.r.id, e.target.value)}
-                          style={{ height: '28px', width: '78px', textAlign: 'right', fontSize: '12px', padding: '0 6px', border: '1px solid var(--border)', borderRadius: '6px' }}
+                          style={{
+                            height: '28px',
+                            width: '60px',
+                            textAlign: 'center',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            padding: '0 4px',
+                            background: '#ffffff',
+                            color: '#000000',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            outline: 'none'
+                          }}
                         />
                       ) : (
                         <span style={{ color: 'var(--muted-foreground)' }}>-</span>
@@ -280,9 +339,15 @@ export default function AdminPublishedPage() {
                     </td>
                     <td>{STOCK_BADGES[st]}</td>
                     <td>
-                      <span className={`badge ${VARIANT_STATUS_BADGE[x.v.status] || 'badge-muted'}`}>
-                        {x.v.status}
-                      </span>
+                      {isOutOfStock ? (
+                        <span style={{ color: '#d97706', fontSize: '12px', fontWeight: 500 }}>
+                          Out of stock
+                        </span>
+                      ) : (
+                        <span style={{ color: '#16a34a', fontSize: '12px', fontWeight: 500 }}>
+                          Active
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -298,4 +363,5 @@ export default function AdminPublishedPage() {
     </div>
   );
 }
+
 
