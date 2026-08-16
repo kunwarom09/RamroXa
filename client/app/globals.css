@@ -50,17 +50,22 @@ html.dark {
 
 * { box-sizing: border-box; }
 
-html,
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
-  background: var(--canvas);
-  color: var(--primary);
-  font-family: 'Share Tech', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  transition: background .15s, color .15s;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
-  max-width: 100vw;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  font-family: 'Share Tech', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -600,5 +605,206 @@ tbody tr:hover { background: var(--muted); }
   }
 }
 
+/* Collections Hero & Responsive Content */
+.zylo-collections-hero {
+  position: relative;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-position: center 30%;
+  background-size: cover;
+  padding: 48px 16px;
+}
+
+@media (min-width: 768px) {
+  .zylo-collections-hero {
+    min-height: 380px;
+    padding: 64px 24px;
+  }
+}
 
 
+
+.zylo-hero-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+@media (min-width: 640px) {
+  .zylo-hero-title {
+    font-size: 36px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .zylo-hero-title {
+    font-size: 44px;
+  }
+}
+
+.zylo-hero-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #ddd;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+@media (min-width: 640px) {
+  .zylo-hero-sub {
+    font-size: 15px;
+  }
+}
+
+
+
+.zylo-filter-pill-btn {
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  padding: 10px 4px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: all 0.15s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .zylo-filter-pill-btn {
+    font-size: 14px;
+    padding: 14px 0;
+  }
+}
+
+
+
+@media (max-width: 480px) {
+  .zylo-swatch-group {
+    display: none !important;
+  }
+}
+
+/* Storefront Page Container */
+.zylo-page-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  background: #fff;
+  min-height: calc(100vh - 60px);
+}
+
+@media (min-width: 768px) {
+  .zylo-page-container {
+    padding: 40px 32px 72px;
+  }
+}
+
+/* Detail Page Responsive Grid */
+.zylo-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+@media (min-width: 800px) {
+  .zylo-detail-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+}
+
+/* Detail Page Action Buttons */
+.zylo-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (min-width: 480px) {
+  .zylo-detail-actions {
+    flex-direction: row;
+    gap: 12px;
+  }
+}
+
+
+.zylo-collections-content {
+  width: 100%;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 14px;
+  padding-right: 14px;
+  padding-top: 20px;
+  padding-bottom: 60px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .zylo-collections-content {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 28px;
+    padding-bottom: 64px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .zylo-collections-content {
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-top: 36px;
+    padding-bottom: 72px;
+  }
+}
+
+.zylo-filter-pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 600px) {
+  .zylo-filter-pills {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+.zylo-products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 10px;
+  margin-top: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .zylo-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px 16px;
+    margin-top: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .zylo-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 24px;
+    margin-top: 32px;
+  }
+}

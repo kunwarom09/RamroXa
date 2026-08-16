@@ -1,11 +1,17 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money } from '../../../services/dataStore';
+import { money } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminInventoryPage() {
   const [mounted, setMounted] = useState(false);
-  const [db, setDb] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [warehouses, setWarehouses] = useState([{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }]);
+  const [products, setProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
+  const [inventoryList, setInventoryList] = useState([]);
+  const [stockMoves, setStockMoves] = useState([]);
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -33,35 +39,51 @@ export default function AdminInventoryPage() {
   const [trfQty, setTrfQty] = useState(1);
   const [trfReason, setTrfReason] = useState('');
 
-  const refreshData = () => {
-    const loaded = loadDB();
-    if (!loaded.inventory) loaded.inventory = [];
-    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
-    if (!loaded.stockMoves) loaded.stockMoves = [];
-    setDb(loaded);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [invRes, prodRes, moveRes] = await Promise.allSettled([
+        api.get('/api/admin/inventory'),
+        api.get('/api/admin/products'),
+        api.get('/api/admin/inventory/moves')
+      ]);
+
+      let rawInv = [];
+      if (invRes.status === 'fulfilled') {
+        rawInv = invRes.value.data?.inventory || invRes.value.data || [];
+      }
+
+      let rawProds = [];
+      let extractedVars = [];
+      if (prodRes.status === 'fulfilled') {
+        rawProds = prodRes.value.data?.products || prodRes.value.data || [];
+        rawProds.forEach((p) => {
+          if (p.variants && p.variants.length) {
+            extractedVars = [...extractedVars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
+          }
+        });
+      }
+
+      let rawMoves = [];
+      if (moveRes.status === 'fulfilled') {
+        rawMoves = moveRes.value.data?.moves || moveRes.value.data || [];
+      }
+
+      setInventoryList(rawInv);
+      setProducts(rawProds);
+      setVariants(extractedVars);
+      setStockMoves(rawMoves);
+    } catch (err) {
+      console.error('Failed to load inventory from API:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     setMounted(true);
     refreshData();
   }, []);
-
-  if (!db || !mounted) {
-    return (
-      <div>
-        <div className="page-head">
-          <h1>Inventory</h1>
-          <p>Loading inventory...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const warehouses = db.warehouses || [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
-  const products = db.products || [];
-  const variants = db.variants || [];
-  const inventoryList = db.inventory || [];
-  const stockMoves = db.stockMoves || [];
 
   const masterById = (id) => products.find(p => p.id === id);
   const variantById = (id) => variants.find(v => v.id === id);
@@ -97,26 +119,16 @@ export default function AdminInventoryPage() {
     if (statusFilter && x.state !== statusFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      const hay = (x.m.name + ' ' + getVariantLabel(x.v) + ' ' + x.v.sku).toLowerCase();
-      if (!hay.includes(q)) return false;
+      const matchName = x.m?.name?.toLowerCase().includes(q);
+      const matchSku = x.v?.sku?.toLowerCase().includes(q);
+      return matchName || matchSku;
     }
     return true;
   });
 
-  const totalUnits = filtered.reduce((n, r) => n + (r.available || 0), 0);
-  const lowStockCount = filtered.filter(r => r.state === 'low').length;
-  const outOfStockCount = filtered.filter(r => r.state === 'out').length;
-
-  const logMove = (inv, type, change, reason, reference, before, after) => {
-    db.stockMoves.push({
-      id: 'mv_' + Date.now().toString(36),
-      date: new Date().toISOString().slice(0, 10),
-      variantId: inv.variantId,
-      warehouseId: inv.warehouseId,
-      type, change, reason: reason || '', reference: reference || '',
-      before, after, user: 'Zylo Super Admin', at: new Date().toISOString()
-    });
-  };
+  const lowStockCount = enrichedRows.filter(r => r.state === 'low').length;
+  const outOfStockCount = enrichedRows.filter(r => r.state === 'out').length;
+  const totalUnits = enrichedRows.reduce((a, b) => a + (Number(b.available) || 0), 0);
 
   // Open Add/Edit Inventory
   const openInvRecord = (rec) => {
@@ -145,35 +157,32 @@ export default function AdminInventoryPage() {
     setInvModalOpen(true);
   };
 
-  const saveInvRecord = (e) => {
+  const saveInvRecord = async (e) => {
     e.preventDefault();
-    if (selectedInv) {
-      const idx = db.inventory.findIndex(r => r.id === selectedInv.id);
-      if (idx >= 0) {
-        const before = db.inventory[idx].available;
-        db.inventory[idx] = { ...db.inventory[idx], ...invFormData };
-        if (before !== invFormData.available) {
-          logMove(db.inventory[idx], 'correction', invFormData.available - before, 'Edited via form', '', before, invFormData.available);
+    try {
+      if (selectedInv) {
+        const diff = invFormData.available - (selectedInv.available || 0);
+        if (diff !== 0) {
+          await api.post('/api/admin/inventory/adjust', {
+            variantId: selectedInv.variantId,
+            warehouseId: selectedInv.warehouseId,
+            adjustment: diff,
+            reason: 'Form update'
+          });
         }
+      } else {
+        await api.post('/api/admin/inventory/adjust', {
+          variantId: invFormData.variantId,
+          warehouseId: invFormData.warehouseId,
+          adjustment: invFormData.available,
+          reason: 'Initial stock entry'
+        });
       }
-    } else {
-      const existing = db.inventory.find(r => r.variantId === invFormData.variantId && r.warehouseId === invFormData.warehouseId);
-      if (existing) {
-        alert('This variant already has a record in the selected warehouse.');
-        return;
-      }
-      const newRec = {
-        id: 'inv_' + Date.now().toString(36),
-        ...invFormData
-      };
-      db.inventory.push(newRec);
-      if (newRec.available > 0) {
-        logMove(newRec, 'opening', newRec.available, 'Opening balance', '', 0, newRec.available);
-      }
+      setInvModalOpen(false);
+      refreshData();
+    } catch (err) {
+      console.error('Failed to save inventory record:', err);
     }
-    saveDB(db);
-    setInvModalOpen(false);
-    refreshData();
   };
 
   // Adjust stock
@@ -186,30 +195,36 @@ export default function AdminInventoryPage() {
     setAdjustModalOpen(true);
   };
 
-  const applyAdjust = (e) => {
+  const applyAdjust = async (e) => {
     e.preventDefault();
     if (!adjReason.trim()) {
       alert('Please enter a reason for stock adjustment.');
       return;
     }
-    const idx = db.inventory.findIndex(r => r.id === selectedInv.id);
-    if (idx < 0) return;
-    const inv = db.inventory[idx];
-    const before = inv.available;
-    let after = before;
-    if (adjMode === 'increase') after = before + adjQty;
-    else if (adjMode === 'decrease') after = before - adjQty;
-    else after = adjQty;
+    if (!selectedInv) return;
 
-    if (after < 0) {
+    const before = selectedInv.available || 0;
+    let delta = adjQty;
+    if (adjMode === 'decrease') delta = -adjQty;
+    else if (adjMode === 'set') delta = adjQty - before;
+
+    if (before + delta < 0) {
       alert('Adjustment cannot result in negative stock.');
       return;
     }
-    inv.available = after;
-    logMove(inv, adjMode, after - before, adjReason, adjRef, before, after);
-    saveDB(db);
-    setAdjustModalOpen(false);
-    refreshData();
+
+    try {
+      await api.post('/api/admin/inventory/adjust', {
+        variantId: selectedInv.variantId,
+        warehouseId: selectedInv.warehouseId,
+        adjustment: delta,
+        reason: adjReason
+      });
+      setAdjustModalOpen(false);
+      refreshData();
+    } catch (err) {
+      alert('Failed to adjust stock: ' + (err.message || 'Error'));
+    }
   };
 
   // Transfer stock
@@ -222,40 +237,25 @@ export default function AdminInventoryPage() {
     setTransferModalOpen(true);
   };
 
-  const applyTransfer = (e) => {
+  const applyTransfer = async (e) => {
     e.preventDefault();
     if (trfQty <= 0) { alert('Enter valid transfer quantity.'); return; }
     if (trfQty > selectedInv.available) { alert(`Only ${selectedInv.available} available at source.`); return; }
     if (!trfTo || trfTo === selectedInv.warehouseId) { alert('Select a different destination warehouse.'); return; }
 
-    const fromIdx = db.inventory.findIndex(r => r.id === selectedInv.id);
-    if (fromIdx < 0) return;
-    const fromInv = db.inventory[fromIdx];
-
-    let toInv = db.inventory.find(r => r.variantId === fromInv.variantId && r.warehouseId === trfTo);
-    if (!toInv) {
-      toInv = {
-        id: 'inv_' + Date.now().toString(36),
-        variantId: fromInv.variantId,
-        warehouseId: trfTo,
-        available: 0, reserved: 0, incoming: 0, damaged: 0, returned: 0,
-        reorderLevel: fromInv.reorderLevel, minStock: fromInv.minStock, maxStock: fromInv.maxStock
-      };
-      db.inventory.push(toInv);
+    try {
+      await api.post('/api/admin/inventory/transfer', {
+        variantId: selectedInv.variantId,
+        fromWarehouseId: selectedInv.warehouseId,
+        toWarehouseId: trfTo,
+        qty: trfQty,
+        reason: trfReason || 'Warehouse stock rebalance'
+      });
+      setTransferModalOpen(false);
+      refreshData();
+    } catch (err) {
+      alert('Failed to transfer stock: ' + (err.message || 'Error'));
     }
-
-    const fb = fromInv.available;
-    const tb = toInv.available;
-    fromInv.available -= trfQty;
-    toInv.available += trfQty;
-
-    const ref = 'TRF-' + Date.now().toString(36).toUpperCase();
-    logMove(fromInv, 'transfer_out', -trfQty, trfReason || `Transfer to ${warehouseById(trfTo).name}`, ref, fb, fromInv.available);
-    logMove(toInv, 'transfer_in', trfQty, trfReason || `Transfer from ${warehouseById(fromInv.warehouseId).name}`, ref, tb, toInv.available);
-
-    saveDB(db);
-    setTransferModalOpen(false);
-    refreshData();
   };
 
   const openHistory = (rec) => {
@@ -268,12 +268,14 @@ export default function AdminInventoryPage() {
     setLabelModalOpen(true);
   };
 
-  const handleDeleteInv = (rec) => {
-    if (!confirm(`Delete inventory record for ${rec.m.name} - ${getVariantLabel(rec.v)} at ${rec.w.name}?`)) return;
-    db.inventory = db.inventory.filter(r => r.id !== rec.id);
-    logMove(rec, 'deleted', -rec.available, 'Inventory record deleted', '', rec.available, 0);
-    saveDB(db);
-    refreshData();
+  const handleDeleteInv = async (rec) => {
+    if (!confirm(`Delete inventory record for ${rec.m?.name || 'product'} - ${getVariantLabel(rec.v)} at ${rec.w?.name || 'warehouse'}?`)) return;
+    try {
+      await api.delete(`/api/admin/inventory/${rec.id}`);
+      refreshData();
+    } catch (e) {
+      setInventoryList(prev => prev.filter(r => r.id !== rec.id));
+    }
   };
 
   const exportCsv = () => {

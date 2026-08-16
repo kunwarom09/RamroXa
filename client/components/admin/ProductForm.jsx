@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { loadDB, saveDB, money, slugify } from '../../services/dataStore';
+import { money, slugify } from '../../services/formatters';
+import { api } from '../../services/apiClient';
 import { convertToWebP } from '../../services/imageProcessor';
 import Icon from './Icons';
 import ImageEditorModal from './ImageEditorModal';
@@ -47,150 +48,41 @@ const variantLabel = (v) => {
   return parts.join(' / ') || 'Default';
 };
 
-function getInitialProductData(productId) {
-  if (!productId || productId === 'new') {
-    return {
-      editingProd: null,
-      formData: {
-        name: '',
-        slug: '',
-        sku: '',
-        brand: 'Zylo',
-        categoryId: '',
-        status: 'draft',
-        gender: '',
-        season: '',
-        tags: '',
-        price: '',
-        mrp: '',
-        cost: '',
-        description: '',
-        featured: false,
-        trending: false,
-        newArrival: false,
-        bestSelling: false,
-        images: []
-      },
-      draftOptions: { Colour: ['Black'], Size: ['One size'] },
-      matrixState: {}
-    };
-  }
-
-  const db = loadDB();
-  const cats = db.categories || [];
-  const prods = db.products || [];
-  const vars = db.variants || [];
-  const decodedId = decodeURIComponent(String(productId)).trim();
-
-  const prod = prods.find((p) =>
-    p.id === productId ||
-    String(p.id) === String(productId) ||
-    p.id === decodedId ||
-    String(p.id) === decodedId ||
-    p.slug === productId ||
-    p.slug === decodedId ||
-    slugify(p.name) === productId ||
-    slugify(p.name) === decodedId
-  );
-
-  if (!prod) {
-    const catId = cats[0]?.id || '';
-    const cat = cats.find((c) => c.id === catId);
-    const code = (cat ? cat.name.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() : 'GEN').padEnd(3, 'X');
-    const newSku = `ZYL-${code}-${String(prods.length + 1).padStart(5, '0')}`;
-    return {
-      editingProd: null,
-      formData: {
-        name: '',
-        slug: '',
-        sku: newSku,
-        brand: 'Zylo',
-        categoryId: catId,
-        status: 'draft',
-        gender: '',
-        season: '',
-        tags: '',
-        price: '',
-        mrp: '',
-        cost: '',
-        description: '',
-        featured: false,
-        trending: false,
-        newArrival: false,
-        bestSelling: false,
-        images: []
-      },
-      draftOptions: { Colour: ['Black'], Size: ['One size'] },
-      matrixState: {}
-    };
-  }
-
-  const labels = prod.labels || {};
-  const opts = prod.options && Object.keys(prod.options).length > 0
-    ? JSON.parse(JSON.stringify(prod.options))
-    : { Colour: ['Black'], Size: ['One size'] };
-
-  const existingVars = vars.filter((v) => v.productId === prod.id);
-  const initialMatrix = {};
-  existingVars.forEach((v) => {
-    const entry = {
-      barcode: v.barcode || '',
-      price: v.price != null ? v.price : '',
-      status: v.status || 'draft',
-      published: !!v.published,
-      selected: false
-    };
-    if (v.sku) initialMatrix[v.sku] = entry;
-    if (v.options) {
-      const genSku = variantSkuFor(prod.sku || '', v.options, Object.keys(v.options));
-      initialMatrix[genSku] = entry;
-    }
-  });
-
-  return {
-    editingProd: prod,
-    formData: {
-      name: prod.name || '',
-      slug: prod.slug || '',
-      sku: prod.sku || '',
-      brand: prod.brand || 'Zylo',
-      categoryId: prod.categoryId || (cats[0]?.id || ''),
-      status: prod.status || 'draft',
-      gender: prod.gender || '',
-      season: prod.season || '',
-      tags: Array.isArray(prod.tags) ? prod.tags.join(', ') : (prod.tags || ''),
-      price: prod.price != null ? prod.price : '',
-      mrp: prod.mrp != null ? prod.mrp : '',
-      cost: prod.cost != null ? prod.cost : '',
-      description: prod.description || '',
-      featured: !!labels.featured,
-      trending: !!labels.trending,
-      newArrival: !!labels.newArrival,
-      bestSelling: !!labels.bestSelling,
-      images: Array.isArray(prod.images) ? prod.images : []
-    },
-    draftOptions: opts,
-    matrixState: initialMatrix
-  };
-}
-
 export default function ProductForm({ productId = null }) {
   const router = useRouter();
   const routeParams = useParams();
   const activeProductId = productId || routeParams?.id || null;
 
-  const initialData = getInitialProductData(activeProductId);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
-  const [editingProd, setEditingProd] = useState(initialData.editingProd);
+  const [editingProd, setEditingProd] = useState(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [previewDevice, setPreviewDevice] = useState('desktop');
   const [toastMsg, setToastMsg] = useState('');
 
-  const [formData, setFormData] = useState(initialData.formData);
-  const [draftOptions, setDraftOptions] = useState(initialData.draftOptions);
-  const [matrixState, setMatrixState] = useState(initialData.matrixState);
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    sku: '',
+    brand: 'Zylo',
+    categoryId: '',
+    status: 'draft',
+    gender: '',
+    season: '',
+    tags: '',
+    price: '',
+    mrp: '',
+    cost: '',
+    description: '',
+    featured: false,
+    trending: false,
+    newArrival: false,
+    bestSelling: false,
+    images: []
+  });
+  const [draftOptions, setDraftOptions] = useState({ Colour: ['Black'], Size: ['One size'] });
+  const [matrixState, setMatrixState] = useState({});
 
   // Image Studio state
   const [editingImageIdx, setEditingImageIdx] = useState(null);
@@ -210,19 +102,87 @@ export default function ProductForm({ productId = null }) {
   };
 
   useEffect(() => {
-    const db = loadDB();
-    const cats = db.categories || [];
-    const prods = db.products || [];
-    const vars = db.variants || [];
-    setCategories(cats);
-    setProducts(prods);
-    setVariants(vars);
+    async function loadData() {
+      try {
+        const [catRes, prodRes] = await Promise.all([
+          api.get('/api/categories'),
+          api.get('/api/admin/products')
+        ]);
 
-    const fresh = getInitialProductData(activeProductId);
-    setEditingProd(fresh.editingProd);
-    setFormData(fresh.formData);
-    setDraftOptions(fresh.draftOptions);
-    setMatrixState(fresh.matrixState);
+        const cats = catRes.data || [];
+        const prods = prodRes.data?.products || prodRes.data || [];
+        setCategories(cats);
+        setProducts(prods);
+
+        let vars = [];
+        prods.forEach(p => {
+          if (p.variants && p.variants.length) {
+            vars = [...vars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
+          }
+        });
+        setVariants(vars);
+
+        if (activeProductId && activeProductId !== 'new') {
+          const decodedId = decodeURIComponent(String(activeProductId)).trim();
+          const target = prods.find(p => p.id === activeProductId || String(p._id) === activeProductId || p.slug === activeProductId || p.id === decodedId);
+          if (target) {
+            setEditingProd(target);
+            const labels = target.labels || {};
+            setFormData({
+              name: target.name || '',
+              slug: target.slug || '',
+              sku: target.sku || '',
+              brand: target.brand || 'Zylo',
+              categoryId: target.categoryId || (cats[0]?.id || ''),
+              status: target.status || 'draft',
+              gender: target.gender || '',
+              season: target.season || '',
+              tags: Array.isArray(target.tags) ? target.tags.join(', ') : (target.tags || ''),
+              price: target.basePrice ? Math.round(target.basePrice / 100) : (target.price != null ? target.price : ''),
+              mrp: target.mrp ? Math.round(target.mrp / 100) : '',
+              cost: target.cost ? Math.round(target.cost / 100) : '',
+              description: target.description || '',
+              featured: !!labels.featured,
+              trending: !!labels.trending,
+              newArrival: !!labels.newArrival,
+              bestSelling: !!labels.bestSelling,
+              images: Array.isArray(target.images) ? target.images : []
+            });
+
+            if (target.options && Object.keys(target.options).length > 0) {
+              setDraftOptions(JSON.parse(JSON.stringify(target.options)));
+            }
+
+            const existingVars = (target.variants || []).concat(vars.filter(v => v.productId === target.id));
+            const matrix = {};
+            existingVars.forEach((v) => {
+              const entry = {
+                barcode: v.barcode || '',
+                price: v.price != null ? Math.round(v.price / 100) : '',
+                status: v.status || 'active',
+                published: v.published !== false,
+                selected: false
+              };
+              if (v.sku) matrix[v.sku] = entry;
+              if (v.options) {
+                const genSku = variantSkuFor(target.sku || '', v.options, Object.keys(v.options));
+                matrix[genSku] = entry;
+              }
+            });
+            setMatrixState(matrix);
+          }
+        } else {
+          const catId = cats[0]?.id || '';
+          const cat = cats.find((c) => c.id === catId);
+          const code = (cat ? cat.name.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() : 'GEN').padEnd(3, 'X');
+          const newSku = `ZYL-${code}-${String(prods.length + 1).padStart(5, '0')}`;
+          setFormData(prev => ({ ...prev, sku: newSku, categoryId: catId }));
+        }
+      } catch (err) {
+        console.error('Failed to load product form data:', err);
+      }
+    }
+    loadData();
   }, [activeProductId]);
 
   const handleNameChange = (val) => {
@@ -395,27 +355,28 @@ export default function ProductForm({ productId = null }) {
     showToast(`Updated ${selectedRows.length} variant(s)`);
   };
 
-  const saveMasterProduct = (shouldPublish = false) => {
+  const saveMasterProduct = async (shouldPublish = false) => {
     if (!formData.name.trim()) { alert('Name is required'); return; }
     if (!formData.sku.trim()) { alert('SKU is required'); return; }
 
-    const db = loadDB();
-    const prodId = editingProd ? editingProd.id : ('m_' + Date.now().toString(36));
+    const prodId = editingProd ? (editingProd.id || editingProd._id) : ('m_' + Date.now().toString(36));
+    const prodSlug = (formData.slug || slugify(formData.name)).trim();
 
     const rec = {
       id: prodId,
       name: formData.name.trim(),
-      slug: (formData.slug || slugify(formData.name)).trim(),
+      slug: prodSlug,
       sku: formData.sku.trim(),
-      brand: formData.brand.trim(),
-      categoryId: formData.categoryId || null,
-      status: shouldPublish ? 'published' : formData.status,
-      gender: formData.gender.trim(),
-      season: formData.season.trim(),
-      tags: formData.tags.split(',').map((s) => s.trim()).filter(Boolean),
+      brand: formData.brand.trim() || 'Zylo',
+      categoryId: formData.categoryId || 'c_tops',
+      status: shouldPublish ? 'published' : formData.status || 'published',
+      gender: formData.gender.trim() || 'Unisex',
+      season: formData.season.trim() || 'SS26',
+      tags: formData.tags ? formData.tags.split(',').map((s) => s.trim()).filter(Boolean) : [],
       price: formData.price !== '' ? Number(formData.price) : 0,
-      mrp: formData.mrp !== '' ? Number(formData.mrp) : 0,
-      cost: formData.cost !== '' ? Number(formData.cost) : 0,
+      basePrice: formData.price !== '' ? Math.round(Number(formData.price) * 100) : 0,
+      mrp: formData.mrp !== '' ? Math.round(Number(formData.mrp) * 100) : 0,
+      cost: formData.cost !== '' ? Math.round(Number(formData.cost) * 100) : 0,
       description: formData.description.trim(),
       labels: {
         featured: !!formData.featured,
@@ -426,15 +387,6 @@ export default function ProductForm({ productId = null }) {
       options: draftOptions,
       images: formData.images || []
     };
-
-    const prodList = db.products || [];
-    const idx = prodList.findIndex((p) => p.id === prodId);
-    if (idx >= 0) {
-      prodList[idx] = rec;
-    } else {
-      prodList.push(rec);
-    }
-    db.products = prodList;
 
     const newVariants = [];
     matrixRows.forEach((row, i) => {
@@ -447,18 +399,33 @@ export default function ProductForm({ productId = null }) {
         productId: prodId,
         sku: row.sku,
         options: row.combo,
-        price: row.price !== '' ? Number(row.price) : null,
-        barcode: row.barcode,
-        status: shouldPublish ? 'active' : row.status,
-        published: shouldPublish ? true : row.published
+        price: row.price !== '' ? Math.round(Number(row.price) * 100) : rec.basePrice,
+        barcode: row.barcode || '',
+        stock: Number(row.stock || 10),
+        status: shouldPublish ? 'active' : row.status || 'active',
+        published: shouldPublish ? true : row.published !== false
       };
       newVariants.push(variantRec);
     });
 
-    db.variants = (db.variants || []).filter((v) => v.productId !== prodId).concat(newVariants);
+    // 1. Send to Backend REST API
+    try {
+      const apiPayload = {
+        ...rec,
+        variants: newVariants
+      };
 
-    saveDB(db);
-    router.push('/admin/products');
+      if (editingProd && (editingProd.id || editingProd._id)) {
+        const tId = editingProd.id || editingProd._id;
+        await api.put(`/api/admin/products/${tId}`, apiPayload);
+      } else {
+        await api.post('/api/admin/products', apiPayload);
+      }
+      showToast('Product saved successfully in MongoDB');
+      router.push('/admin/products');
+    } catch (apiErr) {
+      alert('Failed to save product in database: ' + (apiErr.message || 'Error'));
+    }
   };
 
   const pPrice = Number(formData.price) || 0;

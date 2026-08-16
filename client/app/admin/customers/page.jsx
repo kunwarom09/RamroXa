@@ -1,18 +1,85 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money } from '../../../services/dataStore';
+import { money } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCust, setEditingCust] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', city: '', email: '', notes: '' });
 
-  const refreshData = () => {
-    const db = loadDB();
-    setCustomers(db.customers || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [custRes, orderRes] = await Promise.all([
+        api.get('/api/admin/customers'),
+        api.get('/api/admin/orders')
+      ]);
+
+      const apiCusts = custRes.data?.customers || custRes.data || [];
+      const apiOrders = orderRes.data?.orders || orderRes.data || [];
+
+      const custMap = new Map();
+
+      // 1. Registered API customers
+      apiCusts.forEach((ac) => {
+        const key = (ac.phone || ac.email || ac.name || '').toLowerCase().trim();
+        const spendNpr = ac.totalSpend != null ? Math.round(ac.totalSpend / 100) : 0;
+        if (key) {
+          custMap.set(key, {
+            id: ac.id || ac._id,
+            name: ac.name || 'Customer',
+            phone: ac.phone || '',
+            city: ac.city || 'Kathmandu',
+            email: ac.email || '',
+            orders: ac.orderCount || 0,
+            spend: spendNpr,
+            notes: 'Registered User'
+          });
+        }
+      });
+
+      // 2. Aggregate orders placed in MongoDB
+      apiOrders.forEach((o) => {
+        const name = o.shippingAddress?.fullName || o.customer;
+        const phone = o.shippingAddress?.phone || o.phone || o.guestPhone;
+        const city = o.shippingAddress?.city || 'Kathmandu';
+        const key = (phone || o.guestEmail || name || '').toLowerCase().trim();
+        const orderTotal = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+
+        if (key) {
+          const existing = custMap.get(key);
+          if (existing) {
+            if (existing.orders === 0) {
+              existing.orders = 1;
+              existing.spend = orderTotal;
+            }
+          } else {
+            custMap.set(key, {
+              id: 'cust_' + (phone || name || 'guest').replace(/[^a-zA-Z0-9]/g, '').slice(0, 10),
+              name: name || 'Storefront Customer',
+              phone: phone || '',
+              city: city,
+              email: o.guestEmail || '',
+              orders: 1,
+              spend: orderTotal,
+              notes: `Order ${o.orderNo || o.no}`
+            });
+          }
+        }
+      });
+
+      const merged = Array.from(custMap.values());
+      setCustomers(merged);
+    } catch (e) {
+      console.error('Failed to load customers from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -37,36 +104,29 @@ export default function AdminCustomersPage() {
     setModalOpen(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    const db = loadDB();
-    const list = db.customers || [];
+
     if (editingCust) {
-      const idx = list.findIndex(c => (c.id ? c.id === editingCust.id : c.name === editingCust.name));
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData };
-      }
+      setCustomers(prev => prev.map(c => (c.id === editingCust.id ? { ...c, ...formData } : c)));
     } else {
-      list.push({
-        id: 'cust_' + Date.now().toString(36),
-        ...formData,
-        orders: 0,
-        spend: 0
-      });
+      setCustomers(prev => [
+        {
+          id: 'cust_' + Date.now().toString(36),
+          ...formData,
+          orders: 0,
+          spend: 0
+        },
+        ...prev
+      ]);
     }
-    db.customers = list;
-    saveDB(db);
     setModalOpen(false);
-    refreshData();
   };
 
   const handleDelete = (c) => {
     if (!confirm(`Delete customer ${c.name}?`)) return;
-    const db = loadDB();
-    db.customers = (db.customers || []).filter(x => (x.id ? x.id !== c.id : x.name !== c.name));
-    saveDB(db);
-    refreshData();
+    setCustomers(prev => prev.filter(x => (x.id ? x.id !== c.id : x.name !== c.name)));
   };
 
   const filtered = customers.filter(c =>

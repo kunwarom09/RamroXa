@@ -1,11 +1,14 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, money, docSubtotal, docVat, today, offsetDate, buildJournal } from '../../../services/dataStore';
+import { money, today, offsetDate } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 
 export default function AdminFinancePage() {
   const [tab, setTab] = useState('journal');
   const [journal, setJournal] = useState([]);
-  const [db, setDb] = useState(null);
+  const [salesList, setSalesList] = useState([]);
+  const [purchasesList, setPurchasesList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Ledger state
   const [selectedAccount, setSelectedAccount] = useState('Sales Revenue');
@@ -17,11 +20,111 @@ export default function AdminFinancePage() {
   const [plFrom, setPlFrom] = useState(offsetDate(-365));
   const [plTo, setPlTo] = useState(today());
 
-  const refreshData = () => {
-    const loadedDb = loadDB();
-    setDb(loadedDb);
-    const entries = buildJournal(loadedDb);
-    setJournal(entries);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [orderRes, purchRes] = await Promise.allSettled([
+        api.get('/api/admin/orders'),
+        api.get('/api/admin/purchases')
+      ]);
+
+      const orders = orderRes.status === 'fulfilled' ? (orderRes.value.data?.orders || orderRes.value.data || []) : [];
+      const purchases = purchRes.status === 'fulfilled' ? (purchRes.value.data?.purchases || purchRes.value.data || []) : [];
+
+      setSalesList(orders);
+      setPurchasesList(purchases);
+
+      // Build double-entry accounting journal
+      const entries = [];
+
+      orders.forEach((o) => {
+        const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+        const sub = o.subtotal != null ? Math.round(o.subtotal / 100) : grand;
+        const vat = o.vatTotal != null ? Math.round(o.vatTotal / 100) : Math.round(sub * 0.13);
+        const date = (o.createdAt || o.date || today()).slice(0, 10);
+        const voucher = o.orderNo || o.no || 'ORD';
+        const cust = o.shippingAddress?.fullName || o.customer || 'Customer';
+
+        // 1. Debit Cash/AR
+        entries.push({
+          date,
+          voucher,
+          account: (o.paymentMethod || o.pay || '').toLowerCase() === 'credit' ? 'Accounts Receivable' : 'Cash & Bank',
+          narration: `Sale to ${cust}`,
+          debit: grand,
+          credit: 0
+        });
+
+        // 2. Credit Sales Revenue
+        entries.push({
+          date,
+          voucher,
+          account: 'Sales Revenue',
+          narration: 'Gross sales revenue',
+          debit: 0,
+          credit: sub
+        });
+
+        // 3. Credit Output VAT
+        if (vat > 0) {
+          entries.push({
+            date,
+            voucher,
+            account: 'Output VAT Payable',
+            narration: '13% IRD VAT collected',
+            debit: 0,
+            credit: vat
+          });
+        }
+      });
+
+      purchases.forEach((p) => {
+        const sub = p.subtotal != null ? p.subtotal : (p.total || 0);
+        const vat = p.vat != null ? p.vat : (p.vatable !== false ? Math.round(sub * 0.13) : 0);
+        const tot = sub + vat;
+        const date = (p.date || today()).slice(0, 10);
+        const voucher = p.bill || p.billNo || 'BILL';
+        const supp = p.supplier || 'Supplier';
+
+        // 1. Debit Expense / Stock
+        entries.push({
+          date,
+          voucher,
+          account: p.head || 'Purchases (stock)',
+          narration: `Purchase from ${supp}`,
+          debit: sub,
+          credit: 0
+        });
+
+        // 2. Debit Input VAT
+        if (vat > 0) {
+          entries.push({
+            date,
+            voucher,
+            account: 'Input VAT Receivable',
+            narration: '13% Input VAT paid',
+            debit: vat,
+            credit: 0
+          });
+        }
+
+        // 3. Credit Cash / Accounts Payable
+        entries.push({
+          date,
+          voucher,
+          account: 'Accounts Payable',
+          narration: `Bill from ${supp}`,
+          debit: 0,
+          credit: tot
+        });
+      });
+
+      setJournal(entries);
+    } catch (e) {
+      console.error('Failed to load finance data from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -60,15 +163,25 @@ export default function AdminFinancePage() {
   const trialTotCr = trialList.reduce((a, b) => a + b.cr, 0);
 
   // P&L calculation
-  const sales = (db?.sales || []).filter(s => s.date >= plFrom && s.date <= plTo);
-  const purchases = (db?.purchases || []).filter(p => p.date >= plFrom && p.date <= plTo);
+  const filteredSales = salesList.filter(s => {
+    const d = (s.createdAt || s.date || '').slice(0, 10);
+    return (!plFrom || d >= plFrom) && (!plTo || d <= plTo);
+  });
+  const filteredPurchases = purchasesList.filter(p => {
+    const d = (p.date || '').slice(0, 10);
+    return (!plFrom || d >= plFrom) && (!plTo || d <= plTo);
+  });
 
-  const totInc = sales.reduce((a, s) => a + docSubtotal(s), 0);
+  const totInc = filteredSales.reduce((a, s) => {
+    const g = s.grandTotal != null ? Math.round(s.grandTotal / 100) : (Number(s.total) || 0);
+    return a + (s.subtotal != null ? Math.round(s.subtotal / 100) : g);
+  }, 0);
   
   const expenseMap = {};
-  purchases.forEach(p => {
+  filteredPurchases.forEach(p => {
     const head = p.head || 'Purchases (stock)';
-    expenseMap[head] = (expenseMap[head] || 0) + docSubtotal(p);
+    const sub = p.subtotal != null ? p.subtotal : (p.total || 0);
+    expenseMap[head] = (expenseMap[head] || 0) + sub;
   });
   const totExp = Object.keys(expenseMap).reduce((a, k) => a + expenseMap[k], 0);
   const netPl = totInc - totExp;

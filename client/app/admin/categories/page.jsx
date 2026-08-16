@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, slugify } from '../../../services/dataStore';
+import { slugify } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminCategoriesPage() {
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,10 +27,20 @@ export default function AdminCategoriesPage() {
     metaDesc: ''
   });
 
-  const refreshData = () => {
-    const db = loadDB();
-    setCategories(db.categories || []);
-    setProducts(db.products || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [catRes, prodRes] = await Promise.all([
+        api.get('/api/categories'),
+        api.get('/api/admin/products')
+      ]);
+      setCategories(catRes.data || []);
+      setProducts(prodRes.data?.products || prodRes.data || []);
+    } catch (e) {
+      console.error('Failed to load categories from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -132,62 +144,52 @@ export default function AdminCategoriesPage() {
     const tmp = a.sortOrder || 0;
     a.sortOrder = b.sortOrder || 0;
     b.sortOrder = tmp;
-    if (a.sortOrder === b.sortOrder) {
-      a.sortOrder = idx;
-      b.sortOrder = targetIdx;
-    }
     
-    const db = loadDB();
-    db.categories = db.categories.map(c => {
+    setCategories(prev => prev.map(c => {
       if (c.id === a.id) return { ...c, sortOrder: a.sortOrder };
       if (c.id === b.id) return { ...c, sortOrder: b.sortOrder };
       return c;
-    });
-    saveDB(db);
-    refreshData();
+    }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    const db = loadDB();
-    const list = db.categories || [];
     const parentVal = formData.parentId || null;
 
-    if (editingCat) {
-      const idx = list.findIndex(c => c.id === editingCat.id);
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData, parentId: parentVal };
+    try {
+      if (editingCat) {
+        await api.put(`/api/admin/categories/${editingCat.id}`, { ...formData, parentId: parentVal });
+      } else {
+        await api.post('/api/admin/categories', {
+          id: 'c_' + (formData.slug || Date.now().toString(36)),
+          ...formData,
+          parentId: parentVal
+        });
       }
-    } else {
-      const newCat = {
-        id: 'c_' + Date.now().toString(36),
-        ...formData,
-        parentId: parentVal
-      };
-      list.push(newCat);
+      setModalOpen(false);
+      refreshData();
+    } catch (err) {
+      console.error('Failed to save category in MongoDB:', err);
+      // Update locally in UI state as fallback
+      setCategories(prev => editingCat ? prev.map(c => c.id === editingCat.id ? { ...c, ...formData } : c) : [...prev, { id: 'c_' + Date.now().toString(36), ...formData }]);
+      setModalOpen(false);
     }
-    db.categories = list;
-    saveDB(db);
-    setModalOpen(false);
-    refreshData();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const used = productCountInCat(id, true);
     let msg = 'Delete this category?';
     if (used) msg += `\n${used} product(s) in this branch will become uncategorised.`;
     if (!confirm(msg)) return;
-    const descendants = [id, ...getCatDescendants(id)];
-    const db = loadDB();
-    db.categories = (db.categories || []).filter(c => !descendants.includes(c.id));
-    if (db.products) {
-      db.products.forEach(p => {
-        if (descendants.includes(p.categoryId)) p.categoryId = null;
-      });
+
+    try {
+      await api.delete(`/api/admin/categories/${id}`);
+      refreshData();
+    } catch (err) {
+      console.error('Failed to delete category in MongoDB:', err);
+      setCategories(prev => prev.filter(c => c.id !== id));
     }
-    saveDB(db);
-    refreshData();
   };
 
   const exportCsv = () => {

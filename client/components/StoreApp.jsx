@@ -1,33 +1,42 @@
 'use client';
 import React from 'react';
 import Landing from './Landing';
-import { createOrder } from '../services/orderService';
+import { placeOrderApi } from '../services/orderService';
+import { fetchProducts } from '../services/productService';
 
-const CATALOG = [
-  { name: 'Textured Knitted Shirt', tag: 'LATEST DROP', price: 1750, compare: 2350, img1: '98eab38550301ca9', img2: '248028cbf9d4d390', desc: 'An open-weave knit shirt with a relaxed boxy cut. Breathable texture that layers cleanly over a plain tee for everyday wear.' },
-  { name: 'Structured Trench Coat', tag: 'LATEST DROP', price: 6300, compare: 8400, img1: 'ee2608e46a586391', img2: '0e72c7de7ec1a38e', desc: 'A sharply tailored trench in a water-resistant twill. Structured shoulders and a clean drape built for the city.' },
-  { name: 'Mini Denim Overalls', tag: 'LATEST DROP', price: 1350, compare: 1800, img1: 'e282ebdc1a55d0be', img2: '08accf483615b0df', desc: 'Kid-sized denim overalls in a mid-blue wash. Reinforced stitching and adjustable straps for growing frames.' },
-  { name: 'Riviera Collar Shirt', tag: 'LATEST DROP', price: 1350, compare: 1800, img1: 'a22003dc69fc0fc1', img2: 'b3a1fbdacd69bcda', desc: 'A camp-collar shirt in crinkled cotton gauze. Light, airy and made for warm afternoons.' },
-  { name: 'Stretch Jersey Tee', tag: 'LATEST DROP', price: 1950, compare: 2850, img1: 'ea97fe30fd8d1dfc', img2: '09789ab9b9e151f6', desc: 'A heavyweight jersey tee with a touch of stretch. Holds its shape wash after wash.' },
-  { name: 'Urban Utility Cargo', tag: 'LATEST DROP', price: 2700, compare: 3600, img1: '2461720fa204607a', img2: '39a84305ed8fadbc', desc: 'Roomy cargo trousers with angled utility pockets and a drawcord hem. Hard-wearing cotton canvas.' },
-  { name: 'Classic Boxy Tee', tag: 'LATEST DROP', price: 1050, compare: 1350, img1: '0d3fac373da0bd1f', img2: 'bbb4f22211e2dc51', desc: 'The everyday tee — boxy fit, dropped shoulder, midweight combed cotton in a clean solid.' },
-  { name: 'Pleated Smart Trousers', tag: 'LATEST DROP', price: 2300, compare: 3000, img1: '9a83a5f92f7a34f6', img2: '19eee9f8e07093fd', desc: 'Double-pleated trousers with a tapered leg. Polished enough for work, easy enough for weekends.' },
-  { name: 'French Terry Shorts', tag: 'LATEST DROP', price: 1200, compare: 1650, img1: 'b81e3eb6af13055d', img2: 'd4ddd6f6c7954c6b', desc: 'Loopback french terry shorts with a relaxed rise and side pockets. Off-duty essential.' },
-  { name: 'Heavyweight Oversized Hoodie', tag: 'BEST SELLER', price: 2550, compare: 3300, img1: 'eeac2757b9ee2e46', img2: '67866d53aaeebcac', desc: 'Our signature 480gsm fleece hoodie. Oversized through the body with a double-lined hood and ribbed cuffs.' },
-  { name: 'Patterned Knit Sweater', tag: 'BEST SELLER', price: 1350, compare: 2700, img1: '3b9adec96400865c', img2: 'ea5bdbd64c598cff', desc: 'A jacquard-knit sweater in a tonal stripe. Soft-spun yarn with a regular fit.' },
-  { name: 'Quilted Bomber Jacket', tag: 'BEST SELLER', price: 4350, compare: 5400, img1: '57e8f8ec76e792b1', img2: 'e2a028dd8bd0e7b5', desc: 'A diamond-quilted bomber with matte hardware and ribbed trims. Warm without the bulk.' },
-  { name: 'Hooded Puffer Vest', tag: 'BEST SELLER', price: 1350, compare: 2250, img1: '7f3fd1f72139111d', img2: '4a9712f500002e24', desc: 'A lightweight puffer vest with a stowable hood. Layer it over knits when the mercury drops.' },
-  { name: 'Vegan Leather Leggings', tag: 'BEST SELLER', price: 2250, compare: 2950, img1: '54f4ed23bf992cef', img2: '365d4729feaf7290', desc: 'High-rise leggings in a matte vegan leather with four-way stretch and a clean ankle zip.' },
-  { name: 'Cropped Boxy Blazer', tag: 'BEST SELLER', price: 3900, compare: 5250, img1: 'c71fd29c3338e4a5', img2: 'dac45b43062fbe55', desc: 'A cropped blazer with a boxy shoulder and single-button close. Sharp over anything.' },
-];
+const DEFAULT_CATALOG = [];
 
-const slugForProduct = (p, i) => (p?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || String(i);
+const slugForProduct = (p, i) => (p?.slug || (p?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || String(i));
 
-const COLLECTIONS = [
-  { id: 'men', items: [0, 1, 4, 5, 7, 9, 11] },
-  { id: 'women', items: [3, 6, 8, 10, 13, 14] },
-  { id: 'kids', items: [2, 12] },
-];
+function formatProductItem(p) {
+  const featuredImg = (p.images || []).find((img) => img.isFeatured) || (p.images || [])[0];
+  const secondImg = (p.images || [])[1] || featuredImg;
+  const priceNpr = p.basePrice !== undefined ? Math.round(p.basePrice / 100) : (p.price || 0);
+  const mrpNpr = p.mrp !== undefined ? Math.round(p.mrp / 100) : 0;
+  return {
+    name: p.name,
+    tag: p.labels?.newArrival ? 'NEW ARRIVAL' : (p.labels?.bestSelling ? 'BEST SELLER' : (p.labels?.featured ? 'FEATURED' : 'LATEST DROP')),
+    price: priceNpr,
+    compare: mrpNpr || priceNpr,
+    desc: p.description || '',
+    img1: featuredImg?.url || p.img1 || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
+    img2: secondImg?.url || p.img2 || featuredImg?.url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
+    slug: p.slug || slugForProduct(p, 0),
+    gender: p.gender || 'Unisex',
+    category: p.category || p.categoryId || '',
+    categoryId: p.categoryId || '',
+    tags: p.tags || [],
+    options: p.options || {},
+    id: p.id
+  };
+}
+
+function buildFullCatalog() {
+  return DEFAULT_CATALOG.map((item, idx) => ({
+    ...item,
+    slug: slugForProduct(item, idx)
+  }));
+}
 
 const METHODS = [
   { id: 'cod', name: 'Cash on Delivery', desc: 'Pay in cash when the order arrives at your door. No advance payment required.' },
@@ -38,7 +47,13 @@ const METHODS = [
 const FREE_OVER = 5000;
 const rs = n => 'Rs ' + (n || 0).toLocaleString('en-US');
 const asset = h => `/assets/${h}.q.jpg`;
-const img = h => `url('${asset(h)}') 50% 20% / cover no-repeat`;
+const img = (h) => {
+  if (!h) return "url('/assets/98eab38550301ca9.q.jpg') 50% 20% / cover no-repeat";
+  if (String(h).startsWith('http') || String(h).startsWith('/') || String(h).startsWith('data:')) {
+    return `url('${h}') 50% 20% / cover no-repeat`;
+  }
+  return `url('/assets/${h}.q.jpg') 50% 20% / cover no-repeat`;
+};
 const font = { fontFamily: "'Share Tech', sans-serif" };
 const pillBtn = (dark) => ({ ...font, fontSize: 14, letterSpacing: 1, background: dark ? '#000' : '#fff', color: dark ? '#fff' : '#000', border: '1px solid #000', borderRadius: 999, padding: '14px 28px', cursor: 'pointer' });
 const input = { ...font, fontSize: 14, border: '1px solid #000', borderRadius: 8, padding: 12, outline: 'none', background: '#fff' };
@@ -59,20 +74,55 @@ function QR() {
   return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(21, 1fr)', width: '100%', height: '100%' }}>{cells}</div>;
 }
 
+function loadStoredCart() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('zylo-store-cart');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveStoredCart(cart) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('zylo-store-cart', JSON.stringify(cart || []));
+  } catch (e) {}
+}
+
 export default class StoreApp extends React.Component {
   constructor(props) {
     super(props);
+    const initialCatalog = buildFullCatalog();
     let initialSel = 0;
     if (props.initialProductSlug) {
-      const foundIdx = CATALOG.findIndex((p, i) => slugForProduct(p, i) === props.initialProductSlug || String(i) === props.initialProductSlug);
+      const foundIdx = initialCatalog.findIndex((p, i) => slugForProduct(p, i) === props.initialProductSlug || String(i) === props.initialProductSlug);
       if (foundIdx >= 0) initialSel = foundIdx;
     } else if (props.initialProduct != null) {
       initialSel = props.initialProduct;
     }
 
+    let initialCart = [];
+    let initialName = '';
+    let initialPhone = '';
+    let initialAddress = '';
+    let initialCity = 'Kathmandu';
+
+    if (typeof window !== 'undefined') {
+      initialCart = loadStoredCart();
+      try {
+        initialName = localStorage.getItem('zylo-c-name') || '';
+        initialPhone = localStorage.getItem('zylo-c-phone') || '';
+        initialAddress = localStorage.getItem('zylo-c-address') || '';
+        initialCity = localStorage.getItem('zylo-c-city') || 'Kathmandu';
+      } catch (e) {}
+    }
+
     this.state = {
+      catalog: initialCatalog,
       view: props.initialView || 'shop',
-      cart: [],
+      cart: initialCart,
       pay: 'cod',
       orderId: null,
       orderTotal: 0,
@@ -81,11 +131,22 @@ export default class StoreApp extends React.Component {
       selSize: 'M',
       selQty: 1,
       toast: null,
-      cName: '', cPhone: '', cMsg: '', cTopic: 'Order status', contactSent: false, colFilter: 'all',
+      cName: initialName,
+      cPhone: initialPhone,
+      cAddress: initialAddress,
+      cCity: initialCity,
+      cMsg: '',
+      cTopic: 'Order status',
+      contactSent: false,
+      colFilter: 'all',
       mobileMenuOpen: false,
       landingScale: 1
     };
   }
+
+  getCatalog = () => {
+    return this.state.catalog || buildFullCatalog();
+  };
 
   goToView = (v, extraState = {}, updateUrl = true) => {
     const urlMap = {
@@ -100,7 +161,8 @@ export default class StoreApp extends React.Component {
     let targetUrl = urlMap[v] || '/';
     if (v === 'detail') {
       const selIndex = extraState.sel !== undefined ? extraState.sel : this.state.sel;
-      const p = CATALOG[selIndex];
+      const cat = this.getCatalog();
+      const p = cat[selIndex] || cat[0];
       targetUrl = `/product/${slugForProduct(p, selIndex)}`;
     }
 
@@ -124,6 +186,42 @@ export default class StoreApp extends React.Component {
   closeMobileMenu = () => this.setState({ mobileMenuOpen: false });
 
   componentDidMount() {
+    const loadDynamicCatalog = async () => {
+      try {
+        const apiProds = await fetchProducts();
+        const apiCatalog = (apiProds || []).map(formatProductItem);
+        
+        let selIdx = this.state.sel;
+        let view = this.state.view;
+
+        let currentSlug = this.props.initialProductSlug;
+        if (!currentSlug && typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          if (path.startsWith('/product/')) {
+            currentSlug = path.replace('/product/', '').replace(/\/$/, '');
+          }
+        }
+
+        if (currentSlug && apiCatalog.length > 0) {
+          const foundIdx = apiCatalog.findIndex((p, i) =>
+            slugForProduct(p, i) === currentSlug ||
+            p.slug === currentSlug ||
+            p.id === currentSlug ||
+            String(i) === currentSlug
+          );
+          if (foundIdx >= 0) {
+            selIdx = foundIdx;
+            view = 'detail';
+          }
+        }
+
+        this.setState({ catalog: apiCatalog, sel: selIdx, view });
+      } catch (err) {
+        console.warn('API fetchProducts notice:', err.message);
+      }
+    };
+    loadDynamicCatalog();
+
     this.updateLandingScale = () => {
       if (typeof window === 'undefined') return;
       const vw = window.innerWidth;
@@ -139,6 +237,7 @@ export default class StoreApp extends React.Component {
     this._popstateHandler = () => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
+      const cat = this.getCatalog();
       if (path === '/' || path === '') {
         this.setState({ view: 'shop', mobileMenuOpen: false });
       } else if (path === '/shop' || path.startsWith('/shop')) {
@@ -153,7 +252,7 @@ export default class StoreApp extends React.Component {
         this.setState({ view: 'confirmed', mobileMenuOpen: false });
       } else if (path.startsWith('/product/')) {
         const slug = path.replace('/product/', '').replace(/\/$/, '');
-        const idx = CATALOG.findIndex((p, i) => slugForProduct(p, i) === slug || String(i) === slug);
+        const idx = cat.findIndex((p, i) => slugForProduct(p, i) === slug || p.slug === slug || p.id === slug || String(i) === slug);
         if (idx >= 0) {
           this.setState({ view: 'detail', sel: idx, mobileMenuOpen: false });
         }
@@ -188,10 +287,11 @@ export default class StoreApp extends React.Component {
         if (/^Blog$/.test(label)) { stop(); this.scrollToText('daily style journey'); return; }
       }
       let el = e.target;
+      const cat = this.getCatalog();
       for (let d = 0; d < 14 && el && el !== document.body; d++, el = el.parentElement) {
         const t = el.textContent || '';
         if (t.length > 160) continue;
-        const idx = CATALOG.findIndex(p => t.includes(p.name));
+        const idx = cat.findIndex(p => t.includes(p.name));
         if (idx >= 0) { stop(); this.openProduct(idx); return; }
       }
     };
@@ -244,12 +344,8 @@ export default class StoreApp extends React.Component {
 
     // ZYLO wordmark swap
     this._logoT = setInterval(() => {
-      if (this.state.view !== 'shop') return;
-      const logo = [...document.querySelectorAll('div')].find(d => (d.style.background || '').includes('8b049d5a714cb207'));
-      if (logo && !logo.dataset.wxSwapped) {
-        logo.dataset.wxSwapped = '1';
-        logo.style.background = 'none';
-        logo.innerHTML = "<span style=\"font-family:'Share Tech',sans-serif;font-size:32px;letter-spacing:6px;font-weight:700;color:#000;display:inline-block;cursor:pointer;\">ZYLO</span>";
+      const logo = document.querySelector('.logo-area');
+      if (logo && logo.querySelector('span')) {
         logo.querySelector('span').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 400);
@@ -272,54 +368,115 @@ export default class StoreApp extends React.Component {
   showToast(msg) {
     clearTimeout(this._toastT);
     this.setState({ toast: msg });
-    this._toastT = setTimeout(() => this.setState({ toast: null }), 2200);
+    this._toastT = setTimeout(() => this.setState({ toast: null }), 2400);
   }
 
   addLine(goCheckout) {
-    const p = CATALOG[this.state.sel];
-    this.setState(s => {
-      const cart = [...s.cart];
-      const i = cart.findIndex(l => l.idx === s.sel && l.size === s.selSize);
-      if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + s.selQty };
-      else cart.push({ idx: s.sel, size: s.selSize, qty: s.selQty });
-      return { cart };
-    });
+    const cat = this.getCatalog();
+    const p = cat[this.state.sel] || cat[0];
+    const selIdx = this.state.sel;
+    const selSize = this.state.selSize;
+    const selQty = this.state.selQty;
 
-    if (goCheckout) {
-      this.goToView('checkout');
-    } else {
-      this.showToast('Added ' + p.name + ' to cart');
-    }
+    const cart = [...this.state.cart];
+    const i = cart.findIndex(l => l.idx === selIdx && l.size === selSize);
+    if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + selQty };
+    else cart.push({ idx: selIdx, size: selSize, qty: selQty });
+
+    saveStoredCart(cart);
+    this.setState({ cart }, () => {
+      if (goCheckout) {
+        this.goToView('checkout');
+      } else {
+        this.showToast('Added ' + (p ? p.name : 'product') + ' to cart');
+      }
+    });
   }
 
   bump(i, d) {
-    this.setState(s => ({ cart: s.cart.map((l, j) => j === i ? { ...l, qty: l.qty + d } : l).filter(l => l.qty > 0) }));
+    const newCart = this.state.cart.map((l, j) => j === i ? { ...l, qty: l.qty + d } : l).filter(l => l.qty > 0);
+    saveStoredCart(newCart);
+    this.setState({ cart: newCart });
   }
 
   totals() {
-    const subtotal = this.state.cart.reduce((t, l) => t + CATALOG[l.idx].price * l.qty, 0);
+    const cat = this.getCatalog();
+    const subtotal = this.state.cart.reduce((t, l) => {
+      const item = cat[l.idx];
+      return t + (item ? item.price : 0) * l.qty;
+    }, 0);
     const delivery = subtotal === 0 ? 0 : (subtotal >= FREE_OVER ? 0 : 150);
     return { subtotal, delivery, total: subtotal + delivery };
   }
 
-  placeOrder = () => {
-    const id = 'ZY-' + Math.floor(100000 + Math.random() * 900000);
-    const { total } = this.totals();
-    try {
-      createOrder({
-        no: id,
-        customer: this.state.cName || 'Storefront Customer',
-        phone: this.state.cPhone || '',
-        total: total,
-        method: this.state.pay
-      });
-    } catch (e) {}
+  placeOrder = async () => {
+    const { total, subtotal, delivery } = this.totals();
+    if (!this.state.cart.length || subtotal <= 0) {
+      this.showToast('Your cart is empty! Please add a product first.');
+      return;
+    }
 
+    const customerName = (this.state.cName || '').trim();
+    const customerPhone = (this.state.cPhone || '').trim();
+    const customerAddress = (this.state.cAddress || 'Kathmandu').trim();
+    const customerCity = (this.state.cCity || 'Kathmandu').trim();
+
+    if (!customerName) {
+      this.showToast('Please enter your Full Name.');
+      return;
+    }
+    if (!customerPhone || customerPhone.length < 6) {
+      this.showToast('Please enter your Phone Number.');
+      return;
+    }
+
+    // Persist customer inputs
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('zylo-c-name', customerName);
+        localStorage.setItem('zylo-c-phone', customerPhone);
+        localStorage.setItem('zylo-c-address', customerAddress);
+        localStorage.setItem('zylo-c-city', customerCity);
+      } catch (e) {}
+    }
+
+    const id = 'ZY-' + Math.floor(100000 + Math.random() * 900000);
+    const cat = this.getCatalog();
+    const cartItems = this.state.cart.map(l => {
+      const p = cat[l.idx] || {};
+      return {
+        productId: p.id || ('prod_' + l.idx),
+        variantId: p.variants?.[0]?.id || p.id || ('v_' + l.idx),
+        name: p.name || 'Product',
+        size: l.size || 'M',
+        qty: l.qty || 1,
+        unitPrice: (p.price || 0) * 100
+      };
+    });
+
+    try {
+      await placeOrderApi({
+        items: cartItems,
+        shippingAddress: {
+          fullName: customerName,
+          phone: customerPhone,
+          line1: customerAddress,
+          city: customerCity
+        },
+        paymentMethod: (this.state.pay || 'cod').toLowerCase(),
+        guestPhone: customerPhone
+      });
+    } catch (e) {
+      console.warn('Order dispatch notice:', e);
+    }
+
+    // Clear cart in local storage and state
+    saveStoredCart([]);
     const isCod = this.state.pay === 'cod';
     this.goToView(isCod ? 'confirmed' : this.state.pay, {
       orderId: id,
       orderTotal: total,
-      cart: isCod ? [] : this.state.cart
+      cart: []
     });
   };
 
@@ -348,10 +505,27 @@ export default class StoreApp extends React.Component {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div onClick={this.nav('cart')} style={{ fontSize: 13, letterSpacing: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>CART</span>
-              <span style={{ background: '#fff', color: '#000', borderRadius: 999, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{totalItems}</span>
-            </div>
+            <button
+              onClick={this.nav('cart')}
+              style={{
+                ...font,
+                background: '#000',
+                border: '1.5px solid #ffffff',
+                borderRadius: 9999,
+                padding: '4px 5px 4px 14px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                transition: 'transform 0.15s ease, background 0.15s ease',
+                outline: 'none'
+              }}
+            >
+              <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>CART</span>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
+                {totalItems}
+              </span>
+            </button>
           </div>
         </header>
 
@@ -422,112 +596,301 @@ export default class StoreApp extends React.Component {
 
   renderCollections() {
     const { colFilter } = this.state;
-    const cat = COLLECTIONS.find(c => c.id === colFilter);
-    const items = cat ? cat.items.map(i => ({ ...CATALOG[i], idx: i })) : CATALOG.map((p, idx) => ({ ...p, idx }));
+    const catList = this.getCatalog();
+    let items = [];
+    if (colFilter === 'all') {
+      items = catList.map((p, idx) => ({ ...p, idx }));
+    } else if (colFilter === 'men') {
+      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+        const g = (p.gender || '').toLowerCase();
+        const c = (p.category || p.categoryId || '').toLowerCase();
+        return g === 'men' || g === 'unisex' || c.includes('men');
+      });
+    } else if (colFilter === 'women') {
+      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+        const g = (p.gender || '').toLowerCase();
+        const c = (p.category || p.categoryId || '').toLowerCase();
+        return g === 'women' || g === 'unisex' || c.includes('women');
+      });
+    } else if (colFilter === 'kids') {
+      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+        const g = (p.gender || '').toLowerCase();
+        const c = (p.category || p.categoryId || '').toLowerCase();
+        return g === 'kids' || c.includes('kids');
+      });
+    }
+
+    const filterTabs = [
+      ['all', 'All Products'],
+      ['men', 'Men'],
+      ['women', 'Women'],
+      ['kids', 'Kids']
+    ];
+
     return (
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>CATALOG</div>
-            <h1 style={{ fontSize: 44, margin: '4px 0 0', fontWeight: 400 }}>COLLECTIONS</h1>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['all', 'men', 'women', 'kids'].map(k => (
+      <div style={{ background: '#fff', width: '100%', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box' }}>
+        {/* Collections Hero */}
+        <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+          <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <span style={{ fontSize: 12, background: '#fff', color: '#000', borderRadius: 999, padding: '4px 12px' }}>Shop</span>
+              <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '4px 12px' }}>The new season</span>
+            </div>
+            <h1 className="zylo-hero-title">Elevate your daily wardrobe with ease</h1>
+            <p className="zylo-hero-sub">Explore our handpicked modern silhouettes crafted from sustainable fabrics.</p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
-                key={k}
-                onClick={() => this.goToView('collections', { colFilter: k })}
-                style={{ ...pillBtn(colFilter === k), padding: '8px 18px', fontSize: 12 }}
+                onClick={() => { const el = document.getElementById('col-grid'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
+                style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
               >
-                {k.toUpperCase()}
+                Explore styles
+              </button>
+              <button
+                onClick={() => this.goToView('contact')}
+                style={{ ...font, fontSize: 13, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
+              >
+                About us
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Category Filter Pills & Products Grid */}
+        <div className="zylo-collections-content">
+          <div id="col-grid" className="zylo-filter-pills">
+            {filterTabs.map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => this.goToView('collections', { colFilter: id })}
+                className="zylo-filter-pill-btn"
+                style={{
+                  border: id === colFilter ? '1px solid #000' : '1px solid #ddd',
+                  background: id === colFilter ? '#000' : '#fff',
+                  color: id === colFilter ? '#fff' : '#000'
+                }}
+              >
+                {label}
               </button>
             ))}
           </div>
-        </div>
-        <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 28 }}>
-          {items.map(p => (
-            <div key={p.idx} onClick={() => this.openProduct(p.idx)} style={{ cursor: 'pointer' }}>
-              <div style={{ aspectRatio: '3/4', background: img(p.img1), borderRadius: 12, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
-                <span style={{ position: 'absolute', top: 12, left: 12, background: '#000', color: '#fff', fontSize: 10, letterSpacing: 1.5, padding: '4px 10px', borderRadius: 999 }}>{p.tag}</span>
-              </div>
-              <div style={{ fontSize: 15, marginBottom: 4 }}>{p.name}</div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}>
-                <span style={{ fontWeight: 700 }}>{rs(p.price)}</span>
-                {p.compare > p.price && <span style={{ color: '#888', textDecoration: 'line-through', fontSize: 12 }}>{rs(p.compare)}</span>}
-              </div>
-            </div>
-          ))}
+
+          <div className="zylo-products-grid">
+            {items.map(p => {
+              const best = p.tag === 'BEST SELLER';
+              return (
+                <div key={p.idx} onClick={() => this.openProduct(p.idx)} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', aspectRatio: '368/420', width: '100%', borderRadius: 12, background: img(p.img1), backgroundColor: '#eee', backgroundSize: 'cover', backgroundPosition: 'center', overflow: 'hidden' }}>
+                    <span style={{ position: 'absolute', left: 8, top: 8, fontSize: 10, background: best ? '#000' : '#fff', color: best ? '#fff' : '#000', border: '1px solid #000', borderRadius: 999, padding: '2px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {best ? '★ Best seller' : '✦ New'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, width: '100%', minWidth: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.name}</span>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>{rs(p.price)}</span>
+                        {p.compare > p.price && <span style={{ fontSize: 11, color: '#a1a1a1', textDecoration: 'line-through' }}>{rs(p.compare)}</span>}
+                      </div>
+                    </div>
+                    <div className="zylo-swatch-group" style={{ display: 'flex', gap: 3, flexShrink: 0, marginTop: 2 }}>
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img1), backgroundColor: '#eee' }} />
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img2 || p.img1), backgroundColor: '#eee' }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
   }
 
   renderDetail() {
-    const p = CATALOG[this.state.sel];
+    const cat = this.getCatalog();
+    const p = cat[this.state.sel] || cat[0];
+    if (!p) {
+      return (
+        <main className="zylo-page-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <h2 style={{ fontSize: 28, fontWeight: 400, marginBottom: 12 }}>Product Not Found</h2>
+          <button onClick={() => this.goToView('collections', { colFilter: 'all' })} style={pillBtn(true)}>Back to Shop</button>
+        </main>
+      );
+    }
     const { selImg, selSize, selQty } = this.state;
     const thumbs = [p.img1, p.img2].filter(Boolean);
+    const activeImg = thumbs[selImg] || p.img1;
+    const discountPct = p.compare > p.price ? Math.round((1 - p.price / p.compare) * 100) : 0;
+
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 24px' }}>
-        <div onClick={() => this.goToView('collections', { colFilter: 'all' })} style={{ fontSize: 12, letterSpacing: 1.5, cursor: 'pointer', marginBottom: 24, color: '#888' }}>
-          &larr; BACK TO CATALOG
-        </div>
-        <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 48 }}>
-          <div>
-            <div style={{ aspectRatio: '3/4', background: img(thumbs[selImg] || p.img1), borderRadius: 16, marginBottom: 16 }} />
+      <main className="zylo-page-container">
+        <a
+          onClick={() => this.goToView('collections', { colFilter: 'all' })}
+          style={{
+            ...font,
+            fontSize: 13,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 16,
+            color: '#000',
+            textDecoration: 'none'
+          }}
+        >
+          &larr; Back to store
+        </a>
+
+        <div className="zylo-detail-grid">
+          {/* Left Column: Images */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div
+              style={{
+                aspectRatio: '368/420',
+                width: '100%',
+                maxHeight: 520,
+                borderRadius: 12,
+                background: img(activeImg),
+                backgroundColor: '#eee',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                overflow: 'hidden'
+              }}
+            />
             {thumbs.length > 1 && (
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
                 {thumbs.map((t, i) => (
                   <div
                     key={i}
                     onClick={() => this.setState({ selImg: i })}
-                    style={{ width: 80, height: 100, background: img(t), borderRadius: 8, cursor: 'pointer', border: selImg === i ? '2px solid #000' : '1px solid transparent' }}
+                    style={{
+                      width: 68,
+                      height: 78,
+                      borderRadius: 8,
+                      border: i === selImg ? '2px solid #000' : '1px solid #ddd',
+                      background: img(t),
+                      backgroundColor: '#eee',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
                   />
                 ))}
               </div>
             )}
           </div>
-          <div>
-            <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 10px', borderRadius: 999 }}>{p.tag}</span>
-            <h1 style={{ fontSize: 36, margin: '14px 0 8px', fontWeight: 400 }}>{p.name}</h1>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
-              <span style={{ fontSize: 24, fontWeight: 700 }}>{rs(p.price)}</span>
-              {p.compare > p.price && <span style={{ color: '#888', textDecoration: 'line-through', fontSize: 16 }}>{rs(p.compare)}</span>}
+
+          {/* Right Column: Details & Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: '#888', textTransform: 'uppercase' }}>
+                {p.tag || 'BEST SELLER'}
+              </div>
+              <h1 style={{ margin: 0, fontSize: 34, fontWeight: 400, letterSpacing: 0.5, lineHeight: 1.2 }}>
+                {p.name}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 4 }}>
+                <span style={{ fontSize: 24, fontWeight: 600 }}>{rs(p.price)}</span>
+                {p.compare > p.price && (
+                  <span style={{ fontSize: 15, color: '#a1a1a1', textDecoration: 'line-through' }}>
+                    {rs(p.compare)}
+                  </span>
+                )}
+                {discountPct > 0 && (
+                  <span style={{ fontSize: 12, border: '1px solid #000', borderRadius: 999, padding: '2px 10px', fontWeight: 500 }}>
+                    {discountPct}% OFF
+                  </span>
+                )}
+              </div>
             </div>
-            <p style={{ color: '#555', lineHeight: 1.6, fontSize: 14, marginBottom: 28 }}>{p.desc}</p>
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, letterSpacing: 1.5, marginBottom: 8 }}>SELECT SIZE</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['S', 'M', 'L', 'XL'].map(s => (
+
+            <div
+              className="rich-text-desc"
+              style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: '#444' }}
+              dangerouslySetInnerHTML={{ __html: p.desc }}
+            />
+
+            {/* Size Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>SIZE</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['S', 'M', 'L', 'XL'].map(sz => (
                   <button
-                    key={s}
-                    onClick={() => this.setState({ selSize: s })}
-                    style={{ width: 44, height: 44, borderRadius: 8, border: '1px solid #000', background: selSize === s ? '#000' : '#fff', color: selSize === s ? '#fff' : '#000', cursor: 'pointer', ...font }}
+                    key={sz}
+                    onClick={() => this.setState({ selSize: sz })}
+                    style={{
+                      ...font,
+                      fontSize: 14,
+                      width: 44,
+                      height: 44,
+                      borderRadius: 999,
+                      cursor: 'pointer',
+                      border: sz === selSize ? '1px solid #000' : '1px solid #ccc',
+                      background: sz === selSize ? '#000' : '#fff',
+                      color: sz === selSize ? '#fff' : '#000',
+                      transition: 'all 0.15s ease'
+                    }}
                   >
-                    {s}
+                    {sz}
                   </button>
                 ))}
               </div>
             </div>
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 12, letterSpacing: 1.5, marginBottom: 8 }}>QUANTITY</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => this.setState(s => ({ selQty: Math.max(1, s.selQty - 1) }))} style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid #000', background: '#fff', cursor: 'pointer', ...font }}>-</button>
-                <span style={{ minWidth: 24, textAlign: 'center', fontSize: 16 }}>{selQty}</span>
-                <button onClick={() => this.setState(s => ({ selQty: s.selQty + 1 }))} style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid #000', background: '#fff', cursor: 'pointer', ...font }}>+</button>
+
+            {/* Quantity Stepper */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>QUANTITY</div>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #000', borderRadius: 999, width: 'fit-content' }}>
+                <button
+                  onClick={() => this.setState(st => ({ selQty: Math.max(1, st.selQty - 1) }))}
+                  style={{ ...font, fontSize: 18, width: 40, height: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  −
+                </button>
+                <span style={{ minWidth: 28, textAlign: 'center', fontSize: 15, fontWeight: 500 }}>{selQty}</span>
+                <button
+                  onClick={() => this.setState(st => ({ selQty: st.selQty + 1 }))}
+                  style={{ ...font, fontSize: 18, width: 40, height: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  +
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => this.addLine(false)} style={pillBtn(false)}>ADD TO CART</button>
-              <button onClick={() => this.addLine(true)} style={pillBtn(true)}>BUY NOW &rarr;</button>
+
+            {/* Action Buttons */}
+            <div className="zylo-detail-actions">
+              <button
+                onClick={() => this.addLine(false)}
+                style={{ ...pillBtn(true), flex: 1, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
+              >
+                Add to cart — {rs(p.price * selQty)}
+              </button>
+              <button
+                onClick={() => this.addLine(true)}
+                style={{ ...pillBtn(false), flex: 1, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
+              >
+                Buy now
+              </button>
+            </div>
+
+            {/* Feature bullets */}
+            <div style={{ borderTop: '1px solid #eee', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#6e6e6e' }}>
+              <span>— Free delivery on orders over Rs 5,000</span>
+              <span>— Ships across Nepal in 2–4 days</span>
+              <span>— Pay by Cash on Delivery, eSewa or Fonepay</span>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   renderCart() {
     const { cart } = this.state;
     const { subtotal, delivery, total } = this.totals();
+    const cat = this.getCatalog();
     if (!cart.length) {
       return (
         <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
@@ -543,11 +906,11 @@ export default class StoreApp extends React.Component {
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40 }}>
           <div>
             {cart.map((l, i) => {
-              const p = CATALOG[l.idx];
+              const p = cat[l.idx] || { name: 'Item', price: 0, img1: '' };
               return (
                 <div key={i} style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: '1px solid #e0e0e0', alignItems: 'center' }}>
                   <div style={{ width: 70, height: 90, background: img(p.img1), borderRadius: 8, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
                     <div style={{ fontSize: 15, fontWeight: 500 }}>{p.name}</div>
                     <div style={{ fontSize: 12, color: '#888', margin: '2px 0 6px' }}>Size: {l.size}</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{rs(p.price)}</div>
@@ -580,39 +943,158 @@ export default class StoreApp extends React.Component {
   }
 
   renderCheckout() {
-    const { total } = this.totals();
-    const { pay, cName, cPhone } = this.state;
+    const { cart, pay, cName, cPhone, cAddress, cCity } = this.state;
+    const { subtotal, delivery, total } = this.totals();
+    const cat = this.getCatalog();
+
+    if (!cart.length || subtotal <= 0) {
+      return (
+        <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
+          <h2 style={{ fontSize: 32, fontWeight: 400, marginBottom: 12 }}>YOUR CART IS EMPTY</h2>
+          <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>Please add items to your cart before proceeding to checkout.</p>
+          <button onClick={() => this.goToView('collections', { colFilter: 'all' })} style={pillBtn(true)}>DISCOVER GARMENTS</button>
+        </div>
+      );
+    }
+
     return (
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: '48px 24px' }}>
-        <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 28 }}>CHECKOUT</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px' }}>
+        <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 32 }}>CHECKOUT</h1>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
+          {/* Left: Customer & Shipping Details */}
           <div>
-            <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6 }}>FULL NAME</label>
-            <input value={cName} onChange={e => this.setState({ cName: e.target.value })} placeholder="e.g. Aarav Sharma" style={{ ...input, width: '100%' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6 }}>PHONE NUMBER</label>
-            <input value={cPhone} onChange={e => this.setState({ cPhone: e.target.value })} placeholder="e.g. +977 9801234567" style={{ ...input, width: '100%' }} />
-          </div>
-        </div>
-        <div style={{ marginBottom: 28 }}>
-          <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 10 }}>PAYMENT METHOD</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {METHODS.map(m => (
-              <label key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 14, border: '1px solid #000', borderRadius: 8, background: pay === m.id ? '#000' : '#fff', color: pay === m.id ? '#fff' : '#000', cursor: 'pointer' }}>
-                <input type="radio" name="pay" checked={pay === m.id} onChange={() => this.setState({ pay: m.id })} style={{ marginTop: 2 }} />
+            <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, letterSpacing: 0.5 }}>1. SHIPPING & CONTACT</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
-                  <div style={{ fontSize: 12, color: pay === m.id ? '#ccc' : '#666', marginTop: 2 }}>{m.desc}</div>
+                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>FULL NAME *</label>
+                  <input
+                    value={cName}
+                    onChange={e => this.setState({ cName: e.target.value })}
+                    placeholder="e.g. Aarav Sharma"
+                    style={{ ...input, width: '100%' }}
+                  />
                 </div>
-              </label>
-            ))}
+                <div>
+                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>PHONE NUMBER *</label>
+                  <input
+                    value={cPhone}
+                    onChange={e => this.setState({ cPhone: e.target.value })}
+                    placeholder="e.g. 9801234567"
+                    style={{ ...input, width: '100%' }}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>CITY / DISTRICT</label>
+                    <input
+                      value={cCity}
+                      onChange={e => this.setState({ cCity: e.target.value })}
+                      placeholder="Kathmandu"
+                      style={{ ...input, width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>STREET / LANDMARK</label>
+                    <input
+                      value={cAddress}
+                      onChange={e => this.setState({ cAddress: e.target.value })}
+                      placeholder="e.g. Durbar Marg, House 12"
+                      style={{ ...input, width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, letterSpacing: 0.5 }}>2. PAYMENT METHOD</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {METHODS.map(m => (
+                  <label
+                    key={m.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      padding: 14,
+                      border: pay === m.id ? '2px solid #000' : '1px solid #ddd',
+                      borderRadius: 8,
+                      background: pay === m.id ? '#000' : '#fff',
+                      color: pay === m.id ? '#fff' : '#000',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="pay"
+                      checked={pay === m.id}
+                      onChange={() => this.setState({ pay: m.id })}
+                      style={{ marginTop: 3 }}
+                    />
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
+                      <div style={{ fontSize: 12, color: pay === m.id ? '#ccc' : '#666', marginTop: 2 }}>{m.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Order Summary & Place Button */}
+          <div style={{ background: '#f9f9f9', border: '1px solid #eaeaea', padding: 24, borderRadius: 12, position: 'sticky', top: 80 }}>
+            <h3 style={{ fontSize: 18, margin: '0 0 16px', fontWeight: 600 }}>ORDER ITEMS ({cart.reduce((s, l) => s + l.qty, 0)})</h3>
+            <div style={{ maxHeight: 240, overflowY: 'auto', marginBottom: 16, borderBottom: '1px solid #e0e0e0', paddingBottom: 8 }}>
+              {cart.map((l, i) => {
+                const p = cat[l.idx] || { name: 'Item', price: 0, img1: '' };
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: '8px 0', alignItems: 'center' }}>
+                    <div style={{ width: 44, height: 56, background: img(p.img1), borderRadius: 4, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: '#666' }}>Size: {l.size} &times; {l.qty}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{rs(p.price * l.qty)}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14 }}>
+              <span>Subtotal</span>
+              <span>{rs(subtotal)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontSize: 14 }}>
+              <span>Delivery</span>
+              <span style={{ color: delivery === 0 ? '#10b981' : '#000', fontWeight: delivery === 0 ? 600 : 400 }}>
+                {delivery === 0 ? 'FREE' : rs(delivery)}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #000', paddingTop: 16, marginBottom: 24, fontSize: 18, fontWeight: 700 }}>
+              <span>Total Due</span>
+              <span>{rs(total)}</span>
+            </div>
+            <button
+              onClick={this.placeOrder}
+              style={{
+                ...pillBtn(true),
+                width: '100%',
+                textAlign: 'center',
+                padding: '16px 20px',
+                fontSize: 14,
+                fontWeight: 700,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              }}
+            >
+              CONFIRM ORDER &rarr;
+            </button>
+            <p style={{ textAlign: 'center', fontSize: 11, color: '#888', marginTop: 12 }}>
+              Secure checkout &bull; Instant order confirmation
+            </p>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, fontSize: 20, fontWeight: 700 }}>
-          <span>TOTAL DUE</span><span>{rs(total)}</span>
-        </div>
-        <button onClick={this.placeOrder} style={{ ...pillBtn(true), width: '100%' }}>PLACE ORDER &rarr;</button>
       </div>
     );
   }
@@ -860,17 +1342,14 @@ export default class StoreApp extends React.Component {
             </div>
 
             {/* Service Highlights */}
-            <div style={{ background: '#f5f5f5', borderRadius: 16, padding: '20px 24px', fontSize: 12, color: '#555', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🚚</span>
+            <div style={{ background: '#f5f5f5', borderRadius: 16, padding: '20px 24px', fontSize: 13, color: '#555', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
                 <span><strong>Free delivery</strong> across Nepal on orders over Rs 5,000</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>💳</span>
+              <div>
                 <span><strong>Flexible Payments:</strong> Cash on Delivery, eSewa & Fonepay</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🔄</span>
+              <div>
                 <span><strong>7-Day Easy Exchange:</strong> Hassle-free sizing exchanges</span>
               </div>
             </div>

@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { loadDB, saveDB, money, docSubtotal, docVat, docTotal, today } from '../../../services/dataStore';
+import { money, today } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminReturnsPage() {
   const [returns, setReturns] = useState([]);
   const [sales, setSales] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -30,10 +32,36 @@ export default function AdminReturnsPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState(null);
 
-  const refreshData = () => {
-    const db = loadDB();
-    setReturns(db.returns || []);
-    setSales(db.sales || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/admin/orders');
+      const orders = res.data?.orders || res.data || [];
+      const normalizedSales = orders.map((o, idx) => {
+        const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+        const rawItems = o.items && o.items.length ? o.items : [{ name: 'Garment', qty: 1, unitPrice: grand * 100 }];
+        return {
+          id: o._id || o.orderNo || `s_${idx}`,
+          invoice: o.orderNo || `INV-${2030 + idx}`,
+          orderNo: o.orderNo || o.no,
+          date: (o.createdAt || o.date || today()).slice(0, 10),
+          customer: o.shippingAddress?.fullName || o.customer || 'Storefront Customer',
+          customerPhone: o.shippingAddress?.phone || o.phone || '',
+          total: grand,
+          items: rawItems.map(i => ({
+            desc: i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
+            sku: i.sku || 'SKU',
+            rate: i.unitPrice != null ? Math.round(i.unitPrice / 100) : (Number(i.rate) || grand),
+            qty: Number(i.qty) || 1
+          }))
+        };
+      });
+      setSales(normalizedSales);
+    } catch (e) {
+      console.error('Failed to load orders for returns:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -57,9 +85,6 @@ export default function AdminReturnsPage() {
 
   const handleSelectSale = (s) => {
     setSelectedSale(s);
-    const prevReturns = returns.filter(r => r.saleId === s.id || r.invoice === s.invoice);
-    const alreadyRefundedTotal = prevReturns.reduce((sum, r) => sum + (r.refundAmount || 0), 0);
-
     const initialLines = (s.items || []).map((it, idx) => ({
       index: idx,
       desc: it.desc || 'Item',
@@ -78,25 +103,24 @@ export default function AdminReturnsPage() {
 
   // Compute live return totals
   const vatRate = 13;
-  const originalSaleTotal = selectedSale ? docTotal(selectedSale, vatRate) : 0;
-  const alreadyRefunded = selectedSale ? returns.filter(r => (r.saleId === selectedSale.id || r.invoice === selectedSale.invoice) && r.id !== selectedReturn?.id).reduce((sum, r) => sum + (r.refundAmount || 0), 0) : 0;
-
   let calculatedRefundTotal = 0;
-  if (returnType === 'full') {
-    calculatedRefundTotal = Math.max(0, originalSaleTotal - alreadyRefunded);
-  } else if (returnType === 'custom') {
-    calculatedRefundTotal = Math.max(0, Number(customAmount) || 0);
-  } else {
-    // item or quantity based
-    const selectedLines = lineSelections.filter(l => l.selected && l.returnQty > 0);
-    const sub = selectedLines.reduce((sum, l) => sum + (l.rate * l.returnQty), 0);
-    const vat = selectedSale?.vatable ? Math.round(sub * (vatRate / 100)) : 0;
-    calculatedRefundTotal = sub + vat;
-  }
+  let returnItemsList = [];
 
-  const refundNet = Math.round(calculatedRefundTotal * 100 / (100 + vatRate));
-  const refundVat = calculatedRefundTotal - refundNet;
-  const remainingBalance = Math.max(0, originalSaleTotal - alreadyRefunded - calculatedRefundTotal);
+  if (selectedSale) {
+    if (returnType === 'full') {
+      calculatedRefundTotal = selectedSale.total || 0;
+      returnItemsList = lineSelections.map(l => ({ ...l, returnQty: l.bought }));
+    } else if (returnType === 'custom') {
+      calculatedRefundTotal = Number(customAmount) || 0;
+      returnItemsList = [];
+    } else {
+      const selected = lineSelections.filter(l => l.selected && l.returnQty > 0);
+      returnItemsList = selected;
+      const subtotal = selected.reduce((sum, l) => sum + (l.rate * l.returnQty), 0);
+      const vat = Math.round(subtotal * (vatRate / 100));
+      calculatedRefundTotal = subtotal + vat;
+    }
+  }
 
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files || []);
@@ -118,26 +142,29 @@ export default function AdminReturnsPage() {
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmitReturn = (e) => {
-    if (e) e.preventDefault();
-    if (!selectedSale) return alert('Please select a sale first.');
-    if (calculatedRefundTotal <= 0) return alert('Refund total must be greater than zero.');
+  const handleCreateReturn = (e) => {
+    e.preventDefault();
+    if (!selectedSale) return;
+    if (calculatedRefundTotal <= 0) {
+      alert('Return refund amount must be greater than Rs 0.');
+      return;
+    }
 
-    const db = loadDB();
-    const list = db.returns || [];
+    const returnNet = Math.round(calculatedRefundTotal / (1 + vatRate / 100));
+    const refundVat = calculatedRefundTotal - returnNet;
 
     const newReturn = {
       id: 'ret_' + Date.now().toString(36),
-      no: 'RET-' + (300 + list.length + 1),
+      no: 'RET-' + (1000 + returns.length + 1),
       saleId: selectedSale.id,
       invoice: selectedSale.invoice,
       customer: selectedSale.customer,
       date: today(),
       type: returnType,
-      items: lineSelections.filter(l => l.selected && l.returnQty > 0),
-      reason: returnReason === 'Other' ? customReason : returnReason,
-      restockDest,
-      refundNet,
+      reason: returnReason === 'Other' ? (customReason || 'Other') : returnReason,
+      restock: restockDest,
+      items: returnItemsList,
+      refundNet: returnNet,
       refundVat,
       refundAmount: calculatedRefundTotal,
       status: 'pending',
@@ -147,30 +174,21 @@ export default function AdminReturnsPage() {
       updatedAt: new Date().toISOString()
     };
 
-    list.unshift(newReturn);
-    db.returns = list;
-    saveDB(db);
+    setReturns(prev => [newReturn, ...prev]);
     setModalOpen(false);
-    refreshData();
   };
 
   const updateReturnStatus = (retId, newStatus) => {
-    const db = loadDB();
-    db.returns = (db.returns || []).map(r => r.id === retId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r);
-    saveDB(db);
+    setReturns(prev => prev.map(r => r.id === retId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r));
     if (selectedReturn?.id === retId) {
       setSelectedReturn(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
     }
-    refreshData();
   };
 
   const handleDeleteReturn = (retId) => {
     if (!confirm('Are you sure you want to delete this return record?')) return;
-    const db = loadDB();
-    db.returns = (db.returns || []).filter(r => r.id !== retId);
-    saveDB(db);
+    setReturns(prev => prev.filter(r => r.id !== retId));
     setViewModalOpen(false);
-    refreshData();
   };
 
   const filteredReturns = returns.filter(r => {

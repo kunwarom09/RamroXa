@@ -1,64 +1,93 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { loadDB, money, docSubtotal, docVat, docTotal, today } from '../../../services/dataStore';
+import { money, today } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 
 export default function AdminDashboardPage() {
-  const [db, setDb] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [metrics, setMetrics] = useState({
+    salesToday: 0,
+    monthRevenue: 0,
+    vatPayable: 0,
+    netProfit: 0
+  });
 
   useEffect(() => {
-    setDb(loadDB());
+    async function loadDashboard() {
+      try {
+        const [ordersRes, pnlRes] = await Promise.allSettled([
+          api.get('/api/admin/orders'),
+          api.get('/api/admin/finance/profit-and-loss')
+        ]);
+
+        const apiOrders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data?.orders || ordersRes.value.data || []) : [];
+        setOrders(apiOrders);
+
+        const t = today();
+        const m = t.slice(0, 7);
+
+        const todayCount = apiOrders.filter(o => (o.createdAt || o.date || '').slice(0, 10) === t).length;
+        const monthOrders = apiOrders.filter(o => (o.createdAt || o.date || '').slice(0, 7) === m);
+        const rev = monthOrders.reduce((sum, o) => {
+          const g = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+          return sum + g;
+        }, 0);
+
+        let netProf = rev;
+        let vat = Math.round(rev * 0.13);
+        if (pnlRes.status === 'fulfilled' && pnlRes.value.data?.pnl) {
+          const pnl = pnlRes.value.data.pnl;
+          if (pnl.netProfit != null) netProf = Math.round(pnl.netProfit / 100);
+          if (pnl.vatPayable != null) vat = Math.round(pnl.vatPayable / 100);
+        }
+
+        setMetrics({
+          salesToday: todayCount,
+          monthRevenue: rev,
+          vatPayable: vat,
+          netProfit: netProf
+        });
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboard();
   }, []);
 
-  if (!db) return <div>Loading dashboard...</div>;
-
-  const t = today();
-  const m = t.slice(0, 7);
-
-  const salesToday = (db.sales || []).filter(s => s.date === t);
-  const monthSales = (db.sales || []).filter(s => s.date && s.date.slice(0, 7) === m);
-  const monthPurch = (db.purchases || []).filter(p => p.date && p.date.slice(0, 7) === m);
-
-  const rev = monthSales.reduce((a, s) => a + docSubtotal(s), 0);
-  const exp = monthPurch.reduce((a, p) => a + docSubtotal(p), 0);
-  const vatOut = monthSales.reduce((a, s) => a + docVat(s), 0);
-  const vatIn = monthPurch.reduce((a, p) => a + docVat(p), 0);
-
-  const netVat = Math.max(0, vatOut - vatIn);
-  const profit = rev - exp;
-
-  const recentSales = (db.sales || [])
-    .slice()
-    .sort((a, b) => (b.date < a.date ? -1 : 1))
-    .slice(0, 5);
+  const recentOrders = orders.slice(0, 5);
 
   return (
     <div>
       <div className="page-head">
         <h1>Dashboard</h1>
-        <p>Live overview of store activity.</p>
+        <p>Live overview of store activity from MongoDB.</p>
       </div>
 
       <div className="metric-grid">
         <div className="metric">
-          <div className="label">Sales today</div>
-          <div className="value">{salesToday.length}</div>
-          <div className="hint">Invoices issued today</div>
+          <div className="label">Orders today</div>
+          <div className="value">{metrics.salesToday}</div>
+          <div className="hint">Orders placed today</div>
         </div>
         <div className="metric">
           <div className="label">Revenue this month</div>
-          <div className="value">{money(rev)}</div>
-          <div className="hint">Net taxable revenue</div>
+          <div className="value">{money(metrics.monthRevenue)}</div>
+          <div className="hint">Storefront gross sales</div>
         </div>
         <div className="metric">
           <div className="label">VAT payable</div>
-          <div className="value">{money(netVat)}</div>
-          <div className="hint">Output minus input VAT</div>
+          <div className="value">{money(metrics.vatPayable)}</div>
+          <div className="hint">13% Output VAT estimate</div>
         </div>
         <div className="metric">
           <div className="label">Net profit (month)</div>
-          <div className="value">{money(profit)}</div>
-          <div className="hint">Revenue minus purchases</div>
+          <div className="value">{money(metrics.netProfit)}</div>
+          <div className="hint">Net operational revenue</div>
         </div>
       </div>
 
@@ -77,32 +106,37 @@ export default function AdminDashboardPage() {
 
         <div className="card card-pad">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div className="section-title" style={{ margin: 0 }}>Recent sales</div>
-            <Link href="/admin/sales" style={{ fontSize: '12px', color: 'var(--accent)' }}>View all</Link>
+            <div className="section-title" style={{ margin: 0 }}>Recent orders</div>
+            <Link href="/admin/orders" style={{ fontSize: '12px', color: 'var(--accent)' }}>View all</Link>
           </div>
           <div>
-            {recentSales.length > 0 ? (
-              recentSales.map(s => (
-                <div
-                  key={s.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '8px 0',
-                    borderBottom: '1px solid var(--border)'
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 500 }}>{s.invoice}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
-                      {s.customer} &middot; {s.date}
+            {recentOrders.length > 0 ? (
+              recentOrders.map((o) => {
+                const cust = o.shippingAddress?.fullName || o.customer || o.guestPhone || 'Storefront Customer';
+                const total = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+                const date = (o.createdAt || o.date || '').slice(0, 10);
+                return (
+                  <div
+                    key={o._id || o.orderNo || o.no}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '8px 0',
+                      borderBottom: '1px solid var(--border)'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{o.orderNo || o.no}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
+                        {cust} &middot; {date}
+                      </div>
                     </div>
+                    <div style={{ fontWeight: 500 }}>{money(total)}</div>
                   </div>
-                  <div style={{ fontWeight: 500 }}>{money(docTotal(s))}</div>
-                </div>
-              ))
+                );
+              })
             ) : (
-              <div className="empty-state">No sales yet.</div>
+              <div className="empty-state">No orders yet.</div>
             )}
           </div>
         </div>

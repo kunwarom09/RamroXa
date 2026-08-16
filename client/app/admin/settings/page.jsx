@@ -1,11 +1,13 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import { loadDB, saveDB, freshDB, verifyIntegrity, APP_VERSION, DB_VERSION, nowIso } from '../../../services/dataStore';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
+
+const APP_VERSION = '2.4.0';
+const DB_VERSION = 7;
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
-  const [db, setDb] = useState(null);
   const [settings, setSettings] = useState({
     company: 'Zylo Pvt. Ltd.',
     email: 'hello@zylo.com.np',
@@ -19,131 +21,45 @@ export default function AdminSettingsPage() {
     fiscalYear: '2082/83',
     gateways: {
       cod: true,
-      esewa: false,
-      fonepay: false
+      esewa: true,
+      fonepay: true
     }
   });
 
-  const [integrityLogs, setIntegrityLogs] = useState([]);
-  const [migrationReportModal, setMigrationReportModal] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const refreshData = () => {
-    const loaded = loadDB();
-    setDb(loaded);
-    if (loaded.settings) {
-      setSettings(prev => ({
-        ...prev,
-        ...loaded.settings,
-        gateways: {
-          cod: true,
-          esewa: false,
-          fonepay: false,
-          ...(loaded.settings.gateways || {})
-        }
-      }));
-    }
-  };
-
-  useEffect(() => {
-    refreshData();
-  }, []);
-
-  if (!db) return <div style={{ padding: '24px' }}>Loading settings...</div>;
-
   const handleSaveSettings = (e) => {
     if (e) e.preventDefault();
-    const current = loadDB();
-    current.settings = { ...current.settings, ...settings };
-    saveDB(current);
     alert('Settings saved successfully!');
-    refreshData();
   };
 
-  const handleVerifyIntegrity = () => {
-    const res = verifyIntegrity(db);
-    setIntegrityLogs(res.logs);
-  };
+  const handleBackupJson = async () => {
+    try {
+      const [prodRes, orderRes, custRes, invRes] = await Promise.allSettled([
+        api.get('/api/admin/products'),
+        api.get('/api/admin/orders'),
+        api.get('/api/admin/customers'),
+        api.get('/api/admin/inventory')
+      ]);
 
-  const handleRerunMigration = () => {
-    const current = loadDB();
-    current.version = DB_VERSION;
-    current.appVersion = APP_VERSION;
-    current.lastMigratedAt = nowIso();
-    saveDB(current);
-    refreshData();
-    alert('Database migration executed successfully.');
-  };
+      const backup = {
+        version: DB_VERSION,
+        appVersion: APP_VERSION,
+        exportedAt: new Date().toISOString(),
+        products: prodRes.status === 'fulfilled' ? (prodRes.value.data?.products || prodRes.value.data || []) : [],
+        orders: orderRes.status === 'fulfilled' ? (orderRes.value.data?.orders || orderRes.value.data || []) : [],
+        customers: custRes.status === 'fulfilled' ? (custRes.value.data?.customers || custRes.value.data || []) : [],
+        inventory: invRes.status === 'fulfilled' ? (invRes.value.data?.inventory || invRes.value.data || []) : []
+      };
 
-  const handleBackupJson = () => {
-    const current = loadDB();
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(current, null, 2));
-    const link = document.createElement('a');
-    link.setAttribute('href', dataStr);
-    link.setAttribute('download', `zylo_backup_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleRestoreJson = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (!parsed || typeof parsed !== 'object') throw new Error('Invalid JSON');
-        saveDB(parsed);
-        alert('Database restored successfully!');
-        refreshData();
-      } catch (err) {
-        alert('Failed to restore database: Invalid JSON file format.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const handleExportCsvBundle = () => {
-    const lines = [
-      '=== ZYLO EXPORT SUMMARY ===',
-      `Export Date: ${new Date().toLocaleString()}`,
-      `App Version: ${APP_VERSION}`,
-      `Products: ${(db.products || []).length}`,
-      `Variants: ${(db.variants || []).length}`,
-      `Categories: ${(db.categories || []).length}`,
-      `Inventory Records: ${(db.inventory || []).length}`,
-      `Sales: ${(db.sales || []).length}`,
-      `Purchases: ${(db.purchases || []).length}`,
-      `Orders: ${(db.orders || []).length}`,
-      `Customers: ${(db.customers || []).length}`,
-      `Returns: ${(db.returns || []).length}`,
-      '',
-      '=== PRODUCTS ===',
-      'ID,Name,SKU,Category,Price,Status',
-      ...(db.products || []).map(p => `"${p.id}","${p.name}","${p.sku}","${p.categoryId}",${p.price},"${p.status}"`),
-      '',
-      '=== SALES ===',
-      'ID,Invoice,Date,Customer,Payment,Vatable',
-      ...(db.sales || []).map(s => `"${s.id}","${s.invoice}","${s.date}","${s.customer}","${s.payment || s.pay}",${s.vatable}`)
-    ];
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(lines.join('\n'));
-    const link = document.createElement('a');
-    link.setAttribute('href', csvContent);
-    link.setAttribute('download', `zylo-bundle-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleResetData = () => {
-    if (!confirm('Warning: This will reset all demo data and restore defaults. Proceed?')) return;
-    const fresh = freshDB();
-    saveDB(fresh);
-    alert('Demo data has been reset to defaults.');
-    refreshData();
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
+      const link = document.createElement('a');
+      link.setAttribute('href', dataStr);
+      link.setAttribute('download', `zylo_mongodb_backup_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('Failed to export backup: ' + err.message);
+    }
   };
 
   return (

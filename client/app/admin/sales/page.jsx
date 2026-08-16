@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money, docSubtotal, docVat, docTotal, today } from '../../../services/dataStore';
+import { money, today } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminSalesPage() {
   const [sales, setSales] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [viewInvoiceModal, setViewInvoiceModal] = useState(false);
@@ -19,9 +21,45 @@ export default function AdminSalesPage() {
     items: [{ desc: '', qty: 1, rate: 0 }]
   });
 
-  const refreshData = () => {
-    const db = loadDB();
-    setSales(db.sales || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/admin/orders');
+      const orders = res.data?.orders || res.data || [];
+      const normalized = orders.map((o, idx) => {
+        const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+        const sub = o.subtotal != null ? Math.round(o.subtotal / 100) : grand;
+        const vat = o.vatTotal != null ? Math.round(o.vatTotal / 100) : Math.round(sub * 0.13);
+
+        const rawItems = o.items && o.items.length ? o.items : [{ name: 'Storefront Garment', qty: 1, unitPrice: grand * 100 }];
+        const items = rawItems.map(i => {
+          const rate = i.unitPrice != null ? Math.round(i.unitPrice / 100) : (Number(i.rate) || grand);
+          return {
+            desc: i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
+            qty: Number(i.qty) || 1,
+            rate: rate
+          };
+        });
+
+        return {
+          id: o._id || o.orderNo || `s_${idx}`,
+          invoice: o.orderNo || `INV-${2030 + idx}`,
+          date: (o.createdAt || o.date || today()).slice(0, 10),
+          customer: o.shippingAddress?.fullName || o.customer || o.guestPhone || 'Storefront Customer',
+          payment: (o.paymentMethod || o.pay || 'COD').toUpperCase(),
+          vatable: true,
+          items,
+          subtotal: sub,
+          vat,
+          total: grand
+        };
+      });
+      setSales(normalized);
+    } catch (e) {
+      console.error('Failed to load sales from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -36,7 +74,7 @@ export default function AdminSalesPage() {
       customer: 'Walk-in customer',
       payment: 'COD',
       vatable: true,
-      items: [{ desc: 'Monolith Tee', qty: 1, rate: 180000 }]
+      items: [{ desc: 'Monolith Tee', qty: 1, rate: 1800 }]
     });
     setModalOpen(true);
   };
@@ -75,42 +113,33 @@ export default function AdminSalesPage() {
     });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     const validItems = formData.items.filter(i => i.desc.trim() && i.qty > 0);
     if (!validItems.length) {
       alert('Please add at least one item description');
       return;
     }
-    const db = loadDB();
-    const list = db.sales || [];
-    if (editingId) {
-      const idx = list.findIndex(s => s.id === editingId);
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData, items: validItems };
-      }
-    } else {
-      const newSale = {
-        id: 's_' + Date.now().toString(36),
-        orderNo: 'ZY-' + (1040 + list.length + 1),
-        customerPhone: '+977 98-00-000000',
-        ...formData,
-        items: validItems
-      };
-      list.unshift(newSale);
-    }
-    db.sales = list;
-    saveDB(db);
+    const sub = validItems.reduce((acc, i) => acc + (Number(i.qty || 0) * Number(i.rate || 0)), 0);
+    const vat = formData.vatable ? Math.round(sub * 0.13) : 0;
+    const total = sub + vat;
+
+    const newSale = {
+      id: editingId || ('s_' + Date.now().toString(36)),
+      ...formData,
+      items: validItems,
+      subtotal: sub,
+      vat,
+      total
+    };
+
+    setSales(prev => editingId ? prev.map(s => s.id === editingId ? newSale : s) : [newSale, ...prev]);
     setModalOpen(false);
-    refreshData();
   };
 
   const handleDelete = (id) => {
-    if (!confirm('Delete this sale entry? Associated journal records will be cleared.')) return;
-    const db = loadDB();
-    db.sales = (db.sales || []).filter(s => s.id !== id);
-    saveDB(db);
-    refreshData();
+    if (!confirm('Delete this sale entry?')) return;
+    setSales(prev => prev.filter(s => s.id !== id));
   };
 
   const filtered = sales.filter(s =>
@@ -118,12 +147,12 @@ export default function AdminSalesPage() {
     (s.customer || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalRevenue = sales.reduce((sum, s) => sum + docTotal(s), 0);
-  const totalVat = sales.reduce((sum, s) => sum + docVat(s), 0);
+  const totalRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+  const totalVat = sales.reduce((sum, s) => sum + (Number(s.vat) || 0), 0);
 
   const exportCsv = () => {
     const headers = ['Invoice', 'Date', 'Customer', 'Payment', 'Subtotal', 'VAT', 'Total'];
-    const rows = filtered.map(s => [s.invoice, s.date, `"${s.customer}"`, s.payment || s.pay || 'COD', docSubtotal(s), docVat(s), docTotal(s)]);
+    const rows = filtered.map(s => [s.invoice, s.date, `"${s.customer}"`, s.payment || 'COD', s.subtotal || 0, s.vat || 0, s.total || 0]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');

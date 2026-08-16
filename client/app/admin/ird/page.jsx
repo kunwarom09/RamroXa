@@ -1,48 +1,88 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, money, docSubtotal, docVat, docTotal, today } from '../../../services/dataStore';
+import { money, today } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 
 export default function AdminIrdPage() {
   const [monthStr, setMonthStr] = useState(today().slice(0, 7));
-  const [db, setDb] = useState(null);
+  const [salesList, setSalesList] = useState([]);
+  const [purchasesList, setPurchasesList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const refreshData = () => {
-    setDb(loadDB());
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [orderRes, purchRes] = await Promise.allSettled([
+        api.get('/api/admin/orders'),
+        api.get('/api/admin/purchases')
+      ]);
+
+      const orders = orderRes.status === 'fulfilled' ? (orderRes.value.data?.orders || orderRes.value.data || []) : [];
+      const purchases = purchRes.status === 'fulfilled' ? (purchRes.value.data?.purchases || purchRes.value.data || []) : [];
+
+      setSalesList(orders);
+      setPurchasesList(purchases);
+    } catch (e) {
+      console.error('Failed to load IRD data from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshData();
   }, []);
 
-  if (!db) return <div>Loading IRD report...</div>;
-
   const m = monthStr;
-  const settings = db.settings || {};
-  const vatRate = settings.vatRate || 13;
+  const vatRate = 13;
 
-  const sales = (db.sales || []).filter(s => s.date && s.date.slice(0, 7) === m);
-  const purch = (db.purchases || []).filter(p => p.date && p.date.slice(0, 7) === m);
-
-  const sTaxable = sales.filter(s => s.vatable).reduce((a, s) => a + docSubtotal(s), 0);
-  const sExempt = sales.filter(s => !s.vatable).reduce((a, s) => a + docSubtotal(s), 0);
-  const sVat = sales.reduce((a, s) => a + docVat(s, vatRate), 0);
-
-  // Posted sales returns in this month
-  const rets = (db.returns || []).filter(rt => {
-    const isPosted = rt.status === 'approved' || rt.status === 'refund_processed' || rt.status === 'completed';
-    const dateStr = (rt.updatedAt || rt.createdAt || '').slice(0, 7);
-    return isPosted && dateStr === m;
+  const sales = salesList.filter(s => {
+    const d = (s.createdAt || s.date || '').slice(0, 7);
+    return d === m;
+  }).map((s, idx) => {
+    const grand = s.grandTotal != null ? Math.round(s.grandTotal / 100) : (Number(s.total) || 0);
+    const sub = s.subtotal != null ? Math.round(s.subtotal / 100) : grand;
+    const vat = s.vatTotal != null ? Math.round(s.vatTotal / 100) : Math.round(sub * 0.13);
+    return {
+      id: s._id || s.orderNo || `s_${idx}`,
+      invoice: s.orderNo || s.no || `INV-${2030 + idx}`,
+      date: (s.createdAt || s.date || today()).slice(0, 10),
+      customer: s.shippingAddress?.fullName || s.customer || s.guestPhone || 'Storefront Customer',
+      vatable: true,
+      subtotal: sub,
+      vat,
+      total: grand
+    };
   });
 
-  const rNet = rets.reduce((a, rt) => a + (rt.refundNet || 0), 0);
-  const rVat = rets.reduce((a, rt) => a + (rt.refundVat || 0), 0);
+  const purch = purchasesList.filter(p => {
+    const d = (p.date || '').slice(0, 7);
+    return d === m;
+  }).map((p, idx) => {
+    const sub = p.subtotal != null ? p.subtotal : (p.total || 0);
+    const vat = p.vat != null ? p.vat : (p.vatable !== false ? Math.round(sub * 0.13) : 0);
+    return {
+      id: p._id || p.id || `p_${idx}`,
+      bill: p.bill || p.billNo || `BILL-${500 + idx}`,
+      date: (p.date || today()).slice(0, 10),
+      supplier: p.supplier || 'Supplier',
+      vatable: p.vatable !== false,
+      subtotal: sub,
+      vat,
+      total: sub + vat
+    };
+  });
 
-  const finalSalesTaxable = sTaxable - rNet;
-  const finalSalesVat = sVat - rVat;
+  const sTaxable = sales.reduce((a, s) => a + s.subtotal, 0);
+  const sExempt = 0;
+  const sVat = sales.reduce((a, s) => a + s.vat, 0);
 
-  const pTaxable = purch.filter(p => p.vatable).reduce((a, p) => a + docSubtotal(p), 0);
-  const pExempt = purch.filter(p => !p.vatable).reduce((a, p) => a + docSubtotal(p), 0);
-  const pVat = purch.reduce((a, p) => a + docVat(p, vatRate), 0);
+  const finalSalesTaxable = sTaxable;
+  const finalSalesVat = sVat;
+
+  const pTaxable = purch.filter(p => p.vatable).reduce((a, p) => a + p.subtotal, 0);
+  const pExempt = purch.filter(p => !p.vatable).reduce((a, p) => a + p.subtotal, 0);
+  const pVat = purch.reduce((a, p) => a + p.vat, 0);
 
   const netVatPayable = finalSalesVat - pVat;
 
@@ -54,11 +94,11 @@ export default function AdminIrdPage() {
       ['Date', 'Invoice', 'Customer', 'Taxable', 'VAT', 'Total']
     ];
     sales.forEach(s => {
-      rows.push([s.date, s.invoice, `"${s.customer}"`, docSubtotal(s), docVat(s, vatRate), docTotal(s, vatRate)]);
+      rows.push([s.date, s.invoice, `"${s.customer}"`, s.subtotal, s.vat, s.total]);
     });
     rows.push([], ['PURCHASE REGISTER (Kharid Khata)'], ['Date', 'Bill no', 'Supplier', 'Taxable', 'VAT', 'Total']);
     purch.forEach(p => {
-      rows.push([p.date, p.bill, `"${p.supplier}"`, docSubtotal(p), docVat(p, vatRate), docTotal(p, vatRate)]);
+      rows.push([p.date, p.bill, `"${p.supplier}"`, p.subtotal, p.vat, p.total]);
     });
 
     const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');

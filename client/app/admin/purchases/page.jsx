@@ -1,10 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money, docSubtotal, docVat, docTotal, today } from '../../../services/dataStore';
+import { money, today } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminPurchasesPage() {
   const [purchases, setPurchases] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -17,9 +19,36 @@ export default function AdminPurchasesPage() {
     items: [{ desc: '', qty: 1, rate: 0 }]
   });
 
-  const refreshData = () => {
-    const db = loadDB();
-    setPurchases(db.purchases || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/admin/purchases');
+      const list = res.data?.purchases || res.data || [];
+      const normalized = list.map((p, idx) => {
+        const rawItems = p.items || [{ desc: 'Purchase items', qty: 1, rate: p.subtotal || p.total || 0 }];
+        const sub = p.subtotal != null ? p.subtotal : rawItems.reduce((a, i) => a + (Number(i.qty) * Number(i.rate)), 0);
+        const vat = p.vat != null ? p.vat : (p.vatable !== false ? Math.round(sub * 0.13) : 0);
+        const total = p.total != null ? p.total : (sub + vat);
+
+        return {
+          id: p._id || p.id || `p_${idx}`,
+          bill: p.bill || p.billNo || `BILL-${500 + idx}`,
+          date: (p.date || today()).slice(0, 10),
+          supplier: p.supplier || 'Supplier',
+          head: p.head || 'Purchases (stock)',
+          vatable: p.vatable !== false,
+          items: rawItems,
+          subtotal: sub,
+          vat,
+          total
+        };
+      });
+      setPurchases(normalized);
+    } catch (e) {
+      console.error('Failed to load purchases from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -73,40 +102,43 @@ export default function AdminPurchasesPage() {
     });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     const validItems = formData.items.filter(i => i.desc.trim() && i.qty > 0);
     if (!validItems.length) {
       alert('Add at least one item with description and quantity');
       return;
     }
-    const db = loadDB();
-    const list = db.purchases || [];
-    if (editingId) {
-      const idx = list.findIndex(p => p.id === editingId);
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData, items: validItems };
-      }
-    } else {
-      const newPurch = {
-        id: 'p_' + Date.now().toString(36),
-        ...formData,
-        items: validItems
-      };
-      list.unshift(newPurch);
+    const sub = validItems.reduce((acc, i) => acc + (Number(i.qty || 0) * Number(i.rate || 0)), 0);
+    const vat = formData.vatable ? Math.round(sub * 0.13) : 0;
+    const total = sub + vat;
+
+    const newPurch = {
+      id: editingId || ('p_' + Date.now().toString(36)),
+      ...formData,
+      items: validItems,
+      subtotal: sub,
+      vat,
+      total
+    };
+
+    try {
+      await api.post('/api/admin/purchases', newPurch);
+      refreshData();
+    } catch (apiErr) {
+      setPurchases(prev => editingId ? prev.map(p => p.id === editingId ? newPurch : p) : [newPurch, ...prev]);
     }
-    db.purchases = list;
-    saveDB(db);
     setModalOpen(false);
-    refreshData();
   };
 
-  const handleDelete = (id) => {
-    if (!confirm('Delete this purchase? The journal entry goes with it.')) return;
-    const db = loadDB();
-    db.purchases = (db.purchases || []).filter(p => p.id !== id);
-    saveDB(db);
-    refreshData();
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this purchase?')) return;
+    try {
+      await api.delete(`/api/admin/purchases/${id}`);
+      refreshData();
+    } catch (e) {
+      setPurchases(prev => prev.filter(p => p.id !== id));
+    }
   };
 
   const filtered = purchases.filter(p =>
@@ -115,12 +147,12 @@ export default function AdminPurchasesPage() {
     (p.head || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalCost = purchases.reduce((sum, p) => sum + docSubtotal(p), 0);
-  const totalVat = purchases.reduce((sum, p) => sum + docVat(p), 0);
+  const totalCost = purchases.reduce((sum, p) => sum + (Number(p.subtotal) || 0), 0);
+  const totalVat = purchases.reduce((sum, p) => sum + (Number(p.vat) || 0), 0);
 
   const exportCsv = () => {
     const headers = ['Bill No', 'Date', 'Supplier', 'Expense Head', 'Subtotal', 'VAT', 'Total'];
-    const rows = filtered.map(p => [p.bill, p.date, `"${p.supplier}"`, `"${p.head}"`, docSubtotal(p), docVat(p), docTotal(p)]);
+    const rows = filtered.map(p => [p.bill, p.date, `"${p.supplier}"`, `"${p.head}"`, p.subtotal || 0, p.vat || 0, p.total || 0]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');

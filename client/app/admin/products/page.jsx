@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { loadDB, saveDB, money, slugify, getProductThumbnail } from '../../../services/dataStore';
+import { money, slugify, getProductThumbnail } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminProductsListPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -24,11 +26,43 @@ export default function AdminProductsListPage() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const refreshData = () => {
-    const db = loadDB();
-    setProducts(db.products || []);
-    setVariants(db.variants || []);
-    setCategories(db.categories || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [prodRes, catRes] = await Promise.all([
+        api.get('/api/admin/products'),
+        api.get('/api/categories')
+      ]);
+
+      const apiProds = prodRes.data?.products || prodRes.data || [];
+      const apiCats = catRes.data || [];
+
+      const normalizedProds = apiProds.map((ap) => {
+        const apId = ap.id || String(ap._id);
+        return {
+          ...ap,
+          id: apId,
+          price: ap.basePrice ? Math.round(ap.basePrice / 100) : (ap.price || 0),
+          mrp: ap.mrp ? Math.round(ap.mrp / 100) : 0,
+          cost: ap.cost ? Math.round(ap.cost / 100) : 0
+        };
+      });
+
+      let extractedVars = [];
+      apiProds.forEach((p) => {
+        if (p.variants && p.variants.length) {
+          extractedVars = [...extractedVars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
+        }
+      });
+
+      setProducts(normalizedProds);
+      setVariants(extractedVars);
+      setCategories(apiCats);
+    } catch (e) {
+      console.error('Failed to load products from API:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -44,31 +78,56 @@ export default function AdminProductsListPage() {
     return getVariantsOf(masterId).filter((v) => v.published && v.status !== 'archived' && v.status !== 'discontinued').length;
   };
 
-  const handleDuplicate = (id) => {
-    const src = products.find((p) => p.id === id);
+  const handleDuplicate = async (id) => {
+    const src = products.find((p) => p.id === id || String(p._id) === id);
     if (!src) return;
-    const db = loadDB();
-    const copy = JSON.parse(JSON.stringify(src));
-    copy.id = 'm_' + Date.now().toString(36);
-    copy.name = src.name + ' (copy)';
-    copy.slug = slugify(copy.name);
-    copy.sku = src.sku + '-C' + String((db.products || []).length + 1);
-    copy.status = 'draft';
-    db.products.push(copy);
-    saveDB(db);
-    refreshData();
-    showToast('Product duplicated');
+
+    try {
+      const copy = {
+        name: src.name + ' (Copy)',
+        slug: slugify(src.name + ' (Copy)'),
+        sku: (src.sku || 'SKU') + '-CPY',
+        categoryId: src.categoryId || 'c_tops',
+        brand: src.brand || 'Zylo',
+        gender: src.gender || 'Unisex',
+        basePrice: (src.price || 1500) * 100,
+        mrp: (src.mrp || 2000) * 100,
+        cost: (src.cost || 700) * 100,
+        description: src.description || '',
+        options: src.options || { Size: ['S', 'M', 'L'] },
+        images: src.images || []
+      };
+
+      await api.post('/api/admin/products', copy);
+      showToast('Product duplicated successfully in MongoDB');
+      refreshData();
+    } catch (err) {
+      showToast('Failed to duplicate product: ' + (err.message || 'Error'));
+    }
   };
 
-  const handleDelete = (id) => {
-    const vCount = getVariantsOf(id).length;
-    if (!confirm(`Delete this master product and its ${vCount} variant(s)?`)) return;
-    const db = loadDB();
-    db.products = (db.products || []).filter((p) => p.id !== id);
-    db.variants = (db.variants || []).filter((v) => v.productId !== id);
-    saveDB(db);
-    refreshData();
-    showToast('Product deleted');
+  const handleDelete = async (id) => {
+    if (!id) return;
+
+    const targetProd = products.find((p) =>
+      (p.id && (p.id === id || String(p.id) === String(id))) ||
+      (p._id && (p._id === id || String(p._id) === String(id))) ||
+      (p.sku && p.sku === id) ||
+      (p.slug && p.slug === id)
+    );
+
+    const targetId = targetProd?.id || targetProd?._id || id;
+    const prodName = targetProd?.name || 'this product';
+
+    if (!confirm(`Delete product "${prodName}" from database?`)) return;
+
+    try {
+      await api.delete(`/api/admin/products/${targetId}`);
+      showToast(`Product "${prodName}" deleted from MongoDB`);
+      refreshData();
+    } catch (apiErr) {
+      showToast(`Failed to delete product: ${apiErr.message || 'Error'}`);
+    }
   };
 
   const filtered = products.filter((p) => {
@@ -86,25 +145,25 @@ export default function AdminProductsListPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
-  const handleBulkAction = (action) => {
+  const handleBulkAction = async (action) => {
     if (!selectedIds.length) return;
     if (action === 'duplicate') {
-      selectedIds.forEach((id) => handleDuplicate(id));
+      for (const id of selectedIds) {
+        await handleDuplicate(id);
+      }
       setSelectedIds([]);
       return;
     }
-    const db = loadDB();
-    db.products = (db.products || []).map((p) => {
-      if (!selectedIds.includes(p.id)) return p;
-      if (action === 'publish') return { ...p, status: 'published' };
-      if (action === 'unpublish') return { ...p, status: 'draft' };
-      if (action === 'archive') return { ...p, status: 'archived' };
-      return p;
-    });
-    saveDB(db);
+
+    const newStatus = action === 'publish' ? 'published' : (action === 'unpublish' ? 'draft' : 'archived');
+    for (const id of selectedIds) {
+      try {
+        await api.put(`/api/admin/products/${id}`, { status: newStatus });
+      } catch (e) {}
+    }
     setSelectedIds([]);
     refreshData();
-    showToast(`Bulk action "${action}" applied`);
+    showToast(`Bulk action "${action}" applied to MongoDB`);
   };
 
   const exportCsv = () => {

@@ -1,10 +1,15 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, today } from '../../../services/dataStore';
+import { today } from '../../../services/formatters';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminCmsPage() {
-  const [pages, setPages] = useState([]);
+  const [pages, setPages] = useState([
+    { id: 'pg_about', title: 'About Zylo', slug: '/about', status: 'published', updated: today() },
+    { id: 'pg_shipping', title: 'Shipping & Delivery', slug: '/shipping', status: 'published', updated: today() },
+    { id: 'pg_returns', title: 'Returns & Exchanges', slug: '/returns', status: 'published', updated: today() },
+    { id: 'pg_privacy', title: 'Privacy Policy', slug: '/privacy', status: 'published', updated: today() }
+  ]);
   const [homepageSections, setHomepageSections] = useState([
     'Hero banner',
     'Featured products',
@@ -16,15 +21,6 @@ export default function AdminCmsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPage, setEditingPage] = useState(null);
   const [formData, setFormData] = useState({ title: '', slug: '', status: 'published', meta: '', content: '' });
-
-  const refreshData = () => {
-    const db = loadDB();
-    setPages(db.pages || []);
-  };
-
-  useEffect(() => {
-    refreshData();
-  }, []);
 
   const moveSection = (index, direction) => {
     const newSections = [...homepageSections];
@@ -57,15 +53,10 @@ export default function AdminCmsPage() {
   const handleSavePage = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-    const db = loadDB();
-    const list = db.pages || [];
     const slug = formData.slug.trim() || ('/' + formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
     
     if (editingPage) {
-      const idx = list.findIndex(p => p.id === editingPage.id);
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...formData, slug, updated: today() };
-      }
+      setPages(prev => prev.map(p => p.id === editingPage.id ? { ...p, ...formData, slug, updated: today() } : p));
     } else {
       const newP = {
         id: 'pg' + Date.now(),
@@ -73,20 +64,14 @@ export default function AdminCmsPage() {
         slug,
         updated: today()
       };
-      list.push(newP);
+      setPages(prev => [...prev, newP]);
     }
-    db.pages = list;
-    saveDB(db);
     setModalOpen(false);
-    refreshData();
   };
 
   const handleDeletePage = (id) => {
     if (!confirm('Delete this page?')) return;
-    const db = loadDB();
-    db.pages = (db.pages || []).filter(p => p.id !== id);
-    saveDB(db);
-    refreshData();
+    setPages(prev => prev.filter(p => p.id !== id));
   };
 
   const badgeClass = { published: 'badge-success', draft: 'badge-muted', scheduled: 'badge-accent' };

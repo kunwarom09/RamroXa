@@ -1,19 +1,51 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money } from '../../../services/dataStore';
+import { money } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 
 export default function AdminPublishedPage() {
   const [mounted, setMounted] = useState(false);
-  const [db, setDb] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [warehouses, setWarehouses] = useState([{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }]);
+  const [products, setProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
+  const [inventoryList, setInventoryList] = useState([]);
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [selectedVariantIds, setSelectedVariantIds] = useState([]);
 
-  const refreshData = () => {
-    const loaded = loadDB();
-    if (!loaded.inventory) loaded.inventory = [];
-    if (!loaded.warehouses) loaded.warehouses = [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
-    setDb(loaded);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [prodRes, invRes] = await Promise.allSettled([
+        api.get('/api/admin/products'),
+        api.get('/api/admin/inventory')
+      ]);
+
+      let rawProds = [];
+      let extractedVars = [];
+      if (prodRes.status === 'fulfilled') {
+        rawProds = prodRes.value.data?.products || prodRes.value.data || [];
+        rawProds.forEach((p) => {
+          if (p.variants && p.variants.length) {
+            extractedVars = [...extractedVars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
+          }
+        });
+      }
+
+      let rawInv = [];
+      if (invRes.status === 'fulfilled') {
+        rawInv = invRes.value.data?.inventory || invRes.value.data || [];
+      }
+
+      setProducts(rawProds);
+      setVariants(extractedVars);
+      setInventoryList(rawInv);
+    } catch (err) {
+      console.error('Failed to load published catalog from API:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -21,23 +53,7 @@ export default function AdminPublishedPage() {
     refreshData();
   }, []);
 
-  if (!db || !mounted) {
-    return (
-      <div>
-        <div className="page-head">
-          <h1>Published inventory</h1>
-          <p>Loading published inventory...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const warehouses = db.warehouses || [{ id: 'w1', name: 'Kathmandu DC' }, { id: 'w2', name: 'Pokhara Store' }];
-  const products = db.products || [];
-  const variants = db.variants || [];
-  const inventoryList = db.inventory || [];
-
-  const masterById = (id) => products.find(p => p.id === id);
+  const masterById = (id) => products.find(p => p.id === id || String(p._id) === id);
   const warehouseById = (id) => warehouses.find(w => w.id === id) || { name: 'Kathmandu DC' };
 
   const getVariantLabel = (v) => {
@@ -47,14 +63,14 @@ export default function AdminPublishedPage() {
   };
 
   const getVariantPrice = (v) => {
+    if (!v) return 0;
     if (v.price != null && v.price !== '') return Number(v.price);
     const m = masterById(v.productId);
-    return m ? m.price : 0;
+    return m ? (Number(m.price) || 0) : 0;
   };
 
   const toDisplayPrice = (val) => {
-    const n = Number(val) || 0;
-    return n >= 10000 ? Math.round(n / 100) : n;
+    return Number(val) || 0;
   };
 
   const stockState = (invRecord) => {
@@ -72,7 +88,7 @@ export default function AdminPublishedPage() {
   // Published variant rows
   const allPublishedRows = [];
   variants.forEach(v => {
-    if (!v.published) return;
+    if (v.published === false) return;
     const m = masterById(v.productId);
     if (!m || m.status === 'archived') return;
     const recs = inventoryList.filter(r => r.variantId === v.id && !r.archived);
@@ -86,51 +102,32 @@ export default function AdminPublishedPage() {
   const filtered = allPublishedRows.filter(x => {
     if (warehouseFilter && (!x.r || x.r.warehouseId !== warehouseFilter)) return false;
     if (search) {
-      const hay = (x.m.name + ' ' + getVariantLabel(x.v) + ' ' + x.v.sku).toLowerCase();
+      const hay = (x.m.name + ' ' + getVariantLabel(x.v) + ' ' + (x.v.sku || '')).toLowerCase();
       if (!hay.includes(search.toLowerCase())) return false;
     }
     return true;
   });
 
-  const handleInlinePriceChange = (variantId, newPrice) => {
-    const v = variants.find(x => x.id === variantId);
-    if (!v) return;
-    const m = masterById(v.productId);
-    const entered = Number(newPrice) || 0;
-    const valInPaisa = entered < 10000 ? entered * 100 : entered;
-    v.price = (m && valInPaisa === m.price) ? null : valInPaisa;
-    saveDB(db);
-    refreshData();
-  };
-
-  const handleInlineStockChange = (invId, newStock) => {
-    const r = db.inventory.find(x => x.id === invId);
+  const handleInlineStockChange = async (invId, newStock) => {
+    const r = inventoryList.find(x => x.id === invId);
     if (!r) return;
-    const before = r.available;
-    const after = Number(newStock) || 0;
-    r.available = after;
-    if (!db.stockMoves) db.stockMoves = [];
-    db.stockMoves.push({
-      id: 'mv_' + Date.now().toString(36),
-      date: new Date().toISOString().slice(0, 10),
-      variantId: r.variantId,
-      warehouseId: r.warehouseId,
-      type: 'correction',
-      change: after - before,
-      reason: 'Inline edit on published stock',
-      reference: '',
-      before,
-      after,
-      user: 'Zylo Super Admin',
-      at: new Date().toISOString()
-    });
-    saveDB(db);
-    refreshData();
+    const diff = Number(newStock) - (r.available || 0);
+    try {
+      await api.post('/api/admin/inventory/adjust', {
+        variantId: r.variantId,
+        warehouseId: r.warehouseId,
+        adjustment: diff,
+        reason: 'Inline edit on published stock'
+      });
+      refreshData();
+    } catch (err) {
+      console.error('Failed to update stock:', err);
+    }
   };
 
   const toggleSelectAll = (checked) => {
     if (checked) {
-      setSelectedVariantIds(filtered.map(x => x.v.id + '_' + (x.r ? x.r.id : 'none')));
+      setSelectedVariantIds(filtered.map(x => x.v.id + ':::' + (x.r ? x.r.id : 'none')));
     } else {
       setSelectedVariantIds([]);
     }
@@ -144,48 +141,33 @@ export default function AdminPublishedPage() {
     }
   };
 
-  const handleBulkAction = (action) => {
+  const handleBulkAction = async (action) => {
     if (!selectedVariantIds.length) return;
-    if (action === 'price') {
-      const valStr = prompt(`Set price for selected variant(s), in NPR:`);
-      if (valStr === null) return;
-      const val = Number(valStr) || 0;
-      const valInPaisa = val < 10000 ? val * 100 : val;
-      db.variants.forEach(v => {
-        if (selectedVariantIds.some(key => key.startsWith(v.id))) v.price = valInPaisa;
-      });
-    } else if (action === 'stock') {
+
+    const selectedInvIdSet = new Set();
+    selectedVariantIds.forEach((key) => {
+      const parts = key.split(':::');
+      if (parts[1] && parts[1] !== 'none') selectedInvIdSet.add(parts[1]);
+    });
+
+    if (action === 'stock') {
       const valStr = prompt(`Set available stock for selected variant(s):`);
       if (valStr === null) return;
       const q = Number(valStr) || 0;
-      db.inventory.forEach(r => {
-        if (selectedVariantIds.some(key => key.endsWith('_' + r.id))) {
-          const b = r.available;
-          r.available = q;
-          if (b !== q && db.stockMoves) {
-            db.stockMoves.push({
-              id: 'mv_' + Date.now().toString(36),
-              date: new Date().toISOString().slice(0, 10),
+      for (const invId of selectedInvIdSet) {
+        const r = inventoryList.find(x => x.id === invId);
+        if (r) {
+          try {
+            await api.post('/api/admin/inventory/adjust', {
               variantId: r.variantId,
               warehouseId: r.warehouseId,
-              type: 'correction',
-              change: q - b,
-              reason: 'Bulk stock update',
-              reference: '',
-              before: b,
-              after: q,
-              user: 'Zylo Super Admin',
-              at: new Date().toISOString()
+              adjustment: q - (r.available || 0),
+              reason: 'Bulk stock update'
             });
-          }
+          } catch (e) {}
         }
-      });
-    } else if (action === 'unpublish') {
-      db.variants.forEach(v => {
-        if (selectedVariantIds.some(key => key.startsWith(v.id))) v.published = false;
-      });
+      }
     }
-    saveDB(db);
     setSelectedVariantIds([]);
     refreshData();
   };
@@ -274,7 +256,7 @@ export default function AdminPublishedPage() {
           <tbody>
             {filtered.length > 0 ? (
               filtered.map((x, idx) => {
-                const rowKey = x.v.id + '_' + (x.r ? x.r.id : 'none_' + idx);
+                const rowKey = x.v.id + ':::' + (x.r ? x.r.id : 'none_' + idx);
                 const w = x.r ? warehouseById(x.r.warehouseId) : null;
                 const st = stockState(x.r);
                 const displayPrice = toDisplayPrice(getVariantPrice(x.v));

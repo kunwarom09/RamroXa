@@ -1,46 +1,20 @@
-import { loadDB, buildJournal, docSubtotal, docVat } from './dataStore';
+import { api } from './apiClient';
 
-export function getJournalEntries() {
-  const db = loadDB();
-  return buildJournal(db);
+export async function getJournalEntries() {
+  const res = await api.get('/api/admin/finance/journal');
+  return res.data?.journal || [];
 }
 
-export function getProfitAndLoss(fromDate, toDate) {
-  const db = loadDB();
-  const sales = (db.sales || []).filter(s => (!fromDate || s.date >= fromDate) && (!toDate || s.date <= toDate));
-  const purchases = (db.purchases || []).filter(p => (!fromDate || p.date >= fromDate) && (!toDate || p.date <= toDate));
-
-  const totalSalesNet = sales.reduce((sum, s) => sum + docSubtotal(s), 0);
-  const totalPurchasesNet = purchases.reduce((sum, p) => sum + docSubtotal(p), 0);
-  const netProfit = totalSalesNet - totalPurchasesNet;
-
-  return {
-    totalSalesNet,
-    totalPurchasesNet,
-    netProfit
-  };
+export async function getProfitAndLoss(fromDate, toDate) {
+  const query = new URLSearchParams();
+  if (fromDate) query.append('from', fromDate);
+  if (toDate) query.append('to', toDate);
+  const res = await api.get(`/api/admin/finance/profit-and-loss?${query.toString()}`);
+  return res.data?.pnl || { totalSalesNet: 0, totalPurchasesNet: 0, netProfit: 0 };
 }
 
-export function getIrdVatSummary(monthStr) {
-  const db = loadDB();
-  const vatRate = db.settings ? db.settings.vatRate : 13;
-
-  const sales = (db.sales || []).filter(s => !monthStr || s.date.startsWith(monthStr));
-  const purchases = (db.purchases || []).filter(p => !monthStr || p.date.startsWith(monthStr));
-
-  const salesTaxable = sales.reduce((sum, s) => sum + docSubtotal(s), 0);
-  const salesVat = sales.reduce((sum, s) => sum + docVat(s, vatRate), 0);
-
-  const purchasesTaxable = purchases.reduce((sum, p) => sum + docSubtotal(p), 0);
-  const purchasesVat = purchases.reduce((sum, p) => sum + docVat(p, vatRate), 0);
-
-  const netVatPayable = salesVat - purchasesVat;
-
-  return {
-    salesTaxable,
-    salesVat,
-    purchasesTaxable,
-    purchasesVat,
-    netVatPayable
-  };
+export async function getIrdVatSummary(monthStr) {
+  const query = monthStr ? `?month=${monthStr}` : '';
+  const res = await api.get(`/api/admin/ird/vat-summary${query}`);
+  return res.data?.summary || { salesTaxable: 0, salesVat: 0, purchasesTaxable: 0, purchasesVat: 0, netVatPayable: 0 };
 }

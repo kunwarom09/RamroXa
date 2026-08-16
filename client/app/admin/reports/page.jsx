@@ -1,26 +1,50 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, money, docSubtotal, docVat, docTotal, today, offsetDate, periodKey, esc } from '../../../services/dataStore';
+import { money, today, offsetDate } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminReportsPage() {
   const [periodMode, setPeriodMode] = useState('monthly');
   const [fromDate, setFromDate] = useState(offsetDate(-365));
   const [toDate, setToDate] = useState(today());
-  const [db, setDb] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const refreshData = () => {
-    setDb(loadDB());
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/admin/orders');
+      setOrders(res.data?.orders || res.data || []);
+    } catch (e) {
+      console.error('Failed to load reports data:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshData();
   }, []);
 
-  if (!db) return <div style={{ padding: '24px' }}>Loading reports...</div>;
-
-  const sales = db.sales || [];
-  const vatRate = (db.settings && db.settings.vatRate) || 13;
+  const getPeriodKey = (dateStr, mode) => {
+    if (!dateStr) return 'Unknown';
+    if (mode === 'daily') return dateStr;
+    if (mode === 'weekly') {
+      const d = new Date(dateStr);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const mon = new Date(d.setDate(diff));
+      return mon.toISOString().slice(0, 10);
+    }
+    if (mode === 'quarterly') {
+      const m = parseInt(dateStr.slice(5, 7), 10);
+      const q = Math.ceil(m / 3);
+      return `${dateStr.slice(0, 4)} Q${q}`;
+    }
+    if (mode === 'annual') return dateStr.slice(0, 4);
+    return dateStr.slice(0, 7);
+  };
 
   const setPreset = (type) => {
     const t = today();
@@ -45,21 +69,26 @@ export default function AdminReportsPage() {
     }
   };
 
-  const filteredSales = sales.filter(s => {
-    const matchFrom = !fromDate || (s.date && s.date >= fromDate);
-    const matchTo = !toDate || (s.date && s.date <= toDate);
+  const filteredOrders = orders.filter(o => {
+    const d = (o.createdAt || o.date || '').slice(0, 10);
+    const matchFrom = !fromDate || (d && d >= fromDate);
+    const matchTo = !toDate || (d && d <= toDate);
     return matchFrom && matchTo;
   });
 
-  // Group by period key
   const groups = {};
-  filteredSales.forEach(s => {
-    const k = periodKey(s.date || today(), periodMode);
+  filteredOrders.forEach(o => {
+    const d = (o.createdAt || o.date || today()).slice(0, 10);
+    const k = getPeriodKey(d, periodMode);
     if (!groups[k]) groups[k] = { count: 0, taxable: 0, vat: 0, total: 0 };
+    const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+    const sub = o.subtotal != null ? Math.round(o.subtotal / 100) : grand;
+    const vat = o.vatTotal != null ? Math.round(o.vatTotal / 100) : Math.round(sub * 0.13);
+
     groups[k].count++;
-    groups[k].taxable += docSubtotal(s);
-    groups[k].vat += docVat(s, vatRate);
-    groups[k].total += docTotal(s, vatRate);
+    groups[k].taxable += sub;
+    groups[k].vat += vat;
+    groups[k].total += grand;
   });
 
   const sortedKeys = Object.keys(groups).sort();
@@ -74,7 +103,7 @@ export default function AdminReportsPage() {
   });
 
   const exportCsv = () => {
-    const headers = [`Period (${periodMode})`, 'Invoices', 'Taxable Amount', 'VAT', 'Gross Total'];
+    const headers = [`Period (${periodMode})`, 'Orders', 'Taxable Amount', 'VAT', 'Gross Total'];
     const rows = sortedKeys.map(k => {
       const g = groups[k];
       return [k, g.count, g.taxable, g.vat, g.total];

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { loadDB } from '../../services/dataStore';
+import { api } from '../../services/apiClient';
 import Icon from '../../components/admin/Icons';
 
 export default function AdminLayout({ children }) {
@@ -11,11 +11,51 @@ export default function AdminLayout({ children }) {
   const [dark, setDark] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [db, setDb] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    // Completely purge legacy client-side localStorage db
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('zylo-db');
+      } catch (e) {}
+    }
+
+    // Auth verification guard for admin
+    if (pathname === '/admin/login') {
+      setAuthChecked(true);
+      return;
+    }
+
+    let isMounted = true;
+    async function checkAuth() {
+      try {
+        const res = await api.get('/api/auth/me');
+        const user = res.data?.user;
+        if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+          router.push('/admin/login');
+        } else if (isMounted) {
+          setCurrentUser(user);
+          setAuthChecked(true);
+        }
+      } catch (err) {
+        if (isMounted) {
+          router.push('/admin/login');
+        }
+      }
+    }
+
+    checkAuth();
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname, router]);
 
   useEffect(() => {
     // Theme persistence
-    const savedTheme = localStorage.getItem('zylo-theme');
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('zylo-theme') : null;
     if (savedTheme === 'dark') {
       setDark(true);
       document.documentElement.classList.add('dark');
@@ -38,10 +78,57 @@ export default function AdminLayout({ children }) {
   }, []);
 
   useEffect(() => {
-    if (searchModalOpen) {
-      setDb(loadDB());
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
     }
-  }, [searchModalOpen]);
+
+    const q = searchQuery.toLowerCase().trim();
+    let isCancelled = false;
+
+    async function doSearch() {
+      try {
+        const [prodRes, orderRes, custRes] = await Promise.allSettled([
+          api.get(`/api/admin/products?q=${encodeURIComponent(q)}`),
+          api.get(`/api/admin/orders?q=${encodeURIComponent(q)}`),
+          api.get(`/api/admin/customers?q=${encodeURIComponent(q)}`)
+        ]);
+
+        if (isCancelled) return;
+        const results = [];
+
+        if (prodRes.status === 'fulfilled') {
+          const prods = prodRes.value.data?.products || prodRes.value.data || [];
+          prods.slice(0, 5).forEach((p) => {
+            results.push({ type: 'Product', label: `${p.name} (${p.sku || ''})`, route: '/admin/products' });
+          });
+        }
+
+        if (orderRes.status === 'fulfilled') {
+          const orders = orderRes.value.data?.orders || orderRes.value.data || [];
+          orders.slice(0, 5).forEach((o) => {
+            const cust = o.shippingAddress?.fullName || o.customer || o.guestPhone || 'Customer';
+            results.push({ type: 'Order', label: `Order ${o.orderNo || o.no} - ${cust}`, route: '/admin/orders' });
+          });
+        }
+
+        if (custRes.status === 'fulfilled') {
+          const custs = custRes.value.data?.customers || custRes.value.data || [];
+          custs.slice(0, 5).forEach((c) => {
+            results.push({ type: 'Customer', label: `${c.name || c.email} (${c.phone || ''})`, route: '/admin/customers' });
+          });
+        }
+
+        setSearchResults(results);
+      } catch (err) {}
+    }
+
+    const t = setTimeout(doSearch, 200);
+    return () => {
+      isCancelled = true;
+      clearTimeout(t);
+    };
+  }, [searchQuery]);
 
   const toggleTheme = () => {
     const next = !dark;
@@ -82,46 +169,32 @@ export default function AdminLayout({ children }) {
     { label: 'Settings', route: '/admin/settings', icon: 'settings' }
   ];
 
-  // Global search filtering
-  const q = searchQuery.toLowerCase().trim();
-  const searchResults = [];
-  if (db && q) {
-    // Products
-    (db.products || []).forEach(p => {
-      if (p.name.toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q)) {
-        searchResults.push({ type: 'Product', label: `${p.name} (${p.sku})`, route: '/admin/products' });
-      }
-    });
-    // Orders
-    (db.orders || []).forEach(o => {
-      if (o.no.toLowerCase().includes(q) || (o.customer || '').toLowerCase().includes(q)) {
-        searchResults.push({ type: 'Order', label: `Order ${o.no} - ${o.customer}`, route: '/admin/orders' });
-      }
-    });
-    // Sales
-    (db.sales || []).forEach(s => {
-      if (s.invoice.toLowerCase().includes(q) || (s.customer || '').toLowerCase().includes(q)) {
-        searchResults.push({ type: 'Sale', label: `${s.invoice} - ${s.customer}`, route: '/admin/sales' });
-      }
-    });
-    // Customers
-    (db.customers || []).forEach(c => {
-      if (c.name.toLowerCase().includes(q) || (c.phone || '').toLowerCase().includes(q)) {
-        searchResults.push({ type: 'Customer', label: `${c.name} (${c.phone || ''})`, route: '/admin/customers' });
-      }
-    });
-    // Categories
-    (db.categories || []).forEach(c => {
-      if (c.name.toLowerCase().includes(q)) {
-        searchResults.push({ type: 'Category', label: c.name, route: '/admin/categories' });
-      }
-    });
-  }
-
   const handleNavigate = (route) => {
     setSearchModalOpen(false);
     router.push(route);
   };
+
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/api/auth/logout');
+    } catch (err) {
+      console.warn('Logout error:', err.message);
+    }
+    router.push('/admin/login');
+  };
+
+  if (!authChecked && pathname !== '/admin/login') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--background)', color: 'var(--muted-foreground)' }}>
+        Verifying authorization...
+      </div>
+    );
+  }
+
+  const initials = currentUser?.name
+    ? currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'SA';
 
   return (
     <div className="shell">
@@ -164,14 +237,30 @@ export default function AdminLayout({ children }) {
               <Icon name={dark ? 'sun' : 'moon'} size={17} />
             </button>
             <div className="user-chip">
-              <div className="avatar">SA</div>
+              <div className="avatar">{initials}</div>
               <div>
-                <div style={{ fontWeight: 500 }}>Zylo Super Admin</div>
-                <div style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>Super Admin</div>
+                <div style={{ fontWeight: 500 }}>{currentUser?.name || 'Zylo Super Admin'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
+                  {currentUser?.role || 'Admin'}
+                </div>
               </div>
-              <Link href="/admin/login" style={{ fontSize: '11px', color: 'var(--muted-foreground)', marginLeft: '8px' }}>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '11px',
+                  color: 'var(--muted-foreground)',
+                  marginLeft: '8px',
+                  cursor: 'pointer',
+                  padding: '2px 6px',
+                  borderRadius: '4px'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted-foreground)'}
+              >
                 Sign out
-              </Link>
+              </button>
             </div>
           </div>
         </header>

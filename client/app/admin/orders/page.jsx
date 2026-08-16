@@ -1,28 +1,59 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { loadDB, saveDB, money } from '../../../services/dataStore';
+import { money } from '../../../services/formatters';
+import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const refreshData = () => {
-    const db = loadDB();
-    setOrders(db.orders || []);
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/admin/orders');
+      const apiOrders = res.data?.orders || res.data || [];
+      const normalizedApi = apiOrders.map((o) => {
+        const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+        const rawItems = (o.items || []).map(it => ({
+          ...it,
+          rate: it.unitPrice != null ? Math.round(it.unitPrice / 100) : (Number(it.rate) || 0)
+        }));
+        return {
+          no: o.orderNo || o.no,
+          customer: o.shippingAddress?.fullName || o.customer || o.guestEmail || 'Storefront Customer',
+          phone: o.shippingAddress?.phone || o.guestPhone || o.phone || '',
+          date: o.createdAt ? o.createdAt.slice(0, 10) : (o.date || new Date().toISOString().slice(0, 10)),
+          total: grand,
+          pay: (o.paymentMethod || o.pay || 'COD').toUpperCase(),
+          status: o.fulfillmentStatus || o.status || 'pending',
+          items: rawItems,
+          shippingAddress: o.shippingAddress || null
+        };
+      });
+
+      setOrders(normalizedApi);
+    } catch (err) {
+      console.error('Failed to load admin orders from MongoDB:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshData();
   }, []);
 
-  const handleStatusChange = (no, newStatus) => {
-    const db = loadDB();
-    db.orders = (db.orders || []).map(o => o.no === no ? { ...o, status: newStatus } : o);
-    saveDB(db);
-    refreshData();
+  const handleStatusChange = async (no, newStatus) => {
+    try {
+      await api.patch(`/api/admin/orders/${no}/status`, { fulfillmentStatus: newStatus });
+      refreshData();
+    } catch (e) {
+      console.error('Failed to update order status:', e);
+    }
   };
 
   const filtered = orders.filter(o => {
@@ -167,11 +198,16 @@ export default function AdminOrdersPage() {
             <h2>Order Details ({selectedOrder.no})</h2>
             <div style={{ fontSize: '13px', lineHeight: '1.8' }}>
               <p style={{ margin: '4px 0' }}><strong>Customer:</strong> {selectedOrder.customer}</p>
+              {selectedOrder.phone && <p style={{ margin: '4px 0' }}><strong>Phone:</strong> {selectedOrder.phone}</p>}
+              {selectedOrder.shippingAddress && (
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Shipping Address:</strong> {selectedOrder.shippingAddress.line1 ? `${selectedOrder.shippingAddress.line1}, ${selectedOrder.shippingAddress.city || 'Kathmandu'}` : (typeof selectedOrder.shippingAddress === 'string' ? selectedOrder.shippingAddress : 'Kathmandu Valley')}
+                </p>
+              )}
               <p style={{ margin: '4px 0' }}><strong>Order Date:</strong> {selectedOrder.date}</p>
               <p style={{ margin: '4px 0' }}><strong>Payment Method:</strong> {selectedOrder.pay}</p>
               <p style={{ margin: '4px 0' }}><strong>Fulfillment Status:</strong> <span className={`badge ${badgeForStatus[selectedOrder.status] || 'badge-muted'}`}>{selectedOrder.status}</span></p>
-              <p style={{ margin: '4px 0' }}><strong>Invoice Number:</strong> {selectedOrder.invoice || 'N/A'}</p>
-              
+
               {selectedOrder.items && selectedOrder.items.length > 0 && (
                 <div style={{ marginTop: '14px' }}>
                   <div className="section-title">Order Items</div>
@@ -186,9 +222,9 @@ export default function AdminOrdersPage() {
                     <tbody>
                       {selectedOrder.items.map((it, idx) => (
                         <tr key={idx}>
-                          <td>{it.desc}</td>
+                          <td>{it.name || it.desc || 'Product'}</td>
                           <td className="num">{it.qty}</td>
-                          <td className="num">{money(it.rate)}</td>
+                          <td className="num">{money(it.rate != null ? it.rate : (it.unitPrice != null ? Math.round(it.unitPrice / 100) : 0))}</td>
                         </tr>
                       ))}
                     </tbody>
