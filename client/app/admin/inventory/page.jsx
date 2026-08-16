@@ -387,7 +387,7 @@ export default function AdminInventoryPage() {
       {invModalOpen && (
         <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setInvModalOpen(false); }}>
           <div className="modal">
-            <h2>{selectedInv ? 'Edit Inventory Record' : 'Add Inventory Record'}</h2>
+            <h2>{selectedInv ? 'Edit inventory record' : 'Add inventory record'}</h2>
             <form onSubmit={saveInvRecord}>
               <div className="form-grid-2">
                 <div className="field">
@@ -422,7 +422,7 @@ export default function AdminInventoryPage() {
                   </select>
                 </div>
                 <div className="field">
-                  <label>Available Qty</label>
+                  <label>Available</label>
                   <input
                     type="number"
                     value={invFormData.available}
@@ -431,7 +431,7 @@ export default function AdminInventoryPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Reserved Qty</label>
+                  <label>Reserved</label>
                   <input
                     type="number"
                     value={invFormData.reserved}
@@ -439,7 +439,7 @@ export default function AdminInventoryPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Incoming Qty</label>
+                  <label>Incoming</label>
                   <input
                     type="number"
                     value={invFormData.incoming}
@@ -447,7 +447,7 @@ export default function AdminInventoryPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Damaged Qty</label>
+                  <label>Damaged</label>
                   <input
                     type="number"
                     value={invFormData.damaged}
@@ -455,15 +455,39 @@ export default function AdminInventoryPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Reorder Level</label>
+                  <label>Returned</label>
+                  <input
+                    type="number"
+                    value={invFormData.returned}
+                    onChange={(e) => setInvFormData({ ...invFormData, returned: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="field">
+                  <label>Reorder level</label>
                   <input
                     type="number"
                     value={invFormData.reorderLevel}
                     onChange={(e) => setInvFormData({ ...invFormData, reorderLevel: Number(e.target.value) })}
                   />
                 </div>
+                <div className="field">
+                  <label>Minimum stock</label>
+                  <input
+                    type="number"
+                    value={invFormData.minStock}
+                    onChange={(e) => setInvFormData({ ...invFormData, minStock: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="field">
+                  <label>Maximum stock</label>
+                  <input
+                    type="number"
+                    value={invFormData.maxStock}
+                    onChange={(e) => setInvFormData({ ...invFormData, maxStock: Number(e.target.value) })}
+                  />
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button type="button" className="btn" onClick={() => setInvModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Save record</button>
               </div>
