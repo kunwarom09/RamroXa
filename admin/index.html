@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zylo Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div class="login-screen page visible" id="loginPage">
+  <div class="login-card">
+    <p class="brand">Zylo</p>
+    <h1>Sign in to admin</h1>
+    <form id="loginForm" novalidate onsubmit="return signIn(event)">
+      <div class="field"><label for="email">Email</label><input id="email" type="text" autocomplete="username" value="admin@zylo.com.np"></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" value="changeme123"></div>
+      <button class="btn btn-primary btn-block" type="submit" id="loginBtn">Sign in</button>
+    </form>
+    <p class="hint">Static prototype. Sign-in is not checked &mdash; any details open the dashboard. Data is stored in this browser only.</p>
+    <noscript><p class="hint" style="color:var(--danger);">JavaScript is disabled. This admin needs JavaScript to run.</p></noscript>
+  </div>
+</div>
+
+<div class="shell hidden" id="appShell">
+<aside class="sidebar">
+  <div class="sidebar-logo">Zylo admin</div>
+  <div class="sidebar-section-label">Menu</div>
+  <a class="nav-item active" data-page="dashboardPage" onclick="showPage('dashboardPage')"><span class="ic" data-icon="dashboard" data-size="17"></span>Dashboard</a>
+  <a class="nav-item" data-page="categoriesPage" onclick="showPage('categoriesPage')"><span class="ic" data-icon="cms" data-size="17"></span>Categories</a>
+  <a class="nav-item" data-page="productsPage" onclick="showPage('productsPage')"><span class="ic" data-icon="products" data-size="17"></span>Master products</a>
+  <a class="nav-item" data-page="ordersPage" onclick="showPage('ordersPage')"><span class="ic" data-icon="orders" data-size="17"></span>Orders</a>
+  <a class="nav-item" data-page="customersPage" onclick="showPage('customersPage')"><span class="ic" data-icon="customers" data-size="17"></span>Customers</a>
+  <a class="nav-item" data-page="inventoryPage" onclick="showPage('inventoryPage')"><span class="ic" data-icon="inventory" data-size="17"></span>Inventory</a>
+  <a class="nav-item" data-page="publishedPage" onclick="showPage('publishedPage')"><span class="ic" data-icon="products" data-size="17"></span>Published stock</a>
+  <div class="sidebar-section-label">Accounts</div>
+  <a class="nav-item" data-page="salesPage" onclick="showPage('salesPage')"><span class="ic" data-icon="sales" data-size="17"></span>Sales</a>
+  <a class="nav-item" data-page="returnsPage" onclick="showPage('returnsPage')"><span class="ic" data-icon="arrowDown" data-size="17"></span>Sales returns</a>
+  <a class="nav-item" data-page="purchasesPage" onclick="showPage('purchasesPage')"><span class="ic" data-icon="purchases" data-size="17"></span>Purchases</a>
+  <a class="nav-item" data-page="financePage" onclick="showPage('financePage')"><span class="ic" data-icon="finance" data-size="17"></span>Finance</a>
+  <a class="nav-item" data-page="reportsPage" onclick="showPage('reportsPage')"><span class="ic" data-icon="reports" data-size="17"></span>Reports</a>
+  <a class="nav-item" data-page="irdPage" onclick="showPage('irdPage')"><span class="ic" data-icon="ird" data-size="17"></span>IRD / VAT</a>
+  <div class="sidebar-section-label">Content</div>
+  <a class="nav-item" data-page="cmsPage" onclick="showPage('cmsPage')"><span class="ic" data-icon="cms" data-size="17"></span>CMS</a>
+  <a class="nav-item" data-page="settingsPage" onclick="showPage('settingsPage')"><span class="ic" data-icon="settings" data-size="17"></span>Settings</a>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="search-box"><span data-icon="search" data-size="15" style="display:flex;"></span>Search<kbd>&#8984;K</kbd></div>
+    <div class="topbar-right">
+      <button class="icon-btn" aria-label="Notifications" onclick="showToast('No new notifications')" data-icon="bell" data-size="17"></button>
+      <button class="icon-btn" aria-label="Toggle theme" onclick="toggleTheme()" data-icon="sun" data-size="17"></button>
+      <div class="user-chip">
+        <div class="avatar">SA</div>
+        <div>
+          <div style="font-weight:500;">Zylo Super Admin</div>
+          <div style="font-size:11px;color:var(--muted-foreground);">Super Admin</div>
+        </div>
+        <a onclick="signOut()" style="font-size:11px;color:var(--muted-foreground);margin-left:8px;cursor:pointer;">Sign out</a>
+      </div>
+    </div>
+  </header>
+  <div class="content">
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="page" id="dashboardPage">
+    <div class="page-head"><h1>Dashboard</h1><p>Live overview of store activity.</p></div>
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Sales today</div><div class="value" id="dashSalesToday">-</div></div>
+      <div class="metric"><div class="label">Revenue this month</div><div class="value" id="dashRevMonth">-</div></div>
+      <div class="metric"><div class="label">VAT payable</div><div class="value" id="dashVat">-</div></div>
+      <div class="metric"><div class="label">Net profit (month)</div><div class="value" id="dashProfit">-</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card card-pad">
+        <div class="section-title">Revenue, last 30 days</div>
+        <svg viewBox="0 0 400 120" style="width:100%;height:120px;">
+          <polyline points="0,95 30,80 60,85 90,60 120,65 150,45 180,50 210,30 240,38 270,20 300,26 330,10 360,16 400,8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="card card-pad">
+        <div class="section-title">Recent sales</div>
+        <div id="dashRecentSales"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCTS ============ -->
+  <div class="page" id="productsPage">
+    <div class="page-head"><h1>Master products</h1><p id="productsCount">-</p></div>
+    <div class="toolbar">
+      <input type="text" id="masterSearch" placeholder="Search name or SKU" style="width:230px;" oninput="renderMasters()">
+      <select id="masterCategoryFilter" onchange="renderMasters()"></select>
+      <select id="masterStatusFilter" onchange="renderMasters()">
+        <option value="">All statuses</option><option value="draft">Draft</option>
+        <option value="published">Published</option><option value="archived">Archived</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportMastersCsv()">Export CSV</button>
+      <button class="btn btn-primary" onclick="openMaster()">+ New master product</button>
+    </div>
+    <div class="bulk-bar" id="mastersBulkBar">
+      <span data-selected-count>0 selected</span><div class="spacer"></div>
+      <button data-bulk-action="publish">Publish</button>
+      <button data-bulk-action="unpublish">Unpublish</button>
+      <button data-bulk-action="archive">Archive</button>
+      <button data-bulk-action="duplicate">Duplicate</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="mastersTable">
+        <thead><tr>
+          <th style="width:32px;"><input type="checkbox" data-select-all></th>
+          <th>Master product</th><th>SKU</th><th>Category</th>
+          <th class="num">Price</th><th class="num">Variants</th><th class="num">Published</th>
+          <th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="mastersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ CATEGORIES ============ -->
+  <div class="page" id="categoriesPage">
+    <div class="page-head"><h1>Categories</h1><p>Unlimited-depth tree. Drag order with the arrows; the storefront nav follows this structure.</p></div>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportCategoriesCsv()">Export CSV</button>
+      <button class="btn btn-primary" onclick="openCategory()">+ New category</button>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>Slug</th><th class="num">Products</th><th>Featured</th><th>Visibility</th><th>Status</th><th style="width:150px;"></th></tr></thead>
+        <tbody id="categoriesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCT EDIT ============ -->
+  <div class="page" id="productEditPage">
+    <div class="page-head"><h1 id="masterEditTitle">Master product</h1><p id="masterEditSub">Central record. Variants below are the sellable units.</p></div>
+    <div class="form-max">
+      <div class="card card-pad form-section">
+        <h2>Basics</h2>
+        <div class="form-grid-2">
+          <div class="field"><label>Name</label><input id="mName" oninput="mAutoSlug()"></div>
+          <div class="field"><label>Slug</label><input id="mSlug"></div>
+          <div class="field"><label>Master SKU</label>
+            <div class="sku-row"><input id="mSku"><button class="btn btn-sm" type="button" onclick="mGenSku()">Generate</button></div>
+          </div>
+          <div class="field"><label>Brand</label><input id="mBrand"></div>
+          <div class="field"><label>Category</label><select id="mCategory"></select></div>
+          <div class="field"><label>Status</label>
+            <select id="mStatus"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select>
+          </div>
+          <div class="field"><label>Gender</label><input id="mGender"></div>
+          <div class="field"><label>Season</label><input id="mSeason"></div>
+        </div>
+        <div class="field"><label>Tags (comma separated)</label><input id="mTags"></div>
+        <div class="checkbox-row">
+          <label><input type="checkbox" id="mFeatured"> Featured</label>
+          <label><input type="checkbox" id="mTrending"> Trending</label>
+          <label><input type="checkbox" id="mNew"> New arrival</label>
+          <label><input type="checkbox" id="mBest"> Best selling</label>
+        </div>
+      </div>
+
+      <div class="card card-pad form-section">
+        <h2>Pricing (NPR)</h2>
+        <div class="form-grid-3">
+          <div class="field"><label>Price</label><input id="mPrice" type="number" oninput="mCalc()"></div>
+          <div class="field"><label>Compare-at / MRP</label><input id="mMrp" type="number" oninput="mCalc()"></div>
+          <div class="field"><label>Cost price</label><input id="mCost" type="number" oninput="mCalc()"></div>
+        </div>
+        <div class="calc-line" id="mCalcOut"></div>
+        <p style="font-size:11px;color:var(--muted-foreground);margin-top:8px;">Variants inherit this price unless given an override below.</p>
+      </div>
+
+      <div class="card card-pad form-section">
+        <h2>Description</h2>
+        <div class="field"><textarea id="mDesc" rows="3"></textarea></div>
+      </div>
+
+      <div class="card card-pad form-section">
+        <h2>Options</h2>
+        <p style="font-size:12px;color:var(--muted-foreground);margin:0 0 12px;">
+          Define option sets. The variant matrix is their combination &mdash; editing these regenerates it,
+          keeping status, price overrides and stock for combinations that still exist.
+        </p>
+        <div id="mOptionRows"></div>
+        <button class="btn btn-sm" type="button" onclick="mAddOption()">+ Add option set</button>
+      </div>
+
+      <div class="card card-pad form-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          <h2 style="margin:0;">Variant matrix <span id="mVariantCount" style="color:var(--muted-foreground);font-weight:normal;"></span></h2>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" type="button" onclick="mSelectAllVariants(true)">Select all</button>
+            <button class="btn btn-sm" type="button" onclick="mSelectAllVariants(false)">Clear</button>
+            <button class="btn btn-sm" type="button" onclick="mBulkVariant('publish')">Publish selected</button>
+            <button class="btn btn-sm" type="button" onclick="mBulkVariant('unpublish')">Unpublish selected</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th style="width:32px;"><input type="checkbox" onchange="mSelectAllVariants(this.checked)"></th>
+            <th>Variant</th><th>SKU</th><th>Barcode</th>
+            <th class="num">Price</th><th>Status</th><th style="width:80px;">Publish</th>
+          </tr></thead><tbody id="mVariantBody"></tbody></table>
+        </div>
+        <p style="font-size:11px;color:var(--muted-foreground);margin-top:10px;">
+          Only published variants with a sellable status appear on the storefront.
+          Publishing the master publishes every enabled variant; individual variants can still be held back.
+        </p>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveMaster()">Save master product</button>
+        <button class="btn" onclick="publishMaster()">Publish + all variants</button>
+        <button class="btn" onclick="duplicateMasterCurrent()">Duplicate</button>
+        <button class="btn" onclick="showPage('productPreviewPage')">Preview</button>
+        <button class="btn" onclick="showPage('productsPage')">Back to list</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCT PREVIEW ============ -->
+  <div class="page" id="productPreviewPage">
+    <div class="page-head"><h1>Preview</h1><p>Exactly what customers see on the storefront.</p></div>
+    <div class="preview-toolbar">
+      <div class="device-toggle">
+        <button class="active" onclick="setDevice(this,'desktop')" data-icon="desktop" data-size="16" aria-label="Desktop"></button>
+        <button onclick="setDevice(this,'tablet')" data-icon="tablet" data-size="16" aria-label="Tablet"></button>
+        <button onclick="setDevice(this,'mobile')" data-icon="mobile" data-size="16" aria-label="Mobile"></button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="copyPreviewLink()">Copy link</button>
+        <button class="btn btn-sm" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn btn-sm" onclick="showPage('productEditPage')">Back to editor</button>
+      </div>
+    </div>
+    <div class="preview-stage">
+      <div class="preview-frame" id="previewFrame">
+        <div class="sf"><div class="sf-grid">
+          <div class="sf-image">No image yet
+            <div class="sf-badges"><span class="sf-badge">New</span><span class="sf-badge">Featured</span></div>
+          </div>
+          <div>
+            <div class="sf-eyebrow">Apparel</div>
+            <h2 class="sf-title">Grid Hoodie</h2>
+            <div class="sf-price-row"><span class="sf-price">Rs 3,800</span><span class="sf-mrp">Rs 4,500</span><span class="sf-off">16% off</span></div>
+            <p class="sf-desc">Brushed-back fleece hoodie with a raised grid seam pattern.</p>
+            <div class="sf-variants"><span class="sf-variant">S / Black</span><span class="sf-variant">M / Black</span><span class="sf-variant">L / Black</span></div>
+            <div class="sf-cta-row"><span class="sf-cta primary">Add to cart</span><span class="sf-cta outline">Buy now (COD)</span></div>
+            <div class="sf-content"><p>420gsm brushed-back fleece, relaxed unisex fit.</p></div>
+            <div class="sf-tags"><span class="sf-tag">hoodie</span><span class="sf-tag">new</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ORDERS ============ -->
+  <div class="page" id="ordersPage">
+    <div class="page-head"><h1>Orders</h1><p>Storefront orders</p></div>
+    <div class="toolbar">
+      <input type="text" placeholder="Search order or customer" data-table-search="ordersTable" style="width:250px;">
+      <select data-table-filter="ordersTable" data-filter-col="5">
+        <option value="">All statuses</option><option>pending</option><option>confirmed</option>
+        <option>shipped</option><option>delivered</option><option>cancelled</option>
+      </select>
+    </div>
+    <div class="card table-wrap">
+      <table id="ordersTable">
+        <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="num">Total</th><th>Payment</th><th>Status</th></tr></thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ CUSTOMERS ============ -->
+  <div class="page" id="customersPage">
+    <div class="page-head"><h1>Customers</h1><p>Customer directory</p></div>
+    <div class="toolbar"><input type="text" placeholder="Search customers" data-table-search="customersTable" style="width:250px;"></div>
+    <div class="card table-wrap">
+      <table id="customersTable">
+        <thead><tr><th>Name</th><th>Phone</th><th>City</th><th class="num">Orders</th><th class="num">Lifetime spend</th></tr></thead>
+        <tbody id="customersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ INVENTORY ============ -->
+  <div class="page" id="inventoryPage">
+    <div class="page-head"><h1>Inventory</h1><p id="invSubtitle">Variant-level stock across all warehouses</p></div>
+    <div class="metric-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="metric"><div class="label">Stock records</div><div class="value" id="invCountOut">-</div></div>
+      <div class="metric"><div class="label">Units available</div><div class="value" id="invUnitsOut">-</div></div>
+      <div class="metric"><div class="label">Low stock</div><div class="value" id="invLowOut">-</div></div>
+      <div class="metric"><div class="label">Out of stock</div><div class="value" id="invOutOut">-</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="invSearch" placeholder="Search product, variant or SKU" style="width:240px;" oninput="renderInventory()">
+      <select id="invWarehouse" onchange="renderInventory()"></select>
+      <select id="invStatus" onchange="renderInventory()">
+        <option value="">All stock states</option>
+        <option value="ok">In stock</option><option value="low">Low stock</option><option value="out">Out of stock</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportInventoryCsv()">Export CSV</button>
+      <button class="btn btn-primary" onclick="openInvRecord()">+ Add inventory</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="inventoryTable">
+        <thead><tr>
+          <th>Product</th><th>Variant</th><th>SKU</th><th>Warehouse</th>
+          <th class="num">Available</th><th class="num">Reserved</th><th class="num">Incoming</th>
+          <th class="num">Damaged</th><th class="num">Returned</th>
+          <th class="num">Reorder</th><th>Status</th><th style="width:140px;"></th>
+        </tr></thead>
+        <tbody id="inventoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ PUBLISHED INVENTORY ============ -->
+  <div class="page" id="publishedPage">
+    <div class="page-head"><h1>Published inventory</h1><p>Every published sellable variant. Edit price and stock inline.</p></div>
+    <div class="toolbar">
+      <input type="text" id="pubSearch" placeholder="Search product or SKU" style="width:240px;" oninput="renderPublished()">
+      <select id="pubWarehouse" onchange="renderPublished()"></select>
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportPublishedCsv()">Export CSV</button>
+    </div>
+    <div class="bulk-bar" id="pubBulkBar">
+      <span data-selected-count>0 selected</span><div class="spacer"></div>
+      <button data-bulk-action="publish">Publish</button>
+      <button data-bulk-action="unpublish">Unpublish</button>
+      <button data-bulk-action="price">Set price</button>
+      <button data-bulk-action="stock">Set stock</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="publishedTable">
+        <thead><tr>
+          <th style="width:32px;"><input type="checkbox" data-select-all></th>
+          <th>Product</th><th>Variant</th><th>SKU</th><th>Warehouse</th>
+          <th class="num" style="width:110px;">Price</th><th class="num" style="width:100px;">Stock</th>
+          <th>Status</th><th>Published</th>
+        </tr></thead>
+        <tbody id="publishedBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ SALES ============ -->
+  <div class="page" id="salesPage">
+    <div class="page-head"><h1>Sales</h1><p>Manual sales entry and sales register</p></div>
+    <div class="metric-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="metric"><div class="label">Total sales</div><div class="value" id="salesTotalCount">-</div></div>
+      <div class="metric"><div class="label">Net revenue</div><div class="value" id="salesNetTotal">-</div></div>
+      <div class="metric"><div class="label">VAT collected</div><div class="value" id="salesVatTotal">-</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="Search invoice or customer" data-table-search="salesTable" style="width:250px;">
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportSalesCsv()" data-icon-prefix="download">Export CSV</button>
+      <button class="btn btn-primary" onclick="openSaleModal()">+ Add sale</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="salesTable">
+        <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Payment</th><th class="num">Taxable</th><th class="num">VAT 13%</th><th class="num">Total</th><th></th></tr></thead>
+        <tbody id="salesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ============ SALES RETURNS ============ -->
+  <div class="page" id="returnsPage">
+    <div class="page-head"><h1>Sales returns</h1><p>Every return is raised against an original sale.</p></div>
+    <div class="metric-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="metric"><div class="label">Returns</div><div class="value" id="retCountOut">-</div></div>
+      <div class="metric"><div class="label">Awaiting action</div><div class="value" id="retPendingOut">-</div></div>
+      <div class="metric"><div class="label">Refunded</div><div class="value" id="retRefundedOut">-</div></div>
+      <div class="metric"><div class="label">VAT credited</div><div class="value" id="retVatOut">-</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="retSearch" placeholder="Search return, invoice or customer" style="width:250px;" oninput="renderReturns()">
+      <select id="retStatusFilter" onchange="renderReturns()">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option><option value="under_review">Under review</option>
+        <option value="approved">Approved</option><option value="rejected">Rejected</option>
+        <option value="refund_processed">Refund processed</option><option value="completed">Completed</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportReturnsCsv()">Export CSV</button>
+      <button class="btn btn-primary" onclick="openReturn()">+ New return</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="returnsTable">
+        <thead><tr>
+          <th>Return</th><th>Invoice</th><th>Customer</th><th>Date</th><th>Type</th>
+          <th>Reason</th><th class="num">Refund</th><th>Status</th><th style="width:120px;"></th>
+        </tr></thead>
+        <tbody id="returnsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ PURCHASES ============ -->
+  <div class="page" id="purchasesPage">
+    <div class="page-head"><h1>Purchases</h1><p>Supplier bills and expenses</p></div>
+    <div class="metric-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="metric"><div class="label">Total purchases</div><div class="value" id="purchTotalCount">-</div></div>
+      <div class="metric"><div class="label">Net cost</div><div class="value" id="purchNetTotal">-</div></div>
+      <div class="metric"><div class="label">VAT paid</div><div class="value" id="purchVatTotal">-</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="Search bill or supplier" data-table-search="purchasesTable" style="width:250px;">
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportPurchasesCsv()" data-icon-prefix="download">Export CSV</button>
+      <button class="btn btn-primary" onclick="openPurchaseModal()">+ Add purchase</button>
+    </div>
+    <div class="card table-wrap">
+      <table id="purchasesTable">
+        <thead><tr><th>Bill no</th><th>Date</th><th>Supplier</th><th>Head</th><th class="num">Taxable</th><th class="num">VAT 13%</th><th class="num">Total</th><th></th></tr></thead>
+        <tbody id="purchasesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ FINANCE ============ -->
+  <div class="page" id="financePage">
+    <div class="page-head"><h1>Finance</h1><p>Journal, ledger, daybook and profit &amp; loss</p></div>
+    <div class="tabs" id="financeTabs">
+      <a class="active" onclick="showTab('financeTabs','finJournal',this)">Journal</a>
+      <a onclick="showTab('financeTabs','finLedger',this)">General ledger</a>
+      <a onclick="showTab('financeTabs','finDaybook',this)">Daybook</a>
+      <a onclick="showTab('financeTabs','finTrial',this)">Trial balance</a>
+      <a onclick="showTab('financeTabs','finPL',this)">Profit &amp; loss</a>
+    </div>
+
+    <div class="tab-panel visible" id="finJournal">
+      <p style="font-size:12px;color:var(--muted-foreground);margin:0 0 12px;">Double-entry journal, generated automatically from every sale and purchase.</p>
+      <div class="card table-wrap">
+        <table><thead><tr><th>Date</th><th>Voucher</th><th>Account</th><th>Narration</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody id="journalBody"></tbody>
+        <tfoot id="journalFoot"></tfoot></table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="finLedger">
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted-foreground);">Account</label>
+        <select id="ledgerAccount" onchange="renderLedger()"></select>
+      </div>
+      <div class="card table-wrap">
+        <table><thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
+        <tbody id="ledgerBody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="finDaybook">
+      <div class="toolbar">
+        <label style="font-size:13px;color:var(--muted-foreground);">Date</label>
+        <input type="date" id="daybookDate" onchange="renderDaybook()">
+      </div>
+      <div class="card table-wrap">
+        <table><thead><tr><th>Voucher</th><th>Type</th><th>Particulars</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody id="daybookBody"></tbody>
+        <tfoot id="daybookFoot"></tfoot></table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="finTrial">
+      <div class="card table-wrap">
+        <table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+        <tbody id="trialBody"></tbody>
+        <tfoot id="trialFoot"></tfoot></table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="finPL">
+      <div class="toolbar no-print">
+        <label style="font-size:13px;color:var(--muted-foreground);">From</label>
+        <input type="date" id="plFrom" onchange="renderPL()">
+        <label style="font-size:13px;color:var(--muted-foreground);">To</label>
+        <input type="date" id="plTo" onchange="renderPL()">
+        <div class="spacer"></div>
+        <button class="btn btn-sm" onclick="window.print()">Print</button>
+      </div>
+      <div class="card card-pad" id="plReport"></div>
+    </div>
+  </div>
+
+  <!-- ============ REPORTS ============ -->
+  <div class="page" id="reportsPage">
+    <div class="page-head"><h1>Sales reports</h1><p>Daily, weekly, monthly, quarterly and annual summaries</p></div>
+    <div class="toolbar no-print">
+      <label style="font-size:13px;color:var(--muted-foreground);">Period</label>
+      <select id="reportPeriod" onchange="renderReport()">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly" selected>Monthly</option>
+        <option value="quarterly">Quarterly</option>
+        <option value="annual">Annual</option>
+      </select>
+      <label style="font-size:13px;color:var(--muted-foreground);">From</label>
+      <input type="date" id="reportFrom" onchange="renderReport()">
+      <label style="font-size:13px;color:var(--muted-foreground);">To</label>
+      <input type="date" id="reportTo" onchange="renderReport()">
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportReportCsv()" data-icon-prefix="download">Export CSV</button>
+      <button class="btn" onclick="window.print()">Print</button>
+    </div>
+    <div class="metric-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="metric"><div class="label">Invoices</div><div class="value" id="repCount">-</div></div>
+      <div class="metric"><div class="label">Taxable amount</div><div class="value" id="repTaxable">-</div></div>
+      <div class="metric"><div class="label">VAT</div><div class="value" id="repVat">-</div></div>
+      <div class="metric"><div class="label">Gross total</div><div class="value" id="repTotal">-</div></div>
+    </div>
+    <div class="card table-wrap">
+      <table id="reportTable">
+        <thead><tr><th>Period</th><th class="num">Invoices</th><th class="num">Taxable</th><th class="num">VAT</th><th class="num">Total</th></tr></thead>
+        <tbody id="reportBody"></tbody>
+        <tfoot id="reportFoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ IRD / VAT ============ -->
+  <div class="page" id="irdPage">
+    <div class="page-head"><h1>IRD / VAT report</h1><p>Monthly VAT return summary for Inland Revenue Department filing</p></div>
+    <div class="toolbar no-print">
+      <label style="font-size:13px;color:var(--muted-foreground);">Month</label>
+      <input type="month" id="irdMonth" onchange="renderIrd()">
+      <div class="spacer"></div>
+      <button class="btn" onclick="exportIrdCsv()" data-icon-prefix="download">Export CSV</button>
+      <button class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <div class="card card-pad" id="irdReport"></div>
+  </div>
+
+  <!-- ============ CMS ============ -->
+  <div class="page" id="cmsPage">
+    <div class="page-head"><h1>CMS</h1><p>Website pages and homepage builder</p></div>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="openPageModal()">+ New page</button>
+    </div>
+    <div class="card table-wrap" style="margin-bottom:20px;">
+      <table><thead><tr><th>Page</th><th>URL</th><th>Status</th><th>Last updated</th><th></th></tr></thead>
+      <tbody id="cmsBody"></tbody></table>
+    </div>
+    <div class="card card-pad">
+      <div class="section-title">Homepage builder</div>
+      <p style="font-size:12px;color:var(--muted-foreground);margin:0 0 14px;">Use the arrows to reorder sections.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="homepageSections">
+        <div class="hb-row"><span style="display:flex;align-items:center;gap:8px;"><span data-icon="drag" data-size="15" style="display:flex;color:var(--muted-foreground);"></span>Hero banner</span><div style="display:flex;gap:4px;">
+          <button class="icon-btn" data-move="up" data-icon="arrowUp" data-size="15" aria-label="Move up"></button><button class="icon-btn" data-move="down" data-icon="arrowDown" data-size="15" aria-label="Move down"></button></div></div>
+        <div class="hb-row"><span style="display:flex;align-items:center;gap:8px;"><span data-icon="drag" data-size="15" style="display:flex;color:var(--muted-foreground);"></span>Featured products</span><div style="display:flex;gap:4px;">
+          <button class="icon-btn" data-move="up" data-icon="arrowUp" data-size="15" aria-label="Move up"></button><button class="icon-btn" data-move="down" data-icon="arrowDown" data-size="15" aria-label="Move down"></button></div></div>
+        <div class="hb-row"><span style="display:flex;align-items:center;gap:8px;"><span data-icon="drag" data-size="15" style="display:flex;color:var(--muted-foreground);"></span>New arrivals</span><div style="display:flex;gap:4px;">
+          <button class="icon-btn" data-move="up" data-icon="arrowUp" data-size="15" aria-label="Move up"></button><button class="icon-btn" data-move="down" data-icon="arrowDown" data-size="15" aria-label="Move down"></button></div></div>
+        <div class="hb-row"><span style="display:flex;align-items:center;gap:8px;"><span data-icon="drag" data-size="15" style="display:flex;color:var(--muted-foreground);"></span>Newsletter signup</span><div style="display:flex;gap:4px;">
+          <button class="icon-btn" data-move="up" data-icon="arrowUp" data-size="15" aria-label="Move up"></button><button class="icon-btn" data-move="down" data-icon="arrowDown" data-size="15" aria-label="Move down"></button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SETTINGS ============ -->
+  <div class="page" id="settingsPage">
+    <div class="page-head"><h1>Settings</h1><p>Company, tax, payments and roles</p></div>
+    <div class="tabs" id="settingsTabs">
+      <a class="active" onclick="showTab('settingsTabs','setGeneral',this)">General</a>
+      <a onclick="showTab('settingsTabs','setTax',this)">Tax &amp; VAT</a>
+      <a onclick="showTab('settingsTabs','setPay',this)">Payment gateways</a>
+      <a onclick="showTab('settingsTabs','setRoles',this)">Roles</a>
+    </div>
+    <div class="tab-panel visible" id="setGeneral">
+      <div class="card card-pad form-section">
+        <div class="form-grid-2">
+          <div class="field"><label>Company name</label><input id="cfgCompany" value="Zylo Pvt. Ltd."></div>
+          <div class="field"><label>Contact email</label><input value="hello@zylo.com.np"></div>
+          <div class="field"><label>Phone</label><input value="+977 1-4123456"></div>
+          <div class="field"><label>Address</label><input id="cfgAddress" value="Thamel, Kathmandu"></div>
+          <div class="field"><label>Timezone</label><input value="Asia/Kathmandu"></div>
+          <div class="field"><label>Currency</label><input value="NPR"></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
+      </div>
+      <div class="card card-pad form-section">
+        <h2>Database information</h2>
+        <div class="form-grid-3" style="gap:10px;margin-bottom:14px;">
+          <div><div class="label" style="font-size:11px;color:var(--muted-foreground);">Application version</div><div id="dbAppVer">-</div></div>
+          <div><div class="label" style="font-size:11px;color:var(--muted-foreground);">Schema version</div><div id="dbSchemaVer">-</div></div>
+          <div><div class="label" style="font-size:11px;color:var(--muted-foreground);">Last migration</div><div id="dbLastMig">-</div></div>
+        </div>
+        <div class="table-wrap" style="margin-bottom:14px;">
+          <table><tbody id="dbStatsBody"></tbody></table>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="verifyIntegrity()">Verify integrity</button>
+          <button class="btn btn-sm" onclick="rerunMigration()">Run migration again</button>
+          <button class="btn btn-sm" onclick="showMigrationReport()">Migration report</button>
+          <button class="btn btn-sm" onclick="backupDatabase()">Backup / export JSON</button>
+          <button class="btn btn-sm" onclick="document.getElementById('restoreFile').click()">Restore / import JSON</button>
+          <button class="btn btn-sm" onclick="exportAllCsv()">Export CSV bundle</button>
+          <button class="btn btn-sm btn-danger" onclick="resetData()">Reset demo data</button>
+          <input type="file" id="restoreFile" accept="application/json" style="display:none" onchange="restoreDatabase(this)">
+        </div>
+        <div id="integrityOut" style="margin-top:14px;"></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="setTax">
+      <div class="card card-pad form-section">
+        <div class="form-grid-2">
+          <div class="field"><label>VAT registration (PAN) number</label><input id="cfgPan" value="601234567"></div>
+          <div class="field"><label>VAT rate (%)</label><input id="cfgVatRate" type="number" value="13"></div>
+          <div class="field"><label>Invoice number prefix</label><input id="cfgInvPrefix" value="INV-"></div>
+          <div class="field"><label>Fiscal year</label><input value="2082/83"></div>
+        </div>
+        <p style="font-size:12px;color:var(--muted-foreground);">Changing the VAT rate applies to new entries only; existing records keep the rate they were saved with.</p>
+        <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
+      </div>
+    </div>
+    <div class="tab-panel" id="setPay">
+      <div class="card card-pad form-section">
+        <div class="toggle-row"><div><div class="t-label">Cash on delivery</div><div class="t-hint">Available on every order</div></div><div class="switch on"></div></div>
+        <div class="toggle-row"><div><div class="t-label">eSewa</div><div class="t-hint">Merchant code not configured</div></div><div class="switch"></div></div>
+        <div class="toggle-row"><div><div class="t-label">Fonepay</div><div class="t-hint">Merchant code not configured</div></div><div class="switch"></div></div>
+      </div>
+    </div>
+    <div class="tab-panel" id="setRoles">
+      <div class="card table-wrap">
+        <table><thead><tr><th>Role</th><th>Products</th><th>Sales</th><th>Finance</th><th>Settings</th></tr></thead>
+        <tbody>
+          <tr><td>Super Admin</td><td>Full</td><td>Full</td><td>Full</td><td>Full</td></tr>
+          <tr><td>Manager</td><td>Full</td><td>Full</td><td>View</td><td>-</td></tr>
+          <tr><td>Sales</td><td>View</td><td>Full</td><td>-</td><td>-</td></tr>
+          <tr><td>Finance</td><td>-</td><td>View</td><td>Full</td><td>-</td></tr>
+          <tr><td>Warehouse</td><td>View</td><td>-</td><td>-</td><td>-</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  </div></div></div>
+
+<!-- ============ MODALS ============ -->
+
+
+<div class="modal-backdrop" id="invModal">
+  <div class="modal">
+    <h2 id="invModalTitle">Inventory record</h2>
+    <div class="form-grid-2">
+      <div class="field"><label>Variant</label><select id="ivVariant"></select></div>
+      <div class="field"><label>Warehouse</label><select id="ivWarehouse"></select></div>
+      <div class="field"><label>Available</label><input id="ivAvailable" type="number" value="0"></div>
+      <div class="field"><label>Reserved</label><input id="ivReserved" type="number" value="0"></div>
+      <div class="field"><label>Incoming</label><input id="ivIncoming" type="number" value="0"></div>
+      <div class="field"><label>Damaged</label><input id="ivDamaged" type="number" value="0"></div>
+      <div class="field"><label>Returned</label><input id="ivReturned" type="number" value="0"></div>
+      <div class="field"><label>Reorder level</label><input id="ivReorder" type="number" value="5"></div>
+      <div class="field"><label>Minimum stock</label><input id="ivMin" type="number" value="0"></div>
+      <div class="field"><label>Maximum stock</label><input id="ivMax" type="number" value="0"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('invModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvRecord()">Save record</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="adjustModal">
+  <div class="modal" style="max-width:440px;">
+    <h2>Adjust stock</h2>
+    <p id="adjustContext" style="font-size:12px;color:var(--muted-foreground);margin:0 0 14px;"></p>
+    <div class="field"><label>Adjustment type</label>
+      <select id="adjMode">
+        <option value="increase">Increase quantity</option>
+        <option value="decrease">Decrease quantity</option>
+        <option value="replace">Replace quantity (set absolute)</option>
+        <option value="correction">Manual correction (set absolute)</option>
+      </select>
+    </div>
+    <div class="field"><label>Quantity</label><input id="adjQty" type="number" value="1"></div>
+    <div class="field"><label>Reason</label><input id="adjReason" placeholder="Stock count, damage, receipt..."></div>
+    <div class="field"><label>Reference (optional)</label><input id="adjRef" placeholder="PO number, note"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('adjustModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="applyAdjust()">Apply adjustment</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="transferModal">
+  <div class="modal" style="max-width:440px;">
+    <h2 id="transferTitle">Transfer stock</h2>
+    <p id="transferContext" style="font-size:12px;color:var(--muted-foreground);margin:0 0 14px;"></p>
+    <div class="field"><label>Destination warehouse</label><select id="trfTo"></select></div>
+    <div class="field"><label>Quantity</label><input id="trfQty" type="number" value="1"></div>
+    <div class="field"><label>Reason (optional)</label><input id="trfReason"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('transferModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="applyTransfer()">Transfer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="historyModal">
+  <div class="modal">
+    <h2>Stock movement history</h2>
+    <p id="historyContext" style="font-size:12px;color:var(--muted-foreground);margin:0 0 14px;"></p>
+    <div class="table-wrap">
+      <table><thead><tr><th>Date</th><th>Type</th><th>Reason</th><th>Ref</th><th class="num">Change</th><th class="num">Balance</th></tr></thead>
+      <tbody id="historyBody"></tbody></table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('historyModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="labelModal">
+  <div class="modal" style="max-width:380px;">
+    <h2 id="labelTitle">Label</h2>
+    <div id="labelBody" style="text-align:center;padding:16px;background:#fff;color:#000;border-radius:8px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('labelModal')">Close</button>
+      <button class="btn btn-primary" onclick="window.print()">Print</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-backdrop" id="reportModal">
+  <div class="modal">
+    <h2 id="reportTitle">Migration report</h2>
+    <div id="migReportBody" style="font-size:13px;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('reportModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-backdrop" id="returnModal">
+  <div class="modal" style="max-width:720px;">
+    <h2 id="returnModalTitle">New sales return</h2>
+
+    <div id="retStepSearch">
+      <div class="field">
+        <label>Step 1 &mdash; find the original sale</label>
+        <input id="retSaleSearch" placeholder="Order no, invoice, receipt, customer name, phone, SKU or barcode" oninput="renderSaleSearch()">
+      </div>
+      <div id="retSaleResults" class="table-wrap" style="max-height:220px;overflow-y:auto;"></div>
+    </div>
+
+    <div id="retStepForm" style="display:none;">
+      <div class="card card-pad" style="background:var(--muted);margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+          <div id="retSaleSummary" style="font-size:13px;"></div>
+          <button class="btn btn-sm" type="button" onclick="clearSelectedSale()">Change sale</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Step 2 &mdash; return type</label>
+        <select id="retType" onchange="onReturnTypeChange()">
+          <option value="full">Full order return</option>
+          <option value="item">Item-based return</option>
+          <option value="quantity">Quantity-based return</option>
+          <option value="custom">Custom refund amount</option>
+        </select>
+      </div>
+
+      <div id="retLinesWrap">
+        <div class="table-wrap" style="margin-bottom:8px;">
+          <table><thead><tr>
+            <th style="width:32px;"></th><th>Item</th><th>SKU</th>
+            <th class="num">Rate</th><th class="num">Bought</th><th class="num">Returned</th><th class="num" style="width:90px;">Return qty</th>
+          </tr></thead><tbody id="retLinesBody"></tbody></table>
+        </div>
+      </div>
+
+      <div id="retCustomWrap" style="display:none;">
+        <div class="field"><label>Custom refund amount (NPR, VAT inclusive)</label>
+          <input id="retCustomAmount" type="number" min="0" oninput="recalcReturn()"></div>
+      </div>
+
+      <div class="totals-box" style="margin-bottom:16px;">
+        <div><span>Original sale total</span><span id="retOriginalOut">Rs 0</span></div>
+        <div><span>Already refunded</span><span id="retAlreadyOut">Rs 0</span></div>
+        <div><span>Refund net</span><span id="retNetOut">Rs 0</span></div>
+        <div><span>Refund VAT</span><span id="retVatLineOut">Rs 0</span></div>
+        <div class="grand"><span>Refund total</span><span id="retTotalOut">Rs 0</span></div>
+        <div><span>Remaining balance</span><span id="retRemainOut">Rs 0</span></div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="field"><label>Step 3 &mdash; return reason</label>
+          <select id="retReason" onchange="onReasonChange()"></select>
+        </div>
+        <div class="field"><label>Restock destination</label>
+          <select id="retRestock">
+            <option value="available">Return to available stock</option>
+            <option value="damaged">Return to damaged stock</option>
+            <option value="inspection">Return to inspection stock</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="retCustomReasonWrap" style="display:none;">
+        <label>Please describe the reason</label>
+        <textarea id="retCustomReason" rows="2" placeholder="Required when Other is selected"></textarea>
+      </div>
+      <div class="field"><label>Internal notes (staff only)</label>
+        <textarea id="retNotes" rows="2" placeholder="Not shown to the customer"></textarea></div>
+
+      <div class="field">
+        <label>Step 4 &mdash; supporting documents</label>
+        <div class="upload-zone" id="retUploadZone">
+          Drag and drop, or click to browse
+          <div style="font-size:11px;margin-top:4px;">Receipts, invoices, screenshots, product or delivery photos. JPG, PNG, WEBP or PDF, up to 400KB each.</div>
+        </div>
+        <div id="retFileList" style="margin-top:10px;"></div>
+      </div>
+
+      <div id="retErrors" style="margin-bottom:12px;"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('returnModal')">Cancel</button>
+      <button class="btn btn-primary" id="retSaveBtn" onclick="submitReturn()" style="display:none;">Save return</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="returnViewModal">
+  <div class="modal" style="max-width:640px;">
+    <h2 id="retViewTitle">Return</h2>
+    <div id="retViewBody" style="font-size:13px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;" id="retViewActions"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="categoryModal">
+  <div class="modal">
+    <h2 id="categoryModalTitle">Category</h2>
+    <div class="form-grid-2">
+      <div class="field"><label>Name</label><input id="cName" oninput="cAutoSlug()"></div>
+      <div class="field"><label>Slug</label><input id="cSlug"></div>
+      <div class="field"><label>Parent category</label><select id="cParent"></select></div>
+      <div class="field"><label>Sort order</label><input id="cSort" type="number" value="0"></div>
+      <div class="field"><label>Category image URL</label><input id="cImage" placeholder="Optional"></div>
+      <div class="field"><label>Banner image URL</label><input id="cBanner" placeholder="Optional"></div>
+      <div class="field"><label>Icon</label><input id="cIcon" placeholder="Optional"></div>
+      <div class="field"><label>Status</label>
+        <select id="cStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+      <div class="field"><label>Meta title</label><input id="cMetaTitle"></div>
+      <div class="field"><label>Meta description</label><input id="cMetaDesc"></div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="cDesc" rows="2"></textarea></div>
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="cFeatured"> Featured category</label>
+      <label><input type="checkbox" id="cVisible" checked> Visible in navigation</label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('categoryModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Save category</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="saleModal">
+  <div class="modal">
+    <h2 id="saleModalTitle">Add sale</h2>
+    <div class="form-grid-2">
+      <div class="field"><label>Invoice no</label><input id="saleInvoice"></div>
+      <div class="field"><label>Date</label><input id="saleDate" type="date"></div>
+      <div class="field"><label>Customer</label><input id="saleCustomer" placeholder="Walk-in customer"></div>
+      <div class="field"><label>Payment method</label>
+        <select id="salePayment"><option>Cash</option><option>COD</option><option>eSewa</option><option>Fonepay</option><option>Credit</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Items</label>
+      <div class="line-row" style="font-size:11px;color:var(--muted-foreground);">
+        <span>Description</span><span>Qty</span><span>Rate</span><span style="text-align:right;">Amount</span><span></span>
+      </div>
+      <div id="saleLines"></div>
+      <button class="btn btn-sm" type="button" onclick="addSaleLine()">+ Add line</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0;">
+      <input type="checkbox" id="saleVatable" checked onchange="recalcSale()"> VAT applicable (13%)
+    </label>
+    <div class="totals-box">
+      <div><span>Taxable amount</span><span id="saleSub">Rs 0</span></div>
+      <div><span>VAT</span><span id="saleVat">Rs 0</span></div>
+      <div class="grand"><span>Total</span><span id="saleTotal">Rs 0</span></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('saleModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSale()">Save sale</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="purchaseModal">
+  <div class="modal">
+    <h2 id="purchaseModalTitle">Add purchase</h2>
+    <div class="form-grid-2">
+      <div class="field"><label>Bill no</label><input id="purchBill"></div>
+      <div class="field"><label>Date</label><input id="purchDate" type="date"></div>
+      <div class="field"><label>Supplier</label><input id="purchSupplier"></div>
+      <div class="field"><label>Expense head</label>
+        <select id="purchHead">
+          <option>Purchases (stock)</option><option>Freight and delivery</option>
+          <option>Rent</option><option>Salaries</option><option>Utilities</option>
+          <option>Marketing</option><option>Other expenses</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Items</label>
+      <div class="line-row" style="font-size:11px;color:var(--muted-foreground);">
+        <span>Description</span><span>Qty</span><span>Rate</span><span style="text-align:right;">Amount</span><span></span>
+      </div>
+      <div id="purchLines"></div>
+      <button class="btn btn-sm" type="button" onclick="addPurchLine()">+ Add line</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0;">
+      <input type="checkbox" id="purchVatable" checked onchange="recalcPurch()"> VAT applicable (13%)
+    </label>
+    <div class="totals-box">
+      <div><span>Taxable amount</span><span id="purchSub">Rs 0</span></div>
+      <div><span>VAT</span><span id="purchVat">Rs 0</span></div>
+      <div class="grand"><span>Total</span><span id="purchTotal">Rs 0</span></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('purchaseModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePurchase()">Save purchase</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="pageModal">
+  <div class="modal">
+    <h2 id="pageModalTitle">Edit page</h2>
+    <div class="form-grid-2">
+      <div class="field"><label>Title</label><input id="pgTitle"></div>
+      <div class="field"><label>URL slug</label><input id="pgSlug"></div>
+      <div class="field"><label>Status</label>
+        <select id="pgStatus"><option value="draft">Draft</option><option value="published">Published</option><option value="scheduled">Scheduled</option></select>
+      </div>
+      <div class="field"><label>Meta title</label><input id="pgMeta"></div>
+    </div>
+    <div class="field"><label>Content</label>
+      <div class="rte">
+        <div class="rte-toolbar">
+          <button type="button" onclick="rteCmd('bold')" data-icon="bold" data-size="15" aria-label="Bold"></button>
+          <button type="button" onclick="rteCmd('italic')" data-icon="italic" data-size="15" aria-label="Italic"></button>
+          <button type="button" onclick="rteCmd('formatBlock','H3')" data-icon="heading" data-size="15" aria-label="Heading"></button>
+          <button type="button" onclick="rteCmd('insertUnorderedList')" data-icon="bullet" data-size="15" aria-label="Bullet list"></button>
+          <button type="button" onclick="rteCmd('insertOrderedList')" data-icon="numlist" data-size="15" aria-label="Numbered list"></button>
+          <button type="button" onclick="rteLink()" data-icon="link" data-size="15" aria-label="Link"></button>
+        </div>
+        <div class="rte-body" contenteditable="true" id="pgContent"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+      <button class="btn" onclick="closeModal('pageModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePage()">Save page</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

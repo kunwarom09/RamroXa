@@ -1,0 +1,152 @@
+/* Generated from Figma Variables. First mode = :root default.
+   FLOAT tokens are unitless — multiply by 1px in calc() where a length is needed. */
+
+:root {
+  --color-azure-56: rgb(47,128,237); /* @kind color */
+  --color-black-0: rgba(0,0,0,0); /* @kind color */
+  --color-black-10: rgba(0,0,0,0.1); /* @kind color */
+  --color-black-22: rgba(0,0,0,0.22); /* @kind color */
+  --color-black-30: rgba(0,0,0,0.3); /* @kind color */
+  --color-black-40: rgba(0,0,0,0.4); /* @kind color */
+  --color-black-70: rgba(0,0,0,0.7); /* @kind color */
+  --color-black-80: rgba(0,0,0,0.8); /* @kind color */
+  --color-black-90: rgba(0,0,0,0.9); /* @kind color */
+  --color-black-solid: rgb(0,0,0); /* @kind color */
+  --color-grey-12: rgb(31,31,31); /* @kind color */
+  --color-grey-43: rgb(110,110,110); /* @kind color */
+  --color-grey-47: rgb(120,120,120); /* @kind color */
+  --color-grey-63: rgb(161,161,161); /* @kind color */
+  --color-grey-93: rgb(238,238,238); /* @kind color */
+  --color-grey-97: rgb(248,248,248); /* @kind color */
+  --color-orange-45: rgb(200,93,27); /* @kind color */
+  --color-orange-50: rgb(255,106,0); /* @kind color */
+  --color-orange-56: rgb(220,142,67); /* @kind color */
+  --color-orange-62: rgb(242,153,74); /* @kind color */
+  --color-red-63: rgb(235,87,87); /* @kind color */
+  --color-spring-green-34: rgb(58,114,79); /* @kind color */
+  --color-spring-green-42: rgb(39,174,96); /* @kind color */
+  --color-violet-64: rgb(187,107,217); /* @kind color */
+  --color-white-0-2: rgba(255,255,255,0.002); /* @kind color */
+  --color-white-15: rgba(255,255,255,0.15); /* @kind color */
+  --color-white-20: rgba(255,255,255,0.2); /* @kind color */
+  --color-white-40: rgba(255,255,255,0.4); /* @kind color */
+  --color-white-60: rgba(255,255,255,0.6); /* @kind color */
+  --color-white-80: rgba(255,255,255,0.8); /* @kind color */
+  --color-white-solid: rgb(255,255,255); /* @kind color */
+  --color-yellow-62: rgb(242,201,76); /* @kind color */
+  --corner-radius-1000: 1000;
+  --corner-radius-20: 20;
+  --corner-radius-280: 280;
+  --corner-radius-30: 30;
+  --corner-radius-50: 50;
+  --corner-radius-5: 5;
+  --corner-radius-70: 70;
+  --corner-radius-7: 7;
+  --corner-radius-999: 999;
+  --font-family-font-1: "Inter";
+  --font-size-12: 12;
+  --font-size-13: 13;
+  --font-size-14: 14;
+  --font-size-15: 15;
+  --font-size-16: 16;
+  --font-size-18: 18;
+  --font-weight-500: 500;
+  --font-weight-600: 600;
+  --height-22: 22;
+  --height-616: 616;
+  --item-spacing-0-01: 0.01;
+  --item-spacing-0: 0;
+  --item-spacing-10: 10;
+  --item-spacing-11-4: 11.4;
+  --item-spacing-119: 119;
+  --item-spacing-121: 121;
+  --item-spacing-1234-98: 1234.98;
+  --item-spacing-13-3: 13.3;
+  --item-spacing-13-4: 13.4;
+  --item-spacing-13-99: 13.99;
+  --item-spacing-135: 135;
+  --item-spacing-14-01: 14.01;
+  --item-spacing-19-4: 19.4;
+  --item-spacing-21-99: 21.99;
+  --item-spacing-264-1: 264.1;
+  --item-spacing-26: 26;
+  --item-spacing-29-3: 29.3;
+  --item-spacing-40: 40;
+  --item-spacing-438: 438;
+  --item-spacing-488-38: 488.38;
+  --item-spacing-513-75: 513.75;
+  --item-spacing-514-55: 514.55;
+  --item-spacing-54: 54;
+  --item-spacing-58-01: 58.01;
+  --item-spacing-58: 58;
+  --item-spacing-64-8: 64.8;
+  --item-spacing-6: 6;
+  --item-spacing-7-4: 7.4;
+  --item-spacing-7-99: 7.99;
+  --item-spacing-9-99: 9.99;
+  --item-spacing-92-8: 92.8;
+  --item-spacing-s: 24;
+  --item-spacing-xs: 8;
+  --item-spacing-xxs: 4;
+  --letter-spacing-0-32: -0.32;
+  --letter-spacing-0-42: -0.42;
+  --letter-spacing-0-48: -0.48;
+  --letter-spacing-0-52: -0.525;
+  --letter-spacing-0-54: -0.54;
+  --letter-spacing-0-66: -0.66;
+  --letter-spacing-0-6: -0.6;
+  --letter-spacing-1-08: -1.08;
+  --letter-spacing-1-32: -1.32;
+  --letter-spacing-1-44: -1.44;
+  --letter-spacing-1-86: -1.86;
+  --line-height-15-6: 15.6;
+  --line-height-18-2: 18.2;
+  --line-height-21: 21;
+  --line-height-22-5: 22.5;
+  --line-height-23-25: 23.25;
+  --line-height-24-8: 24.8;
+  --line-height-27: 27;
+  --line-height-28: 28;
+  --line-height-33: 33;
+  --line-height-43-92: 43.92;
+  --line-height-51-92: 51.92;
+  --line-height-55-92: 55.92;
+  --line-height-69-44: 69.44;
+  --opacity-100: 100;
+  --opacity-60: 60;
+  --opacity-90: 90;
+  --stroke-weight-0-06: 0.057;
+  --stroke-weight-0-09: 0.094;
+  --stroke-weight-0-41: 0.412;
+  --stroke-weight-0-54: 0.538;
+  --stroke-weight-0-58: 0.583;
+  --stroke-weight-0-63: 0.625;
+  --stroke-weight-0-67: 0.667;
+  --stroke-weight-0-75: 0.75;
+  --stroke-weight-0-83: 0.833;
+  --stroke-weight-0-94: 0.938;
+  --stroke-weight-1-05: 1.05;
+  --stroke-weight-1-15: 1.149;
+  --stroke-weight-1-17: 1.167;
+  --stroke-weight-1-25: 1.25;
+  --stroke-weight-1-2: 1.2;
+  --stroke-weight-1-33: 1.333;
+  --stroke-weight-1-34: 1.343;
+  --stroke-weight-1-61: 1.613;
+  --stroke-weight-1-88: 1.875;
+  --stroke-weight-16-99: 16.985;
+  --stroke-weight-1: 1;
+  --stroke-weight-2: 2;
+  --width-1200: 1200;
+  --width-1240: 1240;
+  --width-1390: 1390;
+  --width-170: 170;
+  --width-180: 180;
+  --width-300: 300;
+  --width-320: 320;
+  --width-400: 400;
+  --width-450: 450;
+  --width-550: 550;
+  --width-570: 570;
+  --width-700: 700;
+}
