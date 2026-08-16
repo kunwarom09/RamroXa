@@ -7,18 +7,10 @@ import Icon from '../../../components/admin/Icons';
 
 export default function AdminProductsListPage() {
   const router = useRouter();
-  const [products, setProducts] = useState(() => {
-    const db = loadDB();
-    return db.products || [];
-  });
-  const [variants, setVariants] = useState(() => {
-    const db = loadDB();
-    return db.variants || [];
-  });
-  const [categories, setCategories] = useState(() => {
-    const db = loadDB();
-    return db.categories || [];
-  });
+  const [mounted, setMounted] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [variants, setVariants] = useState([]);
+  const [categories, setCategories] = useState([]);
   
   // List view states
   const [search, setSearch] = useState('');
@@ -40,6 +32,7 @@ export default function AdminProductsListPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     refreshData();
   }, []);
 
@@ -144,7 +137,9 @@ export default function AdminProductsListPage() {
 
       <div className="page-head">
         <h1>Master products</h1>
-        <p>{filtered.length} of {products.length} master products &middot; {variants.length} variants total</p>
+        <p suppressHydrationWarning>
+          {mounted ? `${filtered.length} of ${products.length} master products · ${variants.length} variants total` : 'Loading master products...'}
+        </p>
       </div>
 
       <div className="toolbar">
