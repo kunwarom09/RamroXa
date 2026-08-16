@@ -1,3 +1,10 @@
-node_modules
-.next
-out
+node_modules/
+.next/
+out/
+.DS_Store
+*.log
+.env.local
+.env*.local
+.antigravity-ide/
+antigravity-ide/
+.gemini/

@@ -5,4 +5,6 @@ out/
 *.log
 .env.local
 .env*.local
-antigravity-ide/*
+.antigravity-ide/
+antigravity-ide/
+.gemini/
