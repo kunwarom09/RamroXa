@@ -2,14 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { loadDB, saveDB, money, slugify } from '../../../services/dataStore';
+import { loadDB, saveDB, money, slugify, getProductThumbnail } from '../../../services/dataStore';
 import Icon from '../../../components/admin/Icons';
 
 export default function AdminProductsListPage() {
   const router = useRouter();
-  const [products, setProducts] = useState([]);
-  const [variants, setVariants] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(() => {
+    const db = loadDB();
+    return db.products || [];
+  });
+  const [variants, setVariants] = useState(() => {
+    const db = loadDB();
+    return db.variants || [];
+  });
+  const [categories, setCategories] = useState(() => {
+    const db = loadDB();
+    return db.categories || [];
+  });
   
   // List view states
   const [search, setSearch] = useState('');
@@ -207,7 +216,7 @@ export default function AdminProductsListPage() {
                 const cat = categories.find((c) => c.id === p.categoryId);
                 const vCount = getVariantsOf(p.id).length;
                 const pubCount = getPublishedVariantCount(p.id);
-                const featImg = (p.images || []).find((img) => img.isFeatured) || (p.images || [])[0];
+                const imgUrl = getProductThumbnail(p);
 
                 return (
                   <tr key={p.id}>
@@ -232,8 +241,15 @@ export default function AdminProductsListPage() {
                           border: '1px solid var(--border)'
                         }}
                       >
-                        {featImg ? (
-                          <img src={featImg.url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {imgUrl ? (
+                          <img
+                            src={imgUrl}
+                            alt={p.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <Icon name="camera" size={14} />
                         )}

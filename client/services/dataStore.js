@@ -108,27 +108,51 @@ export var DEFAULTS = {
       { id: "m1", name: "Monolith Tee", slug: "monolith-tee", sku: "ZYL-APP-00001", categoryId: "c_tops", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["tee", "core"], price: 180000, mrp: 220000, cost: 90000,
         status: "published", labels: { featured: false, trending: false, newArrival: true, bestSelling: true },
-        description: "Heavyweight cotton tee, garment-dyed.", options: { Colour: ["Black", "White"], Size: ["S", "M", "L"] } },
+        description: "Heavyweight cotton tee, garment-dyed.", options: { Colour: ["Black", "White"], Size: ["S", "M", "L"] },
+        images: [
+          { url: "/assets/ea97fe30fd8d1dfc.q.jpg", alt: "Monolith Tee", isFeatured: true, format: "webp" },
+          { url: "/assets/09789ab9b9e151f6.q.jpg", alt: "Monolith Tee detail", isFeatured: false, format: "webp" }
+        ] },
       { id: "m2", name: "Grid Hoodie", slug: "grid-hoodie", sku: "ZYL-APP-00002", categoryId: "c_tops", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["hoodie", "new"], price: 380000, mrp: 450000, cost: 210000,
         status: "published", labels: { featured: true, trending: false, newArrival: true, bestSelling: false },
-        description: "Brushed-back fleece with raised grid seams.", options: { Colour: ["Black"], Size: ["S", "M", "L", "XL"] } },
+        description: "Brushed-back fleece with raised grid seams.", options: { Colour: ["Black"], Size: ["S", "M", "L", "XL"] },
+        images: [
+          { url: "/assets/eeac2757b9ee2e46.q.jpg", alt: "Grid Hoodie", isFeatured: true, format: "webp" },
+          { url: "/assets/67866d53aaeebcac.q.jpg", alt: "Grid Hoodie detail", isFeatured: false, format: "webp" }
+        ] },
       { id: "m3", name: "Aperture Cap", slug: "aperture-cap", sku: "ZYL-ACC-00001", categoryId: "c_acc", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["cap"], price: 150000, mrp: 0, cost: 70000,
         status: "published", labels: { featured: false, trending: false, newArrival: false, bestSelling: false },
-        description: "Six-panel cap with debossed ring logo.", options: { Colour: ["Black"], Size: ["One size"] } },
+        description: "Six-panel cap with debossed ring logo.", options: { Colour: ["Black"], Size: ["One size"] },
+        images: [
+          { url: "/assets/7f3fd1f72139111d.q.jpg", alt: "Aperture Cap", isFeatured: true, format: "webp" },
+          { url: "/assets/4a9712f500002e24.q.jpg", alt: "Aperture Cap detail", isFeatured: false, format: "webp" }
+        ] },
       { id: "m4", name: "Ledger Tote", slug: "ledger-tote", sku: "ZYL-BAG-00001", categoryId: "c_bags", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["bag"], price: 220000, mrp: 0, cost: 110000,
         status: "published", labels: { featured: true, trending: false, newArrival: false, bestSelling: false },
-        description: "Waxed canvas tote with reinforced base.", options: { Colour: ["Natural", "Black"], Size: ["One size"] } },
+        description: "Waxed canvas tote with reinforced base.", options: { Colour: ["Natural", "Black"], Size: ["One size"] },
+        images: [
+          { url: "/assets/e282ebdc1a55d0be.q.jpg", alt: "Ledger Tote", isFeatured: true, format: "webp" },
+          { url: "/assets/08accf483615b0df.q.jpg", alt: "Ledger Tote detail", isFeatured: false, format: "webp" }
+        ] },
       { id: "m5", name: "Contour Jacket", slug: "contour-jacket", sku: "ZYL-OUT-00001", categoryId: "c_out", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["jacket"], price: 720000, mrp: 860000, cost: 420000,
         status: "published", labels: { featured: true, trending: false, newArrival: false, bestSelling: false },
-        description: "Cropped shell with taped seams.", options: { Colour: ["Black"], Size: ["S", "M", "L"] } },
+        description: "Cropped shell with taped seams.", options: { Colour: ["Black"], Size: ["S", "M", "L"] },
+        images: [
+          { url: "/assets/57e8f8ec76e792b1.q.jpg", alt: "Contour Jacket", isFeatured: true, format: "webp" },
+          { url: "/assets/e2a028dd8bd0e7b5.q.jpg", alt: "Contour Jacket detail", isFeatured: false, format: "webp" }
+        ] },
       { id: "m6", name: "Frame Trousers", slug: "frame-trousers", sku: "ZYL-APP-00003", categoryId: "c_bottoms", brand: "Zylo",
         gender: "Unisex", season: "SS26", tags: ["trousers"], price: 300000, mrp: 360000, cost: 150000,
         status: "published", labels: { featured: false, trending: false, newArrival: false, bestSelling: false },
-        description: "Straight leg with articulated knee.", options: { Colour: ["Black"], Size: ["30", "32", "34"] } }
+        description: "Straight leg with articulated knee.", options: { Colour: ["Black"], Size: ["30", "32", "34"] },
+        images: [
+          { url: "/assets/9a83a5f92f7a34f6.q.jpg", alt: "Frame Trousers", isFeatured: true, format: "webp" },
+          { url: "/assets/19eee9f8e07093fd.q.jpg", alt: "Frame Trousers detail", isFeatured: false, format: "webp" }
+        ] }
     ];
   },
   sales: function () {
@@ -310,6 +334,18 @@ export function loadDB() {
         db.returns = [];
         modified = true;
       }
+      if (db.products && db.products.length) {
+        var defProds = DEFAULTS.products();
+        db.products.forEach(function (p) {
+          if (!p.images || !p.images.length) {
+            var def = defProds.find(function (dp) { return dp.id === p.id || dp.sku === p.sku || dp.slug === p.slug; });
+            if (def && def.images && def.images.length) {
+              p.images = def.images;
+              modified = true;
+            }
+          }
+        });
+      }
       if (modified) saveDB(db);
       return db;
     }
@@ -317,6 +353,33 @@ export function loadDB() {
   var fresh = freshDB();
   saveDB(fresh);
   return fresh;
+}
+
+export function getProductThumbnail(p) {
+  if (!p) return '/assets/98eab38550301ca9.q.jpg';
+  if (p.images && p.images.length > 0) {
+    var feat = p.images.find(function (img) { return img && (img.isFeatured || img.featured); }) || p.images[0];
+    if (typeof feat === 'string') return feat;
+    if (feat && feat.url) return feat.url;
+    if (feat && feat.src) return feat.src;
+  }
+  var idMap = {
+    m1: '/assets/ea97fe30fd8d1dfc.q.jpg',
+    m2: '/assets/eeac2757b9ee2e46.q.jpg',
+    m3: '/assets/7f3fd1f72139111d.q.jpg',
+    m4: '/assets/e282ebdc1a55d0be.q.jpg',
+    m5: '/assets/57e8f8ec76e792b1.q.jpg',
+    m6: '/assets/9a83a5f92f7a34f6.q.jpg'
+  };
+  if (p.id && idMap[p.id]) return idMap[p.id];
+  var name = (p.name || '').toLowerCase();
+  if (name.includes('tee') || name.includes('shirt') || name.includes('knit')) return '/assets/98eab38550301ca9.q.jpg';
+  if (name.includes('hoodie') || name.includes('sweat')) return '/assets/eeac2757b9ee2e46.q.jpg';
+  if (name.includes('jacket') || name.includes('coat') || name.includes('bomber') || name.includes('blazer')) return '/assets/57e8f8ec76e792b1.q.jpg';
+  if (name.includes('trouser') || name.includes('pant') || name.includes('cargo') || name.includes('denim') || name.includes('legging')) return '/assets/2461720fa204607a.q.jpg';
+  if (name.includes('cap') || name.includes('hat')) return '/assets/7f3fd1f72139111d.q.jpg';
+  if (name.includes('bag') || name.includes('tote')) return '/assets/e282ebdc1a55d0be.q.jpg';
+  return '/assets/98eab38550301ca9.q.jpg';
 }
 
 export function saveDB(db) {
