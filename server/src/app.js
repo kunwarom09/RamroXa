@@ -17,11 +17,15 @@ export function createApp() {
   // Trust proxy for rate limiting / secure cookies behind reverse proxy
   app.set('trust proxy', 1);
 
-  // Security Headers (configured to allow Swagger UI)
+  // Security Headers (configured to protect API and allow Swagger UI)
   app.use(
     helmet({
       contentSecurityPolicy: false,
-      crossOriginResourcePolicy: { policy: 'cross-origin' }
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      xContentTypeOptions: true,
+      xDnsPrefetchControl: { allow: false }
     })
   );
 

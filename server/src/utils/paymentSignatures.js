@@ -1,11 +1,30 @@
 import crypto from 'crypto';
 import env from '../config/env.js';
 
+const DEFAULT_ESEWA_TEST_SECRET = '8gBm/:&EnhH.1/q';
+const DEFAULT_FONEPAY_TEST_SECRET = 'FPAYTEST';
+
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+export function timingSafeEqualStr(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a, 'utf-8');
+  const bufB = Buffer.from(b, 'utf-8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 /**
  * eSewa v2.0 Signature Generator
  * Message format: "total_amount=100,transaction_uuid=11-201-13,product_code=EPAYTEST"
  */
-export function generateEsewaSignature({ total_amount, transaction_uuid, product_code, secret = env.ESEWA_SECRET }) {
+export function generateEsewaSignature({
+  total_amount,
+  transaction_uuid,
+  product_code,
+  secret = env.ESEWA_SECRET || DEFAULT_ESEWA_TEST_SECRET
+}) {
   const message = `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(message);
@@ -14,9 +33,9 @@ export function generateEsewaSignature({ total_amount, transaction_uuid, product
 
 /**
  * eSewa v2.0 Signature Verifier
- * Validates base64 encoded response string from eSewa
+ * Validates base64 encoded response string from eSewa using constant-time comparison
  */
-export function verifyEsewaPayload(encodedResponse, secret = env.ESEWA_SECRET) {
+export function verifyEsewaPayload(encodedResponse, secret = env.ESEWA_SECRET || DEFAULT_ESEWA_TEST_SECRET) {
   try {
     const decodedStr = Buffer.from(encodedResponse, 'base64').toString('utf-8');
     const data = JSON.parse(decodedStr);
@@ -36,7 +55,7 @@ export function verifyEsewaPayload(encodedResponse, secret = env.ESEWA_SECRET) {
     hmac.update(message);
     const expectedSignature = hmac.digest('base64');
 
-    const isValid = signature === expectedSignature;
+    const isValid = timingSafeEqualStr(signature, expectedSignature);
     return { isValid, data };
   } catch (err) {
     return { isValid: false, data: null, error: err.message };
@@ -46,19 +65,34 @@ export function verifyEsewaPayload(encodedResponse, secret = env.ESEWA_SECRET) {
 /**
  * Fonepay Verification Hash Generator (HMAC-SHA512)
  */
-export function generateFonepayHash({ prn, amount, merchantCode, secret = env.FONEPAY_SECRET }) {
+export function generateFonepayHash({
+  prn,
+  amount,
+  merchantCode,
+  secret = env.FONEPAY_SECRET || DEFAULT_FONEPAY_TEST_SECRET
+}) {
   const message = `${merchantCode},${prn},${amount}`;
   const hmac = crypto.createHmac('sha512', secret);
   hmac.update(message);
   return hmac.digest('hex');
 }
 
-export function verifyFonepayHash({ prn, amount, merchantCode, hash, secret = env.FONEPAY_SECRET }) {
+/**
+ * Fonepay Verification Hash Verifier using constant-time comparison
+ */
+export function verifyFonepayHash({
+  prn,
+  amount,
+  merchantCode,
+  hash,
+  secret = env.FONEPAY_SECRET || DEFAULT_FONEPAY_TEST_SECRET
+}) {
   const expected = generateFonepayHash({ prn, amount, merchantCode, secret });
-  return expected.toLowerCase() === (hash || '').toLowerCase();
+  return timingSafeEqualStr((expected || '').toLowerCase(), (hash || '').toLowerCase());
 }
 
 export default {
+  timingSafeEqualStr,
   generateEsewaSignature,
   verifyEsewaPayload,
   generateFonepayHash,

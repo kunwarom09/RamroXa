@@ -5,7 +5,7 @@ import { authLimiter } from '../middleware/rateLimit.js';
 
 export const router = express.Router();
 
-router.post('/register', register);
+router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
 router.post('/admin/login', authLimiter, adminLogin);
 router.post('/refresh', refresh);

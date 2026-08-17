@@ -4,6 +4,8 @@ import { Inventory } from '../models/Inventory.js';
 import { Category } from '../models/Category.js';
 import { ApiError } from '../utils/ApiError.js';
 
+import { escapeRegex } from '../utils/regex.js';
+
 export async function listProducts(params = {}) {
   const {
     category,
@@ -62,9 +64,9 @@ export async function listProducts(params = {}) {
     if (maxPrice !== undefined) query.basePrice.$lte = Number(maxPrice);
   }
 
-  // Text search
+  // Text search (ReDoS protected)
   if (q && q.trim()) {
-    const term = q.trim();
+    const term = escapeRegex(q.trim());
     query.$or = [
       { name: { $regex: term, $options: 'i' } },
       { tags: { $regex: term, $options: 'i' } },

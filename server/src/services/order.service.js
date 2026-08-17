@@ -106,7 +106,8 @@ export async function createOrder(data) {
       throw ApiError.badRequest(`Product '${item.name || item.productId}' is not available.`);
     }
 
-    const unitPrice = item.unitPrice || (v && v.price != null ? v.price : p.basePrice || p.price || 0);
+    // Server-enforced pricing: Strictly derive price from database records (prevent price tampering)
+    const unitPrice = v && v.price != null ? v.price : (p.basePrice != null ? p.basePrice : p.price || 0);
     const variantLabel = v && v.options ? Object.values(v.options).join(' / ') : (item.size || 'Default');
 
     orderLineItems.push({
@@ -280,7 +281,7 @@ export async function getOrderById({ orderId, user, guestToken, orderNo }) {
     throw ApiError.notFound('Order not found.');
   }
 
-  // Check authorization
+  // Check authorization (prevent IDOR)
   if (user) {
     if (user.role !== 'admin' && user.role !== 'staff') {
       if (order.user && order.user.toString() !== user._id.toString()) {
@@ -288,14 +289,10 @@ export async function getOrderById({ orderId, user, guestToken, orderNo }) {
       }
     }
   } else {
-    // Guest scope: Must match guestToken OR orderNo matching
-    if (guestToken && order.guestToken === guestToken) {
-      return order;
+    // Unauthenticated guest scope: Must provide matching guest token
+    if (!guestToken || order.guestToken !== guestToken) {
+      throw ApiError.forbidden('Valid order verification token required to view this order.');
     }
-    if (orderNo && order.orderNo === orderNo) {
-      return order;
-    }
-    throw ApiError.forbidden('Order verification required to view this order.');
   }
 
   return order;

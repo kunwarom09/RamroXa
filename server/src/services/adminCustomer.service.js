@@ -5,16 +5,18 @@ import { Address } from '../models/Address.js';
 import { Review } from '../models/Review.js';
 import { Wishlist } from '../models/Wishlist.js';
 import { ApiError } from '../utils/ApiError.js';
+import { escapeRegex } from '../utils/regex.js';
 
 export async function listAdminCustomers(query = {}) {
   const { q, page = 1, limit = 50 } = query;
   const filter = { role: 'customer' };
 
   if (q && q.trim()) {
+    const escaped = escapeRegex(q.trim());
     filter.$or = [
-      { name: { $regex: q.trim(), $options: 'i' } },
-      { email: { $regex: q.trim(), $options: 'i' } },
-      { phone: { $regex: q.trim(), $options: 'i' } }
+      { name: { $regex: escaped, $options: 'i' } },
+      { email: { $regex: escaped, $options: 'i' } },
+      { phone: { $regex: escaped, $options: 'i' } }
     ];
   }
 

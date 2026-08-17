@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Product, Variant, Inventory, StockMove, Category } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
+import { escapeRegex } from '../utils/regex.js';
 import crypto from 'crypto';
 
 export async function findProduct(productId) {
@@ -25,10 +26,11 @@ export async function listAdminProducts(query = {}) {
   }
 
   if (q && q.trim()) {
+    const escaped = escapeRegex(q.trim());
     filter.$or = [
-      { name: { $regex: q.trim(), $options: 'i' } },
-      { sku: { $regex: q.trim(), $options: 'i' } },
-      { brand: { $regex: q.trim(), $options: 'i' } }
+      { name: { $regex: escaped, $options: 'i' } },
+      { sku: { $regex: escaped, $options: 'i' } },
+      { brand: { $regex: escaped, $options: 'i' } }
     ];
   }
 

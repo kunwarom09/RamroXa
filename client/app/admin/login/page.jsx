@@ -8,8 +8,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTarget = searchParams ? searchParams.get('redirect') || '/admin/dashboard' : '/admin/dashboard';
 
-  const [email, setEmail] = useState('admin@zylo.com.np');
-  const [password, setPassword] = useState('AdminPassword123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -36,7 +36,9 @@ function LoginForm() {
           <label htmlFor="email">Email</label>
           <input
             id="email"
-            type="text"
+            type="email"
+            placeholder="admin@zylo.com.np"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -46,6 +48,8 @@ function LoginForm() {
           <input
             id="password"
             type="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -60,7 +64,7 @@ function LoginForm() {
         </button>
       </form>
       <p className="hint">
-        Sign-in opens the admin dashboard. Default: admin@zylo.com.np / AdminPassword123!
+        Sign in to access the Zylo admin management dashboard.
       </p>
     </div>
   );

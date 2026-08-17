@@ -3,6 +3,7 @@ import { Review } from '../models/Review.js';
 import { Product } from '../models/Product.js';
 import { Order } from '../models/Order.js';
 import { ApiError } from '../utils/ApiError.js';
+import { escapeRegex } from '../utils/regex.js';
 
 export async function findProductDoc(productIdOrSlug) {
   if (!productIdOrSlug) return null;
@@ -199,10 +200,11 @@ export async function listAdminReviews(query = {}) {
   }
 
   if (q && q.trim()) {
+    const escaped = escapeRegex(q.trim());
     filter.$or = [
-      { userName: { $regex: q.trim(), $options: 'i' } },
-      { comment: { $regex: q.trim(), $options: 'i' } },
-      { title: { $regex: q.trim(), $options: 'i' } }
+      { userName: { $regex: escaped, $options: 'i' } },
+      { comment: { $regex: escaped, $options: 'i' } },
+      { title: { $regex: escaped, $options: 'i' } }
     ];
   }
 

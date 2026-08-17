@@ -1,6 +1,7 @@
 import { Order, Payment, Inventory, StockMove } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { findOrder, updateFulfillmentStatus } from './order.service.js';
+import { escapeRegex } from '../utils/regex.js';
 
 export async function listAdminOrders(query = {}) {
   const { q, paymentStatus, fulfillmentStatus, page = 1, limit = 50 } = query;
@@ -15,7 +16,7 @@ export async function listAdminOrders(query = {}) {
   }
 
   if (q && q.trim()) {
-    const search = q.trim();
+    const search = escapeRegex(q.trim());
     filter.$or = [
       { orderNo: { $regex: search, $options: 'i' } },
       { guestEmail: { $regex: search, $options: 'i' } },

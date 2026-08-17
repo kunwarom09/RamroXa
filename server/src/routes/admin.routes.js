@@ -57,6 +57,7 @@ router.use(requireAuth, requireAdmin);
 // Categories
 router.get('/categories', listCategories);
 router.post('/categories', createCategory);
+router.put('/categories/:id', updateCategory);
 router.patch('/categories/:id', updateCategory);
 router.delete('/categories/:id', deleteCategory);
 
@@ -66,6 +67,7 @@ router.post('/products/populate', populateProducts);
 router.get('/products', listProducts);
 router.post('/products', createProduct);
 router.get('/products/:id', getProduct);
+router.put('/products/:id', updateProduct);
 router.patch('/products/:id', updateProduct);
 router.delete('/products/:id', deleteProduct);
 
@@ -78,6 +80,7 @@ router.get('/inventory/moves', listStockMoves);
 // Orders & Fulfillment
 router.get('/orders', listOrders);
 router.get('/orders/:id', getOrder);
+router.put('/orders/:id/status', updateOrderStatus);
 router.patch('/orders/:id/status', updateOrderStatus);
 router.post('/orders/:id/refund', refundOrder);
 
@@ -85,11 +88,13 @@ router.post('/orders/:id/refund', refundOrder);
 router.get('/coupons', listAdminCoupons);
 router.post('/coupons', createAdminCoupon);
 router.get('/coupons/:id', getAdminCoupon);
+router.put('/coupons/:id', updateAdminCoupon);
 router.patch('/coupons/:id', updateAdminCoupon);
 router.delete('/coupons/:id', deleteAdminCoupon);
 
 // Reviews Moderation
 router.get('/reviews', listAdminReviews);
+router.put('/reviews/:id/status', updateAdminReviewStatus);
 router.patch('/reviews/:id/status', updateAdminReviewStatus);
 router.delete('/reviews/:id', deleteAdminReview);
 

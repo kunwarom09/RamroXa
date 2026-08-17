@@ -31,12 +31,12 @@ export async function connectDB(uri = env.MONGODB_URI) {
         isConnected = true;
         logger.info('Connected to embedded MongoDB dev server');
 
-        // Auto-seed initial categories, warehouses and admin user
-        const { seedCategoriesAndWarehouses } = await import('../scripts/seed.js');
+        // Auto-seed initial categories, warehouses, products, inventory and admin user
+        const { seedDatabase } = await import('../scripts/seed.js');
         const { createAdminUser } = await import('../scripts/createAdmin.js');
-        await seedCategoriesAndWarehouses();
+        await seedDatabase();
         await createAdminUser('admin@zylo.com.np', 'AdminPassword123!', 'Super Admin');
-        logger.info('✅ Embedded database initialized with admin (admin@zylo.com.np / AdminPassword123!)');
+        logger.info('✅ Embedded database initialized with products and admin (admin@zylo.com.np / AdminPassword123!)');
         return conn.connection;
       } catch (memErr) {
         logger.error({ err: memErr.message }, 'Failed to initialize embedded MongoDB');

@@ -15,7 +15,16 @@ export async function register(data) {
     throw ApiError.badRequest('Email, password, and name are required.');
   }
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw ApiError.badRequest('A valid email address is required.');
+  }
+
+  if (typeof password !== 'string' || password.length < 8) {
+    throw ApiError.badRequest('Password must be at least 8 characters long.');
+  }
+
+  const existing = await User.findOne({ email: email.toLowerCase().trim() });
   if (existing) {
     throw ApiError.conflict('An account with this email already exists.');
   }

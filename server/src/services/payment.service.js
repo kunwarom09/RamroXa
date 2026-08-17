@@ -31,6 +31,17 @@ export async function initiateEsewaPayment({ orderId, user, guestToken }) {
     throw ApiError.badRequest('This order has already been paid.');
   }
 
+  // Validate authorization
+  if (order.user) {
+    if (!user || (user.role !== 'admin' && user.role !== 'staff' && order.user.toString() !== user._id.toString())) {
+      throw ApiError.forbidden('Access denied to initiate payment for this order.');
+    }
+  } else if (order.guestToken) {
+    if (!guestToken || order.guestToken !== guestToken) {
+      throw ApiError.forbidden('Valid guest token required to initiate payment.');
+    }
+  }
+
   const merchantCode = env.ESEWA_MERCHANT_CODE || 'EPAYTEST';
   const amountInNpr = (order.grandTotal / 100).toFixed(2);
   const transactionUuid = `${order.orderNo}-${Date.now().toString(36)}`;
@@ -162,6 +173,17 @@ export async function initiateFonepayPayment({ orderId, user, guestToken }) {
 
   if (order.paymentStatus === 'paid') {
     throw ApiError.badRequest('This order has already been paid.');
+  }
+
+  // Validate authorization
+  if (order.user) {
+    if (!user || (user.role !== 'admin' && user.role !== 'staff' && order.user.toString() !== user._id.toString())) {
+      throw ApiError.forbidden('Access denied to initiate payment for this order.');
+    }
+  } else if (order.guestToken) {
+    if (!guestToken || order.guestToken !== guestToken) {
+      throw ApiError.forbidden('Valid guest token required to initiate payment.');
+    }
   }
 
   const merchantCode = env.FONEPAY_MERCHANT_CODE || 'FPAYTEST';

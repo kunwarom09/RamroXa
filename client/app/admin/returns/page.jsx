@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { money, today } from '../../../services/formatters';
+import { money, today, docSubtotal, docVat, docTotal } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 

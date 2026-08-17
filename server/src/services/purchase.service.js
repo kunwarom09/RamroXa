@@ -1,6 +1,7 @@
 import { Purchase } from '../models/Purchase.js';
 import { ApiError } from '../utils/ApiError.js';
 import { VAT_RATE } from '../utils/money.js';
+import { escapeRegex } from '../utils/regex.js';
 
 export async function listPurchases(query = {}) {
   const { fromDate, toDate, supplier, q, page = 1, limit = 50 } = query;
@@ -12,15 +13,16 @@ export async function listPurchases(query = {}) {
     if (toDate) filter.date.$lte = new Date(toDate);
   }
 
-  if (supplier) {
-    filter.supplier = { $regex: supplier.trim(), $options: 'i' };
+  if (supplier && supplier.trim()) {
+    filter.supplier = { $regex: escapeRegex(supplier.trim()), $options: 'i' };
   }
 
   if (q && q.trim()) {
+    const escaped = escapeRegex(q.trim());
     filter.$or = [
-      { billNo: { $regex: q.trim(), $options: 'i' } },
-      { supplier: { $regex: q.trim(), $options: 'i' } },
-      { head: { $regex: q.trim(), $options: 'i' } }
+      { billNo: { $regex: escaped, $options: 'i' } },
+      { supplier: { $regex: escaped, $options: 'i' } },
+      { head: { $regex: escaped, $options: 'i' } }
     ];
   }
 

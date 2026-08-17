@@ -1,5 +1,6 @@
 import { Coupon } from '../models/Coupon.js';
 import { ApiError } from '../utils/ApiError.js';
+import { escapeRegex } from '../utils/regex.js';
 
 export function calculateCouponDiscount(coupon, subtotal) {
   let discount = 0;
@@ -142,9 +143,10 @@ export async function listAdminCoupons(query = {}) {
   }
 
   if (q && q.trim()) {
+    const escaped = escapeRegex(q.trim());
     filter.$or = [
-      { code: { $regex: q.trim(), $options: 'i' } },
-      { description: { $regex: q.trim(), $options: 'i' } }
+      { code: { $regex: escaped, $options: 'i' } },
+      { description: { $regex: escaped, $options: 'i' } }
     ];
   }
 

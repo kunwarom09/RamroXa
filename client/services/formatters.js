@@ -43,3 +43,44 @@ export function getProductThumbnail(p) {
   if (p.img1) return p.img1.startsWith('http') || p.img1.startsWith('/') ? p.img1 : `/assets/${p.img1}.q.jpg`;
   return '/assets/98eab38550301ca9.q.jpg';
 }
+
+export function docSubtotal(doc) {
+  if (!doc) return 0;
+  if (doc.subtotal != null) return Number(doc.subtotal) || 0;
+  if (doc.taxable != null) return Number(doc.taxable) || 0;
+  if (doc.items && Array.isArray(doc.items) && doc.items.length) {
+    return doc.items.reduce((sum, i) => sum + (Number(i.qty || 0) * Number(i.rate || 0)), 0);
+  }
+  return Number(doc.total || doc.grandTotal || 0);
+}
+
+export function docVat(doc, vatRate = 13) {
+  if (!doc) return 0;
+  if (doc.vat != null) return Number(doc.vat) || 0;
+  if (doc.vatAmount != null) return Number(doc.vatAmount) || 0;
+  if (doc.vatTotal != null) return Math.round(doc.vatTotal / 100);
+  if (doc.vatable === false) return 0;
+  const rate = Number(vatRate) || 13;
+  return Math.round((docSubtotal(doc) * rate) / 100);
+}
+
+export function docTotal(doc, vatRate = 13) {
+  if (!doc) return 0;
+  if (doc.total != null) return Number(doc.total) || 0;
+  if (doc.totalAmount != null) return Number(doc.totalAmount) || 0;
+  if (doc.grandTotal != null) return Math.round(doc.grandTotal / 100);
+  return docSubtotal(doc) + docVat(doc, vatRate);
+}
+
+export default {
+  money,
+  moneyNpr,
+  fromPaisa,
+  slugify,
+  today,
+  offsetDate,
+  getProductThumbnail,
+  docSubtotal,
+  docVat,
+  docTotal
+};
