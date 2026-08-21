@@ -65,12 +65,31 @@ button { font-family: inherit; color: var(--primary); }
 .hint { font-size: 12px; color: var(--muted-foreground); margin-top: 20px; }
 
 /* ---------- Shell ---------- */
-.shell { display: flex; min-height: 100vh; background: var(--canvas); color: var(--primary); }
+.shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--canvas);
+  color: var(--primary);
+  align-items: stretch;
+  position: relative;
+}
 .shell.hidden { display: none; }
 .sidebar {
-  width: var(--sidebar-w); flex-shrink: 0; background: var(--surface);
-  border-right: 1px solid var(--border); padding: 8px; position: sticky; top: 0;
-  height: 100vh; overflow-y: auto; display: flex; flex-direction: column;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  z-index: 10;
 }
 .sidebar-logo { font-weight: 500; padding: 12px 12px 16px; font-size: 16px; letter-spacing: 0.05em; }
 .sidebar-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-foreground); padding: 12px 12px 4px; }
@@ -184,6 +203,107 @@ tfoot td { padding: 10px 14px; border-top: 2px solid var(--border); font-weight:
 .tag-pill button { border: none; background: none; cursor: pointer; color: inherit; font-size: 12px; padding: 0; }
 .tag-input > input { border: none; outline: none; background: none; font-size: 13px; flex: 1; min-width: 100px; color: var(--primary); font-family: inherit; }
 
+/* ---------- Bulk Tag Popover / Modal ---------- */
+.tag-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.tag-modal {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tag-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tag-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tag-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.tag-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.tag-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted-foreground);
+  transition: all 0.12s;
+  user-select: none;
+}
+
+.tag-chip-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tag-chip-btn.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.tag-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--canvas);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 /* ---------- Preview (storefront) ---------- */
 .preview-toolbar { display: flex; justify-content: space-between; margin-bottom: 14px; }
 .device-toggle { display: flex; gap: 2px; border: 1px solid var(--border); border-radius: 8px; padding: 2px; }
@@ -251,8 +371,226 @@ tfoot td { padding: 10px 14px; border-top: 2px solid var(--border); font-weight:
 .nav-item .ic { display: flex; align-items: center; justify-content: center; width: 17px; }
 .btn .hi, .search-box .hi { flex-shrink: 0; }
 .rte-toolbar button { display: flex; align-items: center; justify-content: center; }
-.device-toggle button { display: flex; align-items: center; justify-content: center; }
 .hb-row .hi { color: var(--muted-foreground); }
+
+/* ---------- Variant & SubVariant Management (Pixel Accurate to Design) ---------- */
+.variant-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: border-color .15s;
+}
+html.dark .variant-card {
+  background: #171717;
+  border-color: #2c2c2c;
+}
+.variant-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.input-variant-name {
+  width: 260px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .input-variant-name {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.variant-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Value card (inner block per value) */
+.value-card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+html.dark .value-card {
+  background: #1c1c1c;
+  border-color: #2a2a2a;
+}
+.value-row-1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.val-name {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .val-name {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.val-price-group {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  width: 170px;
+  gap: 6px;
+}
+html.dark .val-price-group {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.val-currency-prefix {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  user-select: none;
+}
+.val-amount {
+  border: none !important;
+  background: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  width: 100% !important;
+  font-size: 13px !important;
+  color: var(--primary) !important;
+}
+.btn-add-subset {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.val-remove-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.val-remove-btn:hover {
+  background: var(--muted);
+  color: var(--danger);
+}
+
+.value-row-2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.val-image {
+  flex: 2;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .val-image {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.val-stock {
+  width: 90px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+  text-align: center;
+}
+html.dark .val-stock {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.val-sku {
+  flex: 1.5;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .val-sku {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.val-status {
+  width: 120px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .val-status {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+
+/* Subset Container */
+.subsets-container {
+  margin-top: 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+.subset-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+html.dark .subset-card {
+  background: #161616;
+  border-color: #282828;
+}
+
+@media (max-width: 768px) {
+  .value-row-1, .value-row-2 {
+    flex-wrap: wrap;
+  }
+  .input-variant-name, .val-price-group, .val-stock, .val-status {
+    width: 100%;
+  }
+}
 
 @media print {
   .sidebar, .topbar, .preview-toolbar, .toolbar, .no-print { display: none !important; }

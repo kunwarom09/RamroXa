@@ -32,6 +32,11 @@ export const listProducts = asyncHandler(async (req, res) => {
   res.status(200).json({ data: result });
 });
 
+export const listProductTags = asyncHandler(async (req, res) => {
+  const tags = await adminProductService.getAllDistinctTags();
+  res.status(200).json({ data: { tags } });
+});
+
 export const getProduct = asyncHandler(async (req, res) => {
   const product = await adminProductService.getAdminProductById(req.params.id);
   res.status(200).json({ data: { product } });

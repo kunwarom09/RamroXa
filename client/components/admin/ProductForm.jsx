@@ -7,46 +7,7 @@ import { convertToWebP } from '../../services/imageProcessor';
 import Icon from './Icons';
 import ImageEditorModal from './ImageEditorModal';
 
-const VARIANT_STATUSES = ['active', 'draft', 'disabled', 'discontinued', 'archived'];
-const VARIANT_STATUS_LABEL = {
-  active: 'Active',
-  draft: 'Draft',
-  disabled: 'Disabled',
-  discontinued: 'Discontinued',
-  archived: 'Archived'
-};
-
 const shortCode = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
-
-const variantSkuFor = (masterSku, combo, names) => {
-  const parts = [masterSku];
-  (names || Object.keys(combo || {})).forEach((n) => {
-    if (combo[n]) parts.push(shortCode(combo[n]));
-  });
-  return parts.join('-');
-};
-
-const variantCombos = (opts) => {
-  const names = Object.keys(opts || {});
-  if (!names.length) return [{}];
-  let combos = [{}];
-  names.forEach((n) => {
-    const next = [];
-    const vals = opts[n] || [];
-    combos.forEach((base) => {
-      vals.forEach((v) => {
-        next.push({ ...base, [n]: v });
-      });
-    });
-    combos = next;
-  });
-  return combos;
-};
-
-const variantLabel = (v) => {
-  const parts = Object.values(v.options || {});
-  return parts.join(' / ') || 'Default';
-};
 
 export default function ProductForm({ productId = null }) {
   const router = useRouter();
@@ -81,8 +42,25 @@ export default function ProductForm({ productId = null }) {
     bestSelling: false,
     images: []
   });
-  const [draftOptions, setDraftOptions] = useState({ Colour: ['Black'], Size: ['One size'] });
-  const [matrixState, setMatrixState] = useState({});
+
+  const [variantGroups, setVariantGroups] = useState([
+    {
+      id: 'vg_1',
+      name: 'Size',
+      values: [
+        {
+          id: 'val_1',
+          name: '',
+          amount: '',
+          image: '',
+          stock: 0,
+          sku: '',
+          status: 'Draft',
+          subsets: []
+        }
+      ]
+    }
+  ]);
 
   // Image Studio state
   const [editingImageIdx, setEditingImageIdx] = useState(null);
@@ -149,27 +127,44 @@ export default function ProductForm({ productId = null }) {
               images: Array.isArray(target.images) ? target.images : []
             });
 
-            if (target.options && Object.keys(target.options).length > 0) {
-              setDraftOptions(JSON.parse(JSON.stringify(target.options)));
-            }
-
+            // Populate variant groups from existing variants
             const existingVars = (target.variants || []).concat(vars.filter(v => v.productId === target.id));
-            const matrix = {};
-            existingVars.forEach((v) => {
-              const entry = {
-                barcode: v.barcode || '',
-                price: v.price != null ? Math.round(v.price / 100) : '',
-                status: v.status || 'active',
-                published: v.published !== false,
-                selected: false
-              };
-              if (v.sku) matrix[v.sku] = entry;
-              if (v.options) {
-                const genSku = variantSkuFor(target.sku || '', v.options, Object.keys(v.options));
-                matrix[genSku] = entry;
+            if (existingVars.length > 0) {
+              const topVars = existingVars.filter(v => !v.parentVariantId);
+              const subVars = existingVars.filter(v => !!v.parentVariantId);
+              const subsByParent = {};
+              subVars.forEach(sv => {
+                if (!subsByParent[sv.parentVariantId]) subsByParent[sv.parentVariantId] = [];
+                subsByParent[sv.parentVariantId].push(sv);
+              });
+
+              if (topVars.length) {
+                setVariantGroups([
+                  {
+                    id: 'vg_' + target.id,
+                    name: 'Size',
+                    values: topVars.map(v => ({
+                      id: v.id,
+                      name: v.name || '',
+                      amount: v.price != null ? Math.round(v.price / 100) : '',
+                      image: v.image || '',
+                      stock: v.stock || 0,
+                      sku: v.sku || '',
+                      status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
+                      subsets: (subsByParent[v.id] || []).map(sv => ({
+                        id: sv.id,
+                        name: sv.name || '',
+                        amount: sv.price != null ? Math.round(sv.price / 100) : '',
+                        image: sv.image || '',
+                        stock: sv.stock || 0,
+                        sku: sv.sku || '',
+                        status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft'))
+                      }))
+                    }))
+                  }
+                ]);
               }
-            });
-            setMatrixState(matrix);
+            }
           }
         } else {
           const catId = cats[0]?.id || '';
@@ -223,10 +218,9 @@ export default function ProductForm({ productId = null }) {
         images: [...(prev.images || []), ...newImages]
       }));
 
-      showToast(`Uploaded ${files.length} image(s) in WebP format (<200KB)`);
+      showToast(`Uploaded & converted ${processed.length} image(s) to WebP (<200KB)`);
     } catch (err) {
-      console.error(err);
-      alert('Error processing images. Please try again.');
+      alert('Image processing failed: ' + err.message);
     } finally {
       setUploadingImages(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -241,119 +235,205 @@ export default function ProductForm({ productId = null }) {
         isFeatured: i === idx
       }))
     }));
-    showToast('Featured hero image set');
   };
 
   const handleDeleteImage = (idx) => {
     setFormData((prev) => {
-      const copy = (prev.images || []).filter((_, i) => i !== idx);
-      if (copy.length > 0 && !copy.some((img) => img.isFeatured)) {
-        copy[0].isFeatured = true;
+      const updated = (prev.images || []).filter((_, i) => i !== idx);
+      if (updated.length && !updated.some((img) => img.isFeatured)) {
+        updated[0].isFeatured = true;
       }
-      return { ...prev, images: copy };
+      return { ...prev, images: updated };
     });
   };
 
-  const handleUpdateImageDetails = (idx, field, val) => {
-    setFormData((prev) => {
-      const copy = [...(prev.images || [])];
-      copy[idx] = { ...copy[idx], [field]: val };
-      return { ...prev, images: copy };
-    });
-  };
-
-  const handleSaveEditedImage = (updatedImg) => {
+  const handleSaveEditedImage = (editedUrl) => {
     if (editingImageIdx === null) return;
     setFormData((prev) => {
-      const copy = [...(prev.images || [])];
-      copy[editingImageIdx] = updatedImg;
-      return { ...prev, images: copy };
+      const updated = [...(prev.images || [])];
+      if (updated[editingImageIdx]) {
+        updated[editingImageIdx] = {
+          ...updated[editingImageIdx],
+          url: editedUrl
+        };
+      }
+      return { ...prev, images: updated };
     });
-    showToast('Image transformed and saved in WebP');
+    setEditingImageIdx(null);
+    showToast('Image updated');
   };
 
-  // Options helpers
-  const handleAddOptionSet = () => {
-    let base = 'Option', i = 1;
-    while (draftOptions[`${base} ${i}`]) i++;
-    setDraftOptions((prev) => ({ ...prev, [`${base} ${i}`]: [] }));
+  // Variant & SubVariant Management Handlers
+  const handleAddVariantGroup = () => {
+    const masterSku = formData.sku || 'SKU';
+    const vgCount = variantGroups.length + 1;
+    setVariantGroups(prev => [
+      ...prev,
+      {
+        id: 'vg_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: '',
+        values: [
+          {
+            id: 'val_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            name: '',
+            amount: '',
+            image: '',
+            stock: 0,
+            sku: `${masterSku}-V${vgCount}`,
+            status: 'Draft',
+            subsets: []
+          }
+        ]
+      }
+    ]);
   };
 
-  const handleRenameOption = (oldName, newName) => {
-    const trimmed = (newName || '').trim();
-    if (!trimmed || trimmed === oldName || draftOptions[trimmed]) return;
-    setDraftOptions((prev) => {
-      const next = {};
-      Object.keys(prev).forEach((k) => {
-        next[k === oldName ? trimmed : k] = prev[k];
-      });
+  const handleDuplicateVariantGroup = (vgIdx) => {
+    setVariantGroups(prev => {
+      const target = prev[vgIdx];
+      if (!target) return prev;
+      const cloned = JSON.parse(JSON.stringify(target));
+      cloned.id = 'vg_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      cloned.name = target.name ? `${target.name} (Copy)` : 'Variant (Copy)';
+      cloned.values = (cloned.values || []).map(val => ({
+        ...val,
+        id: 'val_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        sku: val.sku ? `${val.sku}-COPY` : '',
+        subsets: (val.subsets || []).map(sub => ({
+          ...sub,
+          id: 'sub_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          sku: sub.sku ? `${sub.sku}-COPY` : ''
+        }))
+      }));
+      const next = [...prev];
+      next.splice(vgIdx + 1, 0, cloned);
+      return next;
+    });
+    showToast('Variant duplicated');
+  };
+
+  const handleDeleteVariantGroup = (vgIdx) => {
+    setVariantGroups(prev => prev.filter((_, idx) => idx !== vgIdx));
+    showToast('Variant removed');
+  };
+
+  const handleUpdateVariantGroup = (vgIdx, patch) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      next[vgIdx] = { ...next[vgIdx], ...patch };
       return next;
     });
   };
 
-  const handleSetOptionValues = (name, csv) => {
-    const vals = csv.split(',').map((s) => s.trim()).filter(Boolean);
-    setDraftOptions((prev) => ({ ...prev, [name]: vals }));
-  };
-
-  const handleRemoveOption = (name) => {
-    setDraftOptions((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      return copy;
+  const handleAddValue = (vgIdx) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const masterSku = formData.sku || 'SKU';
+      const count = (vg.values || []).length + 1;
+      const newVal = {
+        id: 'val_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: '',
+        amount: '',
+        image: '',
+        stock: 0,
+        sku: `${masterSku}-V${count}`,
+        status: 'Draft',
+        subsets: []
+      };
+      vg.values = [...(vg.values || []), newVal];
+      next[vgIdx] = vg;
+      return next;
     });
   };
 
-  const combos = variantCombos(draftOptions);
-  const names = Object.keys(draftOptions);
-
-  const matrixRows = combos.map((combo) => {
-    const sku = variantSkuFor(formData.sku || 'SKU', combo, names);
-    const existingState = matrixState[sku] || {};
-    return {
-      sku,
-      combo,
-      label: variantLabel({ options: combo }),
-      barcode: existingState.barcode !== undefined ? existingState.barcode : '',
-      price: existingState.price !== undefined ? existingState.price : '',
-      status: existingState.status !== undefined ? existingState.status : (formData.status === 'published' ? 'active' : 'draft'),
-      published: existingState.published !== undefined ? existingState.published : (formData.status === 'published'),
-      selected: !!existingState.selected
-    };
-  });
-
-  const updateMatrixRow = (sku, patch) => {
-    setMatrixState((prev) => ({
-      ...prev,
-      [sku]: { ...(prev[sku] || {}), ...patch }
-    }));
-  };
-
-  const handleSelectAllMatrix = (checked) => {
-    const next = {};
-    matrixRows.forEach((r) => {
-      next[r.sku] = { ...(matrixState[r.sku] || {}), selected: checked };
+  const handleDeleteValue = (vgIdx, valIdx) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      vg.values = (vg.values || []).filter((_, i) => i !== valIdx);
+      next[vgIdx] = vg;
+      return next;
     });
-    setMatrixState((prev) => ({ ...prev, ...next }));
   };
 
-  const handleBulkMatrixAction = (action) => {
-    const selectedRows = matrixRows.filter((r) => r.selected);
-    if (!selectedRows.length) {
-      showToast('Select at least one variant');
-      return;
-    }
-    const next = {};
-    selectedRows.forEach((r) => {
-      if (action === 'publish') {
-        next[r.sku] = { ...(matrixState[r.sku] || {}), published: true, status: 'active' };
-      } else if (action === 'unpublish') {
-        next[r.sku] = { ...(matrixState[r.sku] || {}), published: false };
+  const handleUpdateValue = (vgIdx, valIdx, patch) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const values = [...(vg.values || [])];
+      values[valIdx] = { ...values[valIdx], ...patch };
+      vg.values = values;
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
+  const handleAddSubset = (vgIdx, valIdx) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const values = [...(vg.values || [])];
+      const val = { ...values[valIdx] };
+      const parentSku = val.sku || formData.sku || 'SKU';
+      const count = (val.subsets || []).length + 1;
+      const newSub = {
+        id: 'sub_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: '',
+        amount: '',
+        image: '',
+        stock: 0,
+        sku: `${parentSku}-S${count}`,
+        status: 'Draft'
+      };
+      val.subsets = [...(val.subsets || []), newSub];
+      values[valIdx] = val;
+      vg.values = values;
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
+  const handleDeleteSubset = (vgIdx, valIdx, subIdx) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const values = [...(vg.values || [])];
+      const val = { ...values[valIdx] };
+      val.subsets = (val.subsets || []).filter((_, i) => i !== subIdx);
+      values[valIdx] = val;
+      vg.values = values;
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
+  const handleUpdateSubset = (vgIdx, valIdx, subIdx, patch) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const values = [...(vg.values || [])];
+      const val = { ...values[valIdx] };
+      const subsets = [...(val.subsets || [])];
+      subsets[subIdx] = { ...subsets[subIdx], ...patch };
+      val.subsets = subsets;
+      values[valIdx] = val;
+      vg.values = values;
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
+  // Total sellable combinations calculation
+  const totalCombinations = variantGroups.reduce((acc, vg) => {
+    return acc + (vg.values || []).reduce((vAcc, val) => {
+      if ((val.subsets || []).length > 0) {
+        const activeSubs = val.subsets.filter((s) => s.status !== 'Hidden').length;
+        return vAcc + activeSubs;
       }
-    });
-    setMatrixState((prev) => ({ ...prev, ...next }));
-    showToast(`Updated ${selectedRows.length} variant(s)`);
-  };
+      return vAcc + (val.status !== 'Hidden' ? 1 : 0);
+    }, 0);
+  }, 0);
 
   const saveMasterProduct = async (shouldPublish = false) => {
     if (!formData.name.trim()) { alert('Name is required'); return; }
@@ -361,6 +441,9 @@ export default function ProductForm({ productId = null }) {
 
     const prodId = editingProd ? (editingProd.id || editingProd._id) : ('m_' + Date.now().toString(36));
     const prodSlug = (formData.slug || slugify(formData.name)).trim();
+
+    const masterPrice = formData.price !== '' ? Number(formData.price) : 0;
+    const basePricePaisa = Math.round(masterPrice * 100);
 
     const rec = {
       id: prodId,
@@ -373,8 +456,8 @@ export default function ProductForm({ productId = null }) {
       gender: formData.gender.trim() || 'Unisex',
       season: formData.season.trim() || 'SS26',
       tags: formData.tags ? formData.tags.split(',').map((s) => s.trim()).filter(Boolean) : [],
-      price: formData.price !== '' ? Number(formData.price) : 0,
-      basePrice: formData.price !== '' ? Math.round(Number(formData.price) * 100) : 0,
+      price: masterPrice,
+      basePrice: basePricePaisa,
       mrp: formData.mrp !== '' ? Math.round(Number(formData.mrp) * 100) : 0,
       cost: formData.cost !== '' ? Math.round(Number(formData.cost) * 100) : 0,
       description: formData.description.trim(),
@@ -384,31 +467,49 @@ export default function ProductForm({ productId = null }) {
         newArrival: !!formData.newArrival,
         bestSelling: !!formData.bestSelling
       },
-      options: draftOptions,
       images: formData.images || []
     };
 
     const newVariants = [];
-    matrixRows.forEach((row, i) => {
-      const vId = editingProd
-        ? (variants.find((v) => v.productId === prodId && v.sku === row.sku)?.id || ('v_' + prodId + '_' + i))
-        : ('v_' + prodId + '_' + i);
+    variantGroups.forEach((vg) => {
+      (vg.values || []).forEach((val) => {
+        const topAmount = val.amount !== '' && val.amount != null ? Number(val.amount) : masterPrice;
+        const topPricePaisa = Math.round(topAmount * 100);
 
-      const variantRec = {
-        id: vId,
-        productId: prodId,
-        sku: row.sku,
-        options: row.combo,
-        price: row.price !== '' ? Math.round(Number(row.price) * 100) : rec.basePrice,
-        barcode: row.barcode || '',
-        stock: Number(row.stock || 10),
-        status: shouldPublish ? 'active' : row.status || 'active',
-        published: shouldPublish ? true : row.published !== false
-      };
-      newVariants.push(variantRec);
+        const subList = (val.subsets || []).map((sub) => {
+          const subAmt = sub.amount !== '' && sub.amount != null ? Number(sub.amount) : topAmount;
+          const isHidden = sub.status === 'Hidden';
+          return {
+            id: sub.id,
+            name: `${vg.name || 'Variant'}: ${val.name || 'Value'} / ${sub.name || 'Subset'}`,
+            sku: sub.sku || `${val.sku || 'SKU'}-S`,
+            price: Math.round(subAmt * 100),
+            amount: Math.round(subAmt * 100),
+            stock: Number(sub.stock) || 0,
+            image: sub.image || '',
+            status: sub.status === 'Published' ? 'active' : (isHidden ? 'hidden' : 'draft'),
+            published: shouldPublish ? !isHidden : sub.status === 'Published',
+            hidden: isHidden
+          };
+        });
+
+        const isValHidden = val.status === 'Hidden';
+        newVariants.push({
+          id: val.id,
+          name: `${vg.name || 'Variant'}: ${val.name || 'Value'}`,
+          sku: val.sku || `${formData.sku || 'SKU'}-V`,
+          price: topPricePaisa,
+          amount: topPricePaisa,
+          stock: Number(val.stock) || 0,
+          image: val.image || '',
+          status: val.status === 'Published' ? 'active' : (isValHidden ? 'hidden' : 'draft'),
+          published: shouldPublish ? !isValHidden : val.status === 'Published',
+          hidden: isValHidden,
+          subVariants: subList
+        });
+      });
     });
 
-    // 1. Send to Backend REST API
     try {
       const apiPayload = {
         ...rec,
@@ -448,19 +549,18 @@ export default function ProductForm({ productId = null }) {
         <div className="preview-toolbar">
           <div className="device-toggle">
             <button className={previewDevice === 'desktop' ? 'active' : ''} onClick={() => setPreviewDevice('desktop')}>
-              <Icon name="desktop" size={16} />
+              <Icon name="desktop" size={16} /> Desktop
             </button>
             <button className={previewDevice === 'tablet' ? 'active' : ''} onClick={() => setPreviewDevice('tablet')}>
-              <Icon name="tablet" size={16} />
+              <Icon name="tablet" size={16} /> Tablet
             </button>
             <button className={previewDevice === 'mobile' ? 'active' : ''} onClick={() => setPreviewDevice('mobile')}>
-              <Icon name="mobile" size={16} />
+              <Icon name="mobile" size={16} /> Mobile
             </button>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-sm btn-primary" onClick={() => setPreviewMode(false)}>
-              Back to editor
-            </button>
+            <button className="btn btn-sm" onClick={() => window.print()}>Print / PDF</button>
+            <button className="btn btn-sm" onClick={() => setPreviewMode(false)}>Back to Editor</button>
           </div>
         </div>
 
@@ -468,13 +568,9 @@ export default function ProductForm({ productId = null }) {
           <div className={`preview-frame ${previewDevice}`}>
             <div className="sf">
               <div className="sf-grid">
-                <div className="sf-image" style={{ padding: featuredImg ? 0 : '40px', overflow: 'hidden' }}>
+                <div className="sf-image">
                   {featuredImg ? (
-                    <img
-                      src={featuredImg.url}
-                      alt={featuredImg.alt || formData.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                    <img src={featuredImg.url} alt={featuredImg.alt || 'Product preview'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   ) : (
                     'No image yet'
                   )}
@@ -493,10 +589,18 @@ export default function ProductForm({ productId = null }) {
                   </div>
                   <p className="sf-desc">{formData.description || 'No description provided.'}</p>
                   
-                  {combos.length > 0 && (
+                  {variantGroups.length > 0 && (
                     <div className="sf-variants">
-                      {combos.map((c, i) => (
-                        <span key={i} className="sf-variant">{variantLabel({ options: c })}</span>
+                      {variantGroups.map((vg) => (
+                        (vg.values || []).map((val) => (
+                          (val.subsets || []).length > 0 ? (
+                            val.subsets.map((sub, sidx) => (
+                              <span key={sidx} className="sf-variant">{`${vg.name || 'Variant'}: ${val.name || 'Val'} / ${sub.name || 'Sub'}`}</span>
+                            ))
+                          ) : (
+                            <span key={val.id} className="sf-variant">{`${vg.name || 'Variant'}: ${val.name || 'Val'}`}</span>
+                          )
+                        ))
                       ))}
                     </div>
                   )}
@@ -517,7 +621,7 @@ export default function ProductForm({ productId = null }) {
   const editTitle = editingProd ? 'Edit master product' : 'New master product';
   const editSub = editingProd
     ? `${formData.name || editingProd.name} · ${(variants || []).filter((v) => editingProd && v.productId === editingProd.id).length} variant(s)`
-    : 'Central record. Define options, then publish the variants you want live.';
+    : 'Central record. Define variants, amount, and optional subsets with frontend hide toggles.';
 
   return (
     <div className="page">
@@ -579,13 +683,16 @@ export default function ProductForm({ productId = null }) {
             </div>
             <div className="field">
               <label>Master SKU</label>
-              <div className="sku-row">
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <input
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="e.g. ZYL-TEE-00001"
                   required
                 />
-                <button type="button" className="btn btn-sm" onClick={handleGenSkuBtn}>Generate</button>
+                <button type="button" className="btn btn-sm" onClick={handleGenSkuBtn}>
+                  Auto
+                </button>
               </div>
             </div>
             <div className="field">
@@ -781,52 +888,38 @@ export default function ProductForm({ productId = null }) {
                         background: 'rgba(0,0,0,0.7)',
                         color: '#fff',
                         fontSize: '10px',
-                        padding: '1px 6px',
+                        padding: '2px 6px',
                         borderRadius: '4px'
                       }}
                     >
-                      {img.sizeKB || 0} KB
+                      {img.sizeKB ? `${img.sizeKB} KB` : 'WebP'}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '8px' }}>
-                    <input
-                      placeholder="Alt text"
-                      value={img.alt || ''}
-                      onChange={(e) => handleUpdateImageDetails(idx, 'alt', e.target.value)}
-                      style={{ fontSize: '11px', height: '26px', padding: '0 6px' }}
-                    />
-                    <input
-                      placeholder="Caption"
-                      value={img.caption || ''}
-                      onChange={(e) => handleUpdateImageDetails(idx, 'caption', e.target.value)}
-                      style={{ fontSize: '11px', height: '26px', padding: '0 6px' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                     <button
                       type="button"
-                      className={`btn btn-sm ${img.isFeatured ? 'btn-primary' : ''}`}
-                      style={{ fontSize: '11px', height: '26px', padding: '0 8px' }}
-                      onClick={() => handleSetFeaturedImage(idx)}
+                      className="btn btn-sm"
+                      style={{ fontSize: '11px', padding: '0 8px', height: '26px' }}
+                      onClick={() => setEditingImageIdx(idx)}
                     >
-                      {img.isFeatured ? '★ Featured' : 'Set featured'}
+                      <Icon name="wand" size={13} /> Edit Studio
                     </button>
-
                     <div style={{ display: 'flex', gap: '4px' }}>
+                      {!img.isFeatured && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Set as featured main image"
+                          onClick={() => handleSetFeaturedImage(idx)}
+                        >
+                          ★
+                        </button>
+                      )}
                       <button
                         type="button"
-                        className="btn btn-sm"
-                        style={{ fontSize: '11px', height: '26px', padding: '0 8px' }}
-                        onClick={() => setEditingImageIdx(idx)}
-                      >
-                        Edit Studio
-                      </button>
-                      <button
-                        type="button"
-                        className="icon-btn btn-danger"
-                        style={{ width: '26px', height: '26px' }}
+                        className="icon-btn"
+                        title="Delete image"
                         onClick={() => handleDeleteImage(idx)}
                       >
                         <Icon name="close" size={12} />
@@ -894,125 +987,260 @@ export default function ProductForm({ productId = null }) {
           </div>
         </div>
 
-        {/* Card 5: Options */}
+        {/* Card 5: Variants section matching exact mockup */}
         <div className="card card-pad form-section">
-          <h2>Options</h2>
-          {names.length > 0 ? (
-            names.map((n) => (
-              <div key={n} style={{ display: 'grid', gridTemplateColumns: '150px 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                <input
-                  value={n}
-                  onChange={(e) => handleRenameOption(n, e.target.value)}
-                  placeholder="Option name"
-                />
-                <input
-                  value={(draftOptions[n] || []).join(', ')}
-                  onChange={(e) => handleSetOptionValues(n, e.target.value)}
-                  placeholder="Values, comma separated"
-                />
-                <button type="button" className="icon-btn" onClick={() => handleRemoveOption(n)}>
-                  <Icon name="close" size={14} />
-                </button>
-              </div>
-            ))
-          ) : (
-            <p style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
-              No options &mdash; this product will have a single default variant.
+          <div style={{ marginBottom: '6px' }}>
+            <h2 style={{ margin: 0 }}>
+              Variants <span style={{ fontWeight: 'normal', color: 'var(--muted-foreground)', fontSize: '13px' }}>({totalCombinations} sellable combinations)</span>
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', margin: '6px 0 16px', lineHeight: 1.5 }}>
+              Add a primary variant (e.g. Size), then give it a value with a price &mdash; Size &rarr; Small &rarr; Rs. 250. Price inherits the Master Product price but stays editable per value. Add more values to the same variant (Medium, Large...), each with its own price and, optionally, its own Subset (Colour &rarr; Blue / Red / Yellow) &mdash; every subset value carries its own image, stock, SKU and status. Duplicate a variant to reuse its whole structure under a new name.
             </p>
-          )}
-
-          <button className="btn btn-sm" type="button" onClick={handleAddOptionSet} style={{ marginTop: '8px' }}>
-            + Add option set
-          </button>
-        </div>
-
-        {/* Card 6: Variant matrix */}
-        <div className="card card-pad form-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-            <h2 style={{ margin: 0 }}>Variant matrix ({matrixRows.length})</h2>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button className="btn btn-sm" type="button" onClick={() => handleSelectAllMatrix(true)}>Select all</button>
-              <button className="btn btn-sm" type="button" onClick={() => handleSelectAllMatrix(false)}>Clear</button>
-              <button className="btn btn-sm" type="button" onClick={() => handleBulkMatrixAction('publish')}>Publish selected</button>
-              <button className="btn btn-sm" type="button" onClick={() => handleBulkMatrixAction('unpublish')}>Unpublish selected</button>
-            </div>
           </div>
 
-          <div className="card table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ width: '32px' }}>
-                    <input
-                      type="checkbox"
-                      checked={matrixRows.length > 0 && matrixRows.every((r) => r.selected)}
-                      onChange={(e) => handleSelectAllMatrix(e.target.checked)}
-                    />
-                  </th>
-                  <th>Variant</th>
-                  <th>SKU</th>
-                  <th>Barcode</th>
-                  <th className="num">Price</th>
-                  <th>Status</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>Publish</th>
-                </tr>
-              </thead>
-              <tbody>
-                {matrixRows.length > 0 ? (
-                  matrixRows.map((v) => (
-                    <tr key={v.sku}>
-                      <td>
+          {variantGroups.map((vg, vgIdx) => (
+            <div key={vg.id || vgIdx} className="variant-card">
+              <div className="variant-card-head">
+                <input
+                  className="input-variant-name"
+                  placeholder="Variant name (e.g. Size)"
+                  value={vg.name || ''}
+                  onChange={(e) => handleUpdateVariantGroup(vgIdx, { name: e.target.value })}
+                />
+                <div className="variant-card-actions">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => handleDuplicateVariantGroup(vgIdx)}
+                    title="Duplicate Variant"
+                  >
+                    <Icon name="copy" size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => handleDeleteVariantGroup(vgIdx)}
+                    title="Delete Variant"
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="variant-values-list">
+                {(vg.values || []).map((val, valIdx) => {
+                  const masterPrice = formData.price !== '' ? Number(formData.price) : 0;
+                  const effectiveValPrice = val.amount !== '' && val.amount != null ? Number(val.amount) : masterPrice;
+
+                  return (
+                    <div key={val.id || valIdx} className="value-card">
+                      <div className="value-row-1">
                         <input
-                          type="checkbox"
-                          checked={v.selected}
-                          onChange={(e) => updateMatrixRow(v.sku, { selected: e.target.checked })}
+                          className="val-name"
+                          placeholder="Value (e.g. Small)"
+                          value={val.name || ''}
+                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { name: e.target.value })}
                         />
-                      </td>
-                      <td style={{ fontWeight: 500 }}>{v.label}</td>
-                      <td style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}><code>{v.sku}</code></td>
-                      <td>
-                        <input
-                          value={v.barcode}
-                          onChange={(e) => updateMatrixRow(v.sku, { barcode: e.target.value })}
-                          placeholder="-"
-                          style={{ height: '30px', fontSize: '12px', padding: '0 8px', width: '100px' }}
-                        />
-                      </td>
-                      <td className="num">
-                        <input
-                          type="number"
-                          value={v.price}
-                          onChange={(e) => updateMatrixRow(v.sku, { price: e.target.value })}
-                          placeholder="inherit"
-                          style={{ height: '30px', fontSize: '12px', padding: '0 8px', width: '90px', textAlign: 'right' }}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={v.status}
-                          onChange={(e) => updateMatrixRow(v.sku, { status: e.target.value })}
-                          style={{ height: '30px', fontSize: '12px', padding: '0 6px' }}
+                        <div className="val-price-group">
+                          <span className="val-currency-prefix">Rs.</span>
+                          <input
+                            className="val-amount"
+                            type="number"
+                            placeholder={`${masterPrice} (inherit)`}
+                            value={val.amount !== undefined ? val.amount : ''}
+                            onChange={(e) => handleUpdateValue(vgIdx, valIdx, { amount: e.target.value })}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-add-subset"
+                          onClick={() => handleAddSubset(vgIdx, valIdx)}
                         >
-                          {VARIANT_STATUSES.map((s) => (
-                            <option key={s} value={s}>{VARIANT_STATUS_LABEL[s]}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
+                          + Add Subset
+                        </button>
+                        <button
+                          type="button"
+                          className="val-remove-btn"
+                          onClick={() => handleDeleteValue(vgIdx, valIdx)}
+                          title="Remove Value"
+                        >
+                          &times;
+                        </button>
+                      </div>
+
+                      <div className="value-row-2">
                         <input
-                          type="checkbox"
-                          checked={v.published}
-                          onChange={(e) => updateMatrixRow(v.sku, { published: e.target.checked })}
+                          className="val-image"
+                          placeholder="Image URL (optional)"
+                          value={val.image || ''}
+                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { image: e.target.value })}
                         />
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan="7"><div className="empty-state">Add option values to build matrix.</div></td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <input
+                          className="val-stock"
+                          type="number"
+                          placeholder="0"
+                          value={val.stock !== undefined ? val.stock : 0}
+                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { stock: e.target.value })}
+                        />
+                        <input
+                          className="val-sku"
+                          placeholder="SKU (auto)"
+                          value={val.sku || ''}
+                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { sku: e.target.value })}
+                        />
+                        <select
+                          className="val-status"
+                          value={val.status || 'Draft'}
+                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { status: e.target.value })}
+                        >
+                          <option value="Draft">Draft</option>
+                          <option value="Published">Published</option>
+                          <option value="Hidden">Hidden</option>
+                        </select>
+                      </div>
+
+                      {(val.subsets || []).length > 0 && (
+                        <div className="subsets-container">
+                          {val.subsets.map((sub, subIdx) => (
+                            <div key={sub.id || subIdx} className="subset-card">
+                              <div className="value-row-1" style={{ marginBottom: '8px' }}>
+                                <input
+                                  className="sub-name"
+                                  placeholder="Subset (e.g. Blue)"
+                                  value={sub.name || ''}
+                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { name: e.target.value })}
+                                  style={{
+                                    flex: 1,
+                                    height: '34px',
+                                    padding: '0 10px',
+                                    fontSize: '12px',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    background: 'var(--canvas)',
+                                    color: 'var(--primary)'
+                                  }}
+                                />
+                                <div className="val-price-group" style={{ height: '34px', width: '150px' }}>
+                                  <span className="val-currency-prefix" style={{ fontSize: '12px' }}>Rs.</span>
+                                  <input
+                                    className="sub-amount"
+                                    type="number"
+                                    placeholder={`${effectiveValPrice} (inherit)`}
+                                    value={sub.amount !== undefined ? sub.amount : ''}
+                                    onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { amount: e.target.value })}
+                                    style={{ fontSize: '12px' }}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="val-remove-btn"
+                                  onClick={() => handleDeleteSubset(vgIdx, valIdx, subIdx)}
+                                  title="Remove Subset"
+                                  style={{ width: '28px', height: '28px' }}
+                                >
+                                  &times;
+                                </button>
+                              </div>
+
+                              <div className="value-row-2">
+                                <input
+                                  className="sub-image"
+                                  placeholder="Image URL (optional)"
+                                  value={sub.image || ''}
+                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { image: e.target.value })}
+                                  style={{
+                                    flex: 2,
+                                    height: '34px',
+                                    padding: '0 10px',
+                                    fontSize: '12px',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    background: 'var(--canvas)',
+                                    color: 'var(--primary)'
+                                  }}
+                                />
+                                <input
+                                  className="sub-stock"
+                                  type="number"
+                                  placeholder="0"
+                                  value={sub.stock !== undefined ? sub.stock : 0}
+                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { stock: e.target.value })}
+                                  style={{
+                                    width: '80px',
+                                    height: '34px',
+                                    padding: '0 8px',
+                                    fontSize: '12px',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    background: 'var(--canvas)',
+                                    color: 'var(--primary)',
+                                    textAlign: 'center'
+                                  }}
+                                />
+                                <input
+                                  className="sub-sku"
+                                  placeholder="SKU (auto)"
+                                  value={sub.sku || ''}
+                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { sku: e.target.value })}
+                                  style={{
+                                    flex: 1.5,
+                                    height: '34px',
+                                    padding: '0 10px',
+                                    fontSize: '12px',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    background: 'var(--canvas)',
+                                    color: 'var(--primary)'
+                                  }}
+                                />
+                                <select
+                                  className="sub-status"
+                                  value={sub.status || 'Draft'}
+                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { status: e.target.value })}
+                                  style={{
+                                    width: '110px',
+                                    height: '34px',
+                                    padding: '0 8px',
+                                    fontSize: '12px',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '6px',
+                                    background: 'var(--canvas)',
+                                    color: 'var(--primary)'
+                                  }}
+                                >
+                                  <option value="Draft">Draft</option>
+                                  <option value="Published">Published</option>
+                                  <option value="Hidden">Hidden</option>
+                                </select>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => handleAddValue(vgIdx)}
+                style={{ marginTop: '6px' }}
+              >
+                + Add Value
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={handleAddVariantGroup}
+            style={{ marginTop: '12px' }}
+          >
+            + Add Variant
+          </button>
         </div>
 
         {/* Action Bar */}

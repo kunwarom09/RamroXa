@@ -60,6 +60,9 @@ export async function listAdminCustomers(query = {}) {
       name: u.name,
       email: u.email,
       phone: u.phone,
+      permanentAddress: u.permanentAddress || '',
+      temporaryAddress: u.temporaryAddress || '',
+      city: u.temporaryAddress || u.permanentAddress || 'Kathmandu',
       role: u.role,
       status: u.isActive ? 'active' : 'inactive',
       orderCount: stat.orderCount || 0,
@@ -104,6 +107,8 @@ export async function getAdminCustomerById(customerId) {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      permanentAddress: user.permanentAddress || '',
+      temporaryAddress: user.temporaryAddress || '',
       role: user.role,
       isActive: user.isActive,
       createdAt: user.createdAt

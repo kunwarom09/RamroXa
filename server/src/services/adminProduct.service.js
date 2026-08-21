@@ -91,8 +91,17 @@ export async function getAdminProductById(productId) {
     throw ApiError.notFound(`Product with identifier '${productId}' not found.`);
   }
 
-  const variants = await Variant.find({ productId: product.id }).lean();
-  const variantIds = variants.map((v) => v.id);
+  const allVariants = await Variant.find({ productId: product.id }).lean();
+  const topVariants = allVariants.filter((v) => !v.parentVariantId);
+  const subVariants = allVariants.filter((v) => !!v.parentVariantId);
+
+  const subVariantsByParent = subVariants.reduce((acc, sv) => {
+    if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+    acc[sv.parentVariantId].push(sv);
+    return acc;
+  }, {});
+
+  const variantIds = allVariants.map((v) => v.id);
   const inventories = await Inventory.find({ variantId: { $in: variantIds }, archived: false }).lean();
 
   const invByVariantId = inventories.reduce((acc, inv) => {
@@ -101,8 +110,9 @@ export async function getAdminProductById(productId) {
     return acc;
   }, {});
 
-  const enrichedVariants = variants.map((v) => ({
+  const enrichedVariants = (topVariants.length ? topVariants : allVariants).map((v) => ({
     ...v,
+    subVariants: subVariantsByParent[v.id] || [],
     inventory: invByVariantId[v.id] || [],
     availableStock: (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.available, 0),
     reservedStock: (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.reserved, 0)
@@ -177,22 +187,29 @@ export async function createAdminProduct(data, user) {
     images
   });
 
-  // Create variants
+  // Create variants & subvariants
   const createdVariants = [];
 
   if (variants && variants.length) {
     for (const v of variants) {
       const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
-      const vSku = v.sku || `${finalSku}-${Object.values(v.options || {}).join('-').toUpperCase() || 'DEF'}`;
-      const vPrice = v.price !== undefined ? v.price : finalPrice;
+      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || 'Default Variant';
+      const vSku = v.sku || `${finalSku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'VAR'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      const vPrice = (v.amount !== undefined && v.amount !== null && v.amount !== '')
+        ? Number(v.amount)
+        : ((v.price !== undefined && v.price !== null && v.price !== '') ? Number(v.price) : finalPrice);
 
       const newVariant = await Variant.create({
         id: vId,
+        name: vName,
         productId: product.id,
+        parentVariantId: null,
         sku: vSku,
         options: v.options || {},
         price: vPrice,
-        published: v.published !== false
+        hidden: !!v.hidden,
+        published: v.published !== false && !v.hidden,
+        status: v.status || (v.hidden ? 'hidden' : (status === 'published' ? 'active' : 'draft'))
       });
 
       const stockQty = v.stock !== undefined ? v.stock : initialStock;
@@ -218,6 +235,31 @@ export async function createAdminProduct(data, user) {
         });
       }
 
+      // Create SubVariants if provided
+      const subList = v.subVariants || v.subvariants || [];
+      for (const sv of subList) {
+        const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
+        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || 'SubVariant';
+        const svSku = sv.sku || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'SUB'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+        const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
+          ? Number(sv.amount)
+          : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
+        const isHidden = sv.hidden === true;
+
+        await Variant.create({
+          id: svId,
+          name: svName,
+          productId: product.id,
+          parentVariantId: vId,
+          sku: svSku,
+          options: sv.options || {},
+          price: svPrice,
+          hidden: isHidden,
+          published: !isHidden && sv.published !== false,
+          status: isHidden ? 'hidden' : (sv.status || 'active')
+        });
+      }
+
       createdVariants.push(newVariant);
     }
   } else {
@@ -225,7 +267,9 @@ export async function createAdminProduct(data, user) {
     const vId = 'v_' + crypto.randomBytes(6).toString('hex');
     const newVariant = await Variant.create({
       id: vId,
+      name: 'Default',
       productId: product.id,
+      parentVariantId: null,
       sku: `${finalSku}-DEF`,
       options: {},
       price: finalPrice,
@@ -246,7 +290,7 @@ export async function createAdminProduct(data, user) {
   return getAdminProductById(product.id);
 }
 
-export async function updateAdminProduct(productId, updates) {
+export async function updateAdminProduct(productId, updates, user) {
   const product = await findProduct(productId);
   if (!product) {
     throw ApiError.notFound(`Product '${productId}' not found.`);
@@ -279,6 +323,113 @@ export async function updateAdminProduct(productId, updates) {
   }
 
   await product.save();
+
+  // If variants array is provided, sync variants & subvariants
+  if (updates.variants && Array.isArray(updates.variants)) {
+    const pId = product.id;
+    const finalPrice = product.price || product.basePrice || 0;
+    const existingVariants = await Variant.find({ productId: pId });
+    const existingMap = new Map(existingVariants.map((v) => [v.id, v]));
+
+    const processedIds = new Set();
+
+    for (const v of updates.variants) {
+      const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
+      processedIds.add(vId);
+      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || 'Variant';
+      const vSku = v.sku || `${product.sku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()}`;
+      const vPrice = (v.amount !== undefined && v.amount !== null && v.amount !== '')
+        ? Number(v.amount)
+        : ((v.price !== undefined && v.price !== null && v.price !== '') ? Number(v.price) : finalPrice);
+
+      if (existingMap.has(vId)) {
+        await Variant.updateOne(
+          { id: vId },
+          {
+            name: vName,
+            sku: vSku,
+            parentVariantId: null,
+            options: v.options || {},
+            price: vPrice,
+            hidden: !!v.hidden,
+            published: v.published !== false && !v.hidden,
+            status: v.status || (v.hidden ? 'hidden' : 'active')
+          }
+        );
+      } else {
+        await Variant.create({
+          id: vId,
+          name: vName,
+          productId: pId,
+          parentVariantId: null,
+          sku: vSku,
+          options: v.options || {},
+          price: vPrice,
+          hidden: !!v.hidden,
+          published: v.published !== false && !v.hidden,
+          status: v.status || (v.hidden ? 'hidden' : 'active')
+        });
+
+        await Inventory.create({
+          id: `inv_${vId}_w1`,
+          variantId: vId,
+          warehouseId: 'w1',
+          available: v.stock !== undefined ? v.stock : 10,
+          reserved: 0
+        });
+      }
+
+      // Handle Subvariants
+      const subList = v.subVariants || v.subvariants || [];
+      for (const sv of subList) {
+        const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
+        processedIds.add(svId);
+        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || 'SubVariant';
+        const svSku = sv.sku || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()}`;
+        const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
+          ? Number(sv.amount)
+          : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
+        const isHidden = sv.hidden === true;
+
+        if (existingMap.has(svId)) {
+          await Variant.updateOne(
+            { id: svId },
+            {
+              name: svName,
+              sku: svSku,
+              parentVariantId: vId,
+              options: sv.options || {},
+              price: svPrice,
+              hidden: isHidden,
+              published: !isHidden && sv.published !== false,
+              status: isHidden ? 'hidden' : (sv.status || 'active')
+            }
+          );
+        } else {
+          await Variant.create({
+            id: svId,
+            name: svName,
+            productId: pId,
+            parentVariantId: vId,
+            sku: svSku,
+            options: sv.options || {},
+            price: svPrice,
+            hidden: isHidden,
+            published: !isHidden && sv.published !== false,
+            status: isHidden ? 'hidden' : (sv.status || 'active')
+          });
+        }
+      }
+    }
+
+    // Delete variants no longer present in updates
+    const toDelete = existingVariants.filter((v) => !processedIds.has(v.id)).map((v) => v.id);
+    if (toDelete.length > 0) {
+      await Variant.deleteMany({ id: { $in: toDelete } });
+      await Inventory.deleteMany({ variantId: { $in: toDelete } });
+    }
+  }
+
   return getAdminProductById(product.id);
 }
 
@@ -311,6 +462,11 @@ export async function purgeAllProducts() {
   return { message: 'All products, variants, and inventory have been permanently deleted from database.' };
 }
 
+export async function getAllDistinctTags() {
+  const tags = await Product.distinct('tags', { deletedAt: null });
+  return tags.filter(Boolean).sort();
+}
+
 function categoryPrefix(catId) {
   if (catId.includes('tops') || catId.includes('apparel')) return 'APP';
   if (catId.includes('acc')) return 'ACC';
@@ -321,6 +477,7 @@ function categoryPrefix(catId) {
 export default {
   listAdminProducts,
   getAdminProductById,
+  getAllDistinctTags,
   createAdminProduct,
   updateAdminProduct,
   deleteAdminProduct,

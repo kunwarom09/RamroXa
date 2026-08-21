@@ -26,21 +26,51 @@ describe('Phase 2 - Authentication & Session Lifecycle API', () => {
   });
 
   describe('User Registration', () => {
-    it('POST /api/auth/register should create a new customer account', async () => {
+    it('POST /api/auth/register should create a new customer account with permanent and temporary addresses', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
           email: 'sita.rai@example.com',
           password: 'CustomerPass123!',
           name: 'Sita Rai',
-          phone: '+977 9801234567'
+          phone: '+977 9801234567',
+          permanentAddress: 'Pokhara-8, Kaski',
+          temporaryAddress: 'Thamel, Kathmandu'
         });
 
       expect(res.status).toBe(201);
       expect(res.body.data.user).toBeDefined();
       expect(res.body.data.user.email).toBe('sita.rai@example.com');
+      expect(res.body.data.user.permanentAddress).toBe('Pokhara-8, Kaski');
+      expect(res.body.data.user.temporaryAddress).toBe('Thamel, Kathmandu');
       expect(res.body.data.user.role).toBe('customer');
       expect(res.body.data.user.passwordHash).toBeUndefined(); // ensure passwordHash is stripped
+    });
+
+    it('POST /api/auth/register should reject passwords without a special character', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'nospecial@example.com',
+          password: 'Password12345',
+          name: 'No Special'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('BAD_REQUEST');
+    });
+
+    it('POST /api/auth/register should reject passwords without a number', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'nonumber@example.com',
+          password: 'PasswordSpecial!',
+          name: 'No Number'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('BAD_REQUEST');
     });
 
     it('POST /api/auth/register with duplicate email should return 409 Conflict', async () => {

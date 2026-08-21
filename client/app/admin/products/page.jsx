@@ -21,6 +21,12 @@ export default function AdminProductsListPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [toastMsg, setToastMsg] = useState('');
 
+  // Bulk Tag states
+  const [availableTags, setAvailableTags] = useState([]);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [selectedTagsForBulk, setSelectedTagsForBulk] = useState([]);
+  const [newTagInput, setNewTagInput] = useState('');
+
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
@@ -29,13 +35,15 @@ export default function AdminProductsListPage() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, tagRes] = await Promise.all([
         api.get('/api/admin/products'),
-        api.get('/api/categories')
+        api.get('/api/categories'),
+        api.get('/api/admin/products/tags').catch(() => ({ data: { tags: [] } }))
       ]);
 
-      const apiProds = prodRes.data?.products || prodRes.data || [];
-      const apiCats = catRes.data || [];
+      const apiProds = prodRes.data?.products || prodRes.data?.data?.products || prodRes.data || [];
+      const apiCats = catRes.data?.categories || catRes.data?.data?.categories || catRes.data || [];
+      const fetchedTags = tagRes.data?.tags || tagRes.data?.data?.tags || [];
 
       const normalizedProds = apiProds.map((ap) => {
         const apId = ap.id || String(ap._id);
@@ -55,9 +63,17 @@ export default function AdminProductsListPage() {
         }
       });
 
+      const tagSet = new Set(Array.isArray(fetchedTags) ? fetchedTags : []);
+      normalizedProds.forEach(p => {
+        if (Array.isArray(p.tags)) {
+          p.tags.forEach(t => { if (t && typeof t === 'string' && t.trim()) tagSet.add(t.trim()); });
+        }
+      });
+
       setProducts(normalizedProds);
       setVariants(extractedVars);
       setCategories(apiCats);
+      setAvailableTags(Array.from(tagSet).sort((a, b) => a.localeCompare(b)));
     } catch (e) {
       console.error('Failed to load products from API:', e);
     } finally {
@@ -143,6 +159,51 @@ export default function AdminProductsListPage() {
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const toggleTagSelection = (tag) => {
+    setSelectedTagsForBulk((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleAddNewTag = () => {
+    const trimmed = newTagInput.trim();
+    if (!trimmed) return;
+    if (!availableTags.includes(trimmed)) {
+      setAvailableTags((prev) => [...prev, trimmed].sort((a, b) => a.localeCompare(b)));
+    }
+    if (!selectedTagsForBulk.includes(trimmed)) {
+      setSelectedTagsForBulk((prev) => [...prev, trimmed]);
+    }
+    setNewTagInput('');
+  };
+
+  const handleApplyBulkTags = async () => {
+    if (!selectedTagsForBulk.length) {
+      showToast('Please select or add at least one tag');
+      return;
+    }
+    setLoading(true);
+    try {
+      for (const id of selectedIds) {
+        const prod = products.find((p) => p.id === id || String(p._id) === id);
+        const existingTags = Array.isArray(prod?.tags)
+          ? prod.tags
+          : (prod?.tags ? String(prod.tags).split(',').map((s) => s.trim()).filter(Boolean) : []);
+        const mergedTags = Array.from(new Set([...existingTags, ...selectedTagsForBulk])).filter(Boolean);
+        await api.put(`/api/admin/products/${id}`, { tags: mergedTags });
+      }
+      showToast(`Added ${selectedTagsForBulk.length} tag(s) to ${selectedIds.length} product(s) in MongoDB`);
+      setShowTagModal(false);
+      setSelectedTagsForBulk([]);
+      setSelectedIds([]);
+      refreshData();
+    } catch (err) {
+      showToast('Failed to apply tags: ' + (err.message || 'Error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBulkAction = async (action) => {
@@ -234,10 +295,154 @@ export default function AdminProductsListPage() {
         <div className="bulk-bar" style={{ display: 'flex' }}>
           <span>{selectedIds.length} selected</span>
           <div className="spacer" />
+          <button
+            type="button"
+            onClick={() => {
+              setShowTagModal(true);
+              setSelectedTagsForBulk([]);
+              setNewTagInput('');
+            }}
+          >
+            + Add Tags
+          </button>
           <button onClick={() => handleBulkAction('publish')}>Publish</button>
           <button onClick={() => handleBulkAction('unpublish')}>Unpublish</button>
           <button onClick={() => handleBulkAction('archive')}>Archive</button>
           <button onClick={() => handleBulkAction('duplicate')}>Duplicate</button>
+        </div>
+      )}
+
+      {showTagModal && (
+        <div className="tag-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setShowTagModal(false); }}>
+          <div className="tag-modal">
+            <div className="tag-modal-header">
+              <h3>Add Tags to {selectedIds.length} Selected Product{selectedIds.length > 1 ? 's' : ''}</h3>
+              <button className="icon-btn" onClick={() => setShowTagModal(false)} title="Close">
+                ✕
+              </button>
+            </div>
+            <div className="tag-modal-body">
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: '8px' }}>
+                  AVAILABLE TAGS (Click to toggle)
+                </label>
+                {availableTags.length > 0 ? (
+                  <div className="tag-chips-container">
+                    {availableTags.map((tag) => {
+                      const isSelected = selectedTagsForBulk.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`tag-chip-btn ${isSelected ? 'active' : ''}`}
+                          onClick={() => toggleTagSelection(tag)}
+                        >
+                          <span>{isSelected ? '✓' : '+'}</span>
+                          <span>{tag}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--muted-foreground)', padding: '12px', background: 'var(--canvas)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    No tags exist yet. Add a new tag below.
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: '8px' }}>
+                  ADD NEW TAG
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Type new tag name (e.g. core, oversized, premium)..."
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddNewTag();
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      height: '36px',
+                      padding: '0 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--canvas)',
+                      color: 'var(--primary)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={handleAddNewTag}
+                    style={{ height: '36px', padding: '0 14px' }}
+                  >
+                    + Add
+                  </button>
+                </div>
+              </div>
+
+              {selectedTagsForBulk.length > 0 && (
+                <div style={{ background: 'var(--canvas)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted-foreground)', marginBottom: '6px' }}>
+                    TAGS TO BE ADDED ({selectedTagsForBulk.length}):
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {selectedTagsForBulk.map((t) => (
+                      <span
+                        key={t}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'var(--primary)',
+                          color: 'var(--primary-foreground)',
+                          fontSize: '12px',
+                          padding: '3px 10px',
+                          borderRadius: '12px'
+                        }}
+                      >
+                        {t}
+                        <button
+                          type="button"
+                          onClick={() => toggleTagSelection(t)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'inherit',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontSize: '11px',
+                            lineHeight: 1
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="tag-modal-footer">
+              <button className="btn" type="button" onClick={() => setShowTagModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={handleApplyBulkTags}
+                disabled={selectedTagsForBulk.length === 0}
+              >
+                Apply Tags ({selectedTagsForBulk.length})
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

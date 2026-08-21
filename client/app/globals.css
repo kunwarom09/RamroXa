@@ -53,7 +53,7 @@ html.dark {
 html {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -61,7 +61,7 @@ body {
   padding: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   box-sizing: border-box;
   background: #fff;
   color: #000;
@@ -569,17 +569,36 @@ tbody tr:hover { background: var(--muted); }
 /* Responsive Store Footer */
 .store-footer {
   width: 100%;
+  max-width: 1188px;
+  margin-left: auto;
+  margin-right: auto;
   background: #000;
   color: #fff;
-  padding: 64px 32px 32px;
+  border-radius: 0;
+  padding: 48px 24px 28px;
   box-sizing: border-box;
   overflow: hidden;
-  margin-top: auto;
+  margin-top: 48px;
+  margin-bottom: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .store-footer {
+    padding: 64px 36px 32px;
+    margin-top: 64px;
+    margin-bottom: 0 !important;
+  }
+}
+
+.store-footer-inner {
+  max-width: 1188px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .store-footer-grid {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 40px;
@@ -596,7 +615,9 @@ tbody tr:hover { background: var(--muted); }
 
 @media (max-width: 600px) {
   .store-footer {
-    padding: 48px 20px 24px !important;
+    padding: 40px 16px 24px !important;
+    margin-top: 36px;
+    margin-bottom: 0 !important;
   }
   .store-footer-grid {
     grid-template-columns: 1fr !important;
@@ -606,9 +627,26 @@ tbody tr:hover { background: var(--muted); }
 }
 
 /* Collections Hero & Responsive Content */
+.zylo-collections-hero-wrapper {
+  width: 100%;
+  max-width: 1188px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .zylo-collections-hero-wrapper {
+    padding: 0 24px;
+    margin: 0 auto;
+  }
+}
+
 .zylo-collections-hero {
   position: relative;
   min-height: 280px;
+  width: 100%;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -616,12 +654,14 @@ tbody tr:hover { background: var(--muted); }
   background-position: center 30%;
   background-size: cover;
   padding: 48px 16px;
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .zylo-collections-hero {
     min-height: 380px;
     padding: 64px 24px;
+    border-radius: 0;
   }
 }
 
@@ -693,16 +733,17 @@ tbody tr:hover { background: var(--muted); }
 
 /* Storefront Page Container */
 .zylo-page-container {
-  max-width: 1140px;
+  max-width: 1188px;
   margin: 0 auto;
   padding: 24px 16px 60px;
   background: #fff;
   min-height: calc(100vh - 60px);
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .zylo-page-container {
-    padding: 40px 32px 72px;
+    padding: 40px 24px 72px;
   }
 }
 
@@ -740,32 +781,23 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-collections-content {
   width: 100%;
-  max-width: 1140px;
+  max-width: 1188px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 14px;
-  padding-right: 14px;
+  padding-left: 16px;
+  padding-right: 16px;
   padding-top: 20px;
   padding-bottom: 60px;
   box-sizing: border-box;
   overflow: hidden;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .zylo-collections-content {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
     padding-top: 28px;
     padding-bottom: 64px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .zylo-collections-content {
-    padding-left: 32px;
-    padding-right: 32px;
-    padding-top: 36px;
-    padding-bottom: 72px;
   }
 }
 

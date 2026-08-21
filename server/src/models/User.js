@@ -25,6 +25,16 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true
     },
+    permanentAddress: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    temporaryAddress: {
+      type: String,
+      default: '',
+      trim: true
+    },
     role: {
       type: String,
       enum: ['customer', 'admin', 'staff'],

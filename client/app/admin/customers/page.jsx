@@ -10,7 +10,15 @@ export default function AdminCustomersPage() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCust, setEditingCust] = useState(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', city: '', email: '', notes: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    permanentAddress: '',
+    temporaryAddress: '',
+    city: '',
+    email: '',
+    notes: ''
+  });
 
   const refreshData = async () => {
     setLoading(true);
@@ -34,7 +42,9 @@ export default function AdminCustomersPage() {
             id: ac.id || ac._id,
             name: ac.name || 'Customer',
             phone: ac.phone || '',
-            city: ac.city || 'Kathmandu',
+            permanentAddress: ac.permanentAddress || '',
+            temporaryAddress: ac.temporaryAddress || '',
+            city: ac.temporaryAddress || ac.permanentAddress || ac.city || 'Kathmandu',
             email: ac.email || '',
             orders: ac.orderCount || 0,
             spend: spendNpr,
@@ -63,6 +73,8 @@ export default function AdminCustomersPage() {
               id: 'cust_' + (phone || name || 'guest').replace(/[^a-zA-Z0-9]/g, '').slice(0, 10),
               name: name || 'Storefront Customer',
               phone: phone || '',
+              permanentAddress: '',
+              temporaryAddress: city,
               city: city,
               email: o.guestEmail || '',
               orders: 1,
@@ -88,7 +100,7 @@ export default function AdminCustomersPage() {
 
   const openNewCustomerModal = () => {
     setEditingCust(null);
-    setFormData({ name: '', phone: '', city: '', email: '', notes: '' });
+    setFormData({ name: '', phone: '', permanentAddress: '', temporaryAddress: '', city: '', email: '', notes: '' });
     setModalOpen(true);
   };
 
@@ -97,6 +109,8 @@ export default function AdminCustomersPage() {
     setFormData({
       name: c.name || '',
       phone: c.phone || '',
+      permanentAddress: c.permanentAddress || '',
+      temporaryAddress: c.temporaryAddress || '',
       city: c.city || '',
       email: c.email || '',
       notes: c.notes || ''
@@ -109,9 +123,9 @@ export default function AdminCustomersPage() {
     if (!formData.name.trim()) return;
 
     if (editingCust) {
-      setCustomers(prev => prev.map(c => (c.id === editingCust.id ? { ...c, ...formData } : c)));
+      setCustomers((prev) => prev.map((c) => (c.id === editingCust.id ? { ...c, ...formData } : c)));
     } else {
-      setCustomers(prev => [
+      setCustomers((prev) => [
         {
           id: 'cust_' + Date.now().toString(36),
           ...formData,
@@ -126,22 +140,32 @@ export default function AdminCustomersPage() {
 
   const handleDelete = (c) => {
     if (!confirm(`Delete customer ${c.name}?`)) return;
-    setCustomers(prev => prev.filter(x => (x.id ? x.id !== c.id : x.name !== c.name)));
+    setCustomers((prev) => prev.filter((x) => (x.id ? x.id !== c.id : x.name !== c.name)));
   };
 
-  const filtered = customers.filter(c =>
+  const filtered = customers.filter((c) =>
     (c.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (c.phone || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.city || '').toLowerCase().includes(search.toLowerCase())
+    (c.permanentAddress || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.temporaryAddress || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const totalSpend = customers.reduce((a, c) => a + (Number(c.spend) || 0), 0);
   const totalOrders = customers.reduce((a, c) => a + (Number(c.orders) || 0), 0);
 
   const exportCsv = () => {
-    const headers = ['Name', 'Phone', 'City', 'Email', 'Orders', 'Lifetime Spend'];
-    const rows = filtered.map(c => [`"${c.name}"`, `"${c.phone}"`, `"${c.city}"`, `"${c.email || ''}"`, c.orders || 0, c.spend || 0]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const headers = ['Name', 'Email', 'Phone', 'Permanent Address', 'Temporary Address', 'Orders', 'Lifetime Spend'];
+    const rows = filtered.map((c) => [
+      `"${c.name}"`,
+      `"${c.email || ''}"`,
+      `"${c.phone}"`,
+      `"${c.permanentAddress || ''}"`,
+      `"${c.temporaryAddress || ''}"`,
+      c.orders || 0,
+      c.spend || 0
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -154,8 +178,8 @@ export default function AdminCustomersPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Customers</h1>
-        <p>Customer directory and lifetime purchasing log.</p>
+        <h1>Customers & Registered Users</h1>
+        <p>User directory, registered addresses, and customer lifetime purchasing records.</p>
       </div>
 
       <div className="metric-grid">
@@ -180,10 +204,10 @@ export default function AdminCustomersPage() {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="Search customers by name, phone or city"
+          placeholder="Search name, email, phone, or address"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: '280px' }}
+          style={{ width: '320px' }}
         />
         <div className="spacer" />
         <button className="btn" onClick={exportCsv}>Export CSV</button>
@@ -194,9 +218,10 @@ export default function AdminCustomersPage() {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Customer / User</th>
               <th>Phone</th>
-              <th>City</th>
+              <th>Permanent Address</th>
+              <th>Temporary Address</th>
               <th className="num">Orders</th>
               <th className="num">Lifetime Spend</th>
               <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
@@ -206,20 +231,34 @@ export default function AdminCustomersPage() {
             {filtered.length > 0 ? (
               filtered.map((c, idx) => (
                 <tr key={c.id || idx}>
-                  <td><strong>{c.name}</strong></td>
-                  <td style={{ color: 'var(--muted-foreground)' }}><code>{c.phone}</code></td>
-                  <td>{c.city}</td>
+                  <td>
+                    <strong>{c.name}</strong>
+                    <div style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{c.email || 'No email'}</div>
+                  </td>
+                  <td style={{ color: 'var(--muted-foreground)' }}>
+                    <code>{c.phone || '-'}</code>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '13px' }}>{c.permanentAddress || '-'}</span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '13px' }}>{c.temporaryAddress || c.city || '-'}</span>
+                  </td>
                   <td className="num">{c.orders || 0}</td>
                   <td className="num"><strong>{money(c.spend || 0)}</strong></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="icon-btn" title="Edit" onClick={() => openEditCustomerModal(c)}><Icon name="edit" size={15} /></button>
-                    <button className="icon-btn" title="Delete" onClick={() => handleDelete(c)}><Icon name="trash" size={15} /></button>
+                    <button className="icon-btn" title="Edit / View" onClick={() => openEditCustomerModal(c)}>
+                      <Icon name="edit" size={15} />
+                    </button>
+                    <button className="icon-btn" title="Delete" onClick={() => handleDelete(c)}>
+                      <Icon name="trash" size={15} />
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6"><div className="empty-state">No customers found.</div></td>
+                <td colSpan="7"><div className="empty-state">No customers found.</div></td>
               </tr>
             )}
           </tbody>
@@ -228,8 +267,8 @@ export default function AdminCustomersPage() {
 
       {modalOpen && (
         <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}>
-          <div className="modal">
-            <h2>{editingCust ? 'Edit Customer' : 'Add Customer'}</h2>
+          <div className="modal" style={{ maxWidth: '600px' }}>
+            <h2>{editingCust ? 'Customer Details' : 'Add Customer'}</h2>
             <form onSubmit={handleSave}>
               <div className="form-grid-2">
                 <div className="field">
@@ -242,22 +281,6 @@ export default function AdminCustomersPage() {
                   />
                 </div>
                 <div className="field">
-                  <label>Phone Number</label>
-                  <input
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="98XXXXXXXX"
-                  />
-                </div>
-                <div className="field">
-                  <label>City</label>
-                  <input
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Kathmandu"
-                  />
-                </div>
-                <div className="field">
                   <label>Email Address</label>
                   <input
                     type="email"
@@ -266,9 +289,41 @@ export default function AdminCustomersPage() {
                     placeholder="email@example.com"
                   />
                 </div>
+                <div className="field">
+                  <label>Phone Number</label>
+                  <input
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="98XXXXXXXX"
+                  />
+                </div>
+                <div className="field">
+                  <label>City / Location</label>
+                  <input
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="Kathmandu"
+                  />
+                </div>
+                <div className="field">
+                  <label>Permanent Address</label>
+                  <input
+                    value={formData.permanentAddress}
+                    onChange={(e) => setFormData({ ...formData, permanentAddress: e.target.value })}
+                    placeholder="Permanent Address (e.g. Pokhara-8)"
+                  />
+                </div>
+                <div className="field">
+                  <label>Temporary Address</label>
+                  <input
+                    value={formData.temporaryAddress}
+                    onChange={(e) => setFormData({ ...formData, temporaryAddress: e.target.value })}
+                    placeholder="Temporary Address (e.g. Thamel, KTM)"
+                  />
+                </div>
               </div>
               <div className="field">
-                <label>Notes</label>
+                <label>Notes / Status</label>
                 <textarea
                   rows="2"
                   value={formData.notes}
@@ -277,7 +332,7 @@ export default function AdminCustomersPage() {
                 />
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
-                <button type="button" className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
+                <button type="button" className="btn" onClick={() => setModalOpen(false)}>Close</button>
                 <button type="submit" className="btn btn-primary">Save customer</button>
               </div>
             </form>

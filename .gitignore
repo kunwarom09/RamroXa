@@ -49,7 +49,7 @@ antigravity-ide/
 .system_generated/
 
 # Scratch, Planning & Old Prototype Files
-admin/
+/admin/
 zylo-admin.html
 implementation_plan.md
 .implementation_plan.md

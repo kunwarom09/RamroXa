@@ -126,6 +126,7 @@ describe('Phase 5 - Admin CRUD & Management API', () => {
         basePrice: 650000, // Rs 6,500
         mrp: 750000,
         status: 'published',
+        tags: ['jacket', 'waterproof'],
         description: '3-layer waterproof technical shell parka.',
         options: { Colour: ['Charcoal', 'Olive'], Size: ['M', 'L'] },
         variants: [
@@ -177,6 +178,17 @@ describe('Phase 5 - Admin CRUD & Management API', () => {
       expect(storefrontDetailRes.body.data.variants.length).toBe(2);
     });
 
+    it('GET /api/admin/products/tags should list distinct tags across products', async () => {
+      const res = await request(app)
+        .get('/api/admin/products/tags')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body.data.tags)).toBe(true);
+      expect(res.body.data.tags).toContain('jacket');
+      expect(res.body.data.tags).toContain('waterproof');
+    });
+
     it('PATCH /api/admin/products/:id should update product attributes', async () => {
       const res = await request(app)
         .patch(`/api/admin/products/${createdProductId}`)
@@ -193,6 +205,65 @@ describe('Phase 5 - Admin CRUD & Management API', () => {
       // Verify updated price in public storefront
       const publicDetail = await request(app).get(`/api/products/${createdProductSlug}`);
       expect(publicDetail.body.data.basePrice).toBe(620000);
+    });
+
+    it('POST /api/admin/products with nested Variants and SubVariants (amount inheritance and hide flag)', async () => {
+      const nestedPayload = {
+        name: 'Heritage Trench Coat',
+        slug: 'heritage-trench-coat',
+        categoryId: 'outerwear',
+        brand: 'Zylo Heritage',
+        basePrice: 850000, // Rs 8,500
+        variants: [
+          {
+            name: 'Beige Heritage',
+            sku: 'ZYL-OUT-TRN-BEI',
+            amount: 850000,
+            stock: 12,
+            subVariants: [
+              {
+                name: 'Beige / Small',
+                sku: 'ZYL-OUT-TRN-BEI-S',
+                hidden: false
+              },
+              {
+                name: 'Beige / Extra Small (Prototype)',
+                sku: 'ZYL-OUT-TRN-BEI-XS',
+                amount: 900000,
+                hidden: true // Hidden from storefront!
+              }
+            ]
+          }
+        ]
+      };
+
+      const res = await request(app)
+        .post('/api/admin/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(nestedPayload);
+
+      expect(res.status).toBe(201);
+      const prod = res.body.data.product;
+      expect(prod.name).toBe('Heritage Trench Coat');
+      expect(prod.variants.length).toBe(1);
+      expect(prod.variants[0].name).toBe('Beige Heritage');
+      expect(prod.variants[0].subVariants.length).toBe(2);
+
+      const visibleSub = prod.variants[0].subVariants.find((s) => s.sku === 'ZYL-OUT-TRN-BEI-S');
+      const hiddenSub = prod.variants[0].subVariants.find((s) => s.sku === 'ZYL-OUT-TRN-BEI-XS');
+      expect(visibleSub.price).toBe(850000);
+      expect(visibleSub.hidden).toBe(false);
+      expect(hiddenSub.price).toBe(900000);
+      expect(hiddenSub.hidden).toBe(true);
+
+      // Verify storefront detail hides the hidden subvariant
+      const storefrontRes = await request(app).get('/api/products/heritage-trench-coat');
+      expect(storefrontRes.status).toBe(200);
+      const publicVariants = storefrontRes.body.data.variants;
+      const foundHiddenInStore = publicVariants.some((v) => v.sku === 'ZYL-OUT-TRN-BEI-XS');
+      expect(foundHiddenInStore).toBe(false);
+      const foundVisibleInStore = publicVariants.some((v) => v.sku === 'ZYL-OUT-TRN-BEI-S');
+      expect(foundVisibleInStore).toBe(true);
     });
   });
 

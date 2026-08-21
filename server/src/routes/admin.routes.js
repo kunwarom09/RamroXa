@@ -6,6 +6,7 @@ import {
   updateCategory,
   deleteCategory,
   listProducts,
+  listProductTags,
   getProduct,
   createProduct,
   updateProduct,
@@ -64,6 +65,7 @@ router.delete('/categories/:id', deleteCategory);
 // Products
 router.delete('/products/purge-all', purgeProducts);
 router.post('/products/populate', populateProducts);
+router.get('/products/tags', listProductTags);
 router.get('/products', listProducts);
 router.post('/products', createProduct);
 router.get('/products/:id', getProduct);

@@ -140,7 +140,9 @@ export default class StoreApp extends React.Component {
       contactSent: false,
       colFilter: 'all',
       mobileMenuOpen: false,
-      landingScale: 1
+      landingScale: 1,
+      currentUser: null,
+      showProfileModal: false
     };
   }
 
@@ -221,6 +223,28 @@ export default class StoreApp extends React.Component {
       }
     };
     loadDynamicCatalog();
+
+    const checkAuthSession = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('zylo_user');
+          if (stored) {
+            this.setState({ currentUser: JSON.parse(stored) });
+          }
+        }
+        const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData?.data?.user) {
+            this.setState({ currentUser: meData.data.user });
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('zylo_user', JSON.stringify(meData.data.user));
+            }
+          }
+        }
+      } catch (e) {}
+    };
+    checkAuthSession();
 
     this.updateLandingScale = () => {
       if (typeof window === 'undefined') return;
@@ -480,52 +504,117 @@ export default class StoreApp extends React.Component {
     });
   };
 
+  handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('zylo_user');
+    }
+    this.setState({ currentUser: null, showProfileModal: false, toast: 'Signed out successfully' });
+    setTimeout(() => this.setState({ toast: null }), 3000);
+  };
+
   header() {
-    const { view, cart, mobileMenuOpen } = this.state;
+    const { view, cart, mobileMenuOpen, currentUser } = this.state;
     const totalItems = cart.reduce((t, l) => t + l.qty, 0);
     const link = (label, active, onClick) => (
       <span onClick={onClick} style={{ fontSize: 13, letterSpacing: 1, color: active ? '#fff' : '#a1a1a1', cursor: 'pointer' }}>{label}</span>
     );
     return (
       <>
-        <header className="header-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', height: 60, background: '#000', color: '#fff', position: 'sticky', top: 0, zIndex: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <button onClick={this.toggleMobileMenu} className="mobile-nav-toggle" aria-label="Toggle Navigation Menu">
-              <div className={`hamburger-icon ${mobileMenuOpen ? 'open' : ''}`}>
-                <span />
-                <span />
-                <span />
+        <header className="header-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, background: '#000', color: '#fff', position: 'sticky', top: 0, zIndex: 40, margin: 0 }}>
+          <div style={{ maxWidth: 1188, width: '100%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <button onClick={this.toggleMobileMenu} className="mobile-nav-toggle" aria-label="Toggle Navigation Menu">
+                <div className={`hamburger-icon ${mobileMenuOpen ? 'open' : ''}`}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </button>
+              <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>ZYLO</div>
+              <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
+                {link('HOME', view === 'shop', this.nav('shop'))}
+                {link('COLLECTIONS', view === 'collections', this.nav('collections', 'all'))}
+                {link('CONTACT', view === 'contact', this.nav('contact'))}
               </div>
-            </button>
-            <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>ZYLO</div>
-            <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
-              {link('HOME', view === 'shop', this.nav('shop'))}
-              {link('COLLECTIONS', view === 'collections', this.nav('collections', 'all'))}
-              {link('CONTACT', view === 'contact', this.nav('contact'))}
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <button
-              onClick={this.nav('cart')}
-              style={{
-                ...font,
-                background: '#000',
-                border: '1.5px solid #ffffff',
-                borderRadius: 9999,
-                padding: '4px 5px 4px 14px',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 10,
-                transition: 'transform 0.15s ease, background 0.15s ease',
-                outline: 'none'
-              }}
-            >
-              <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>CART</span>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
-                {totalItems}
-              </span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {currentUser ? (
+                <button
+                  onClick={() => this.setState((s) => ({ showProfileModal: !s.showProfileModal }))}
+                  style={{
+                    ...font,
+                    background: '#000',
+                    border: '1.5px solid #ffffff',
+                    borderRadius: 9999,
+                    padding: '4px 5px 4px 14px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'transform 0.15s ease, background 0.15s ease',
+                    outline: 'none'
+                  }}
+                  title="Account Profile & Addresses"
+                >
+                  <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>
+                    {currentUser.name ? currentUser.name.split(' ')[0].toUpperCase() : 'ACCOUNT'}
+                  </span>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                    👤
+                  </span>
+                </button>
+              ) : (
+                <a
+                  href="/login"
+                  style={{
+                    ...font,
+                    background: '#000',
+                    border: '1.5px solid #ffffff',
+                    borderRadius: 9999,
+                    padding: '4px 5px 4px 14px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    textDecoration: 'none',
+                    transition: 'transform 0.15s ease, background 0.15s ease',
+                    outline: 'none'
+                  }}
+                >
+                  <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>
+                    SIGN IN
+                  </span>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                    👤
+                  </span>
+                </a>
+              )}
+
+              <button
+                onClick={this.nav('cart')}
+                style={{
+                  ...font,
+                  background: '#000',
+                  border: '1.5px solid #ffffff',
+                  borderRadius: 9999,
+                  padding: '4px 5px 4px 14px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  transition: 'transform 0.15s ease, background 0.15s ease',
+                  outline: 'none'
+                }}
+              >
+                <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>CART</span>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
+                  {totalItems}
+                </span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -541,7 +630,67 @@ export default class StoreApp extends React.Component {
             <button className="mobile-nav-link" onClick={this.nav('cart')}>CART ({totalItems})</button>
             <button className="mobile-nav-link" onClick={this.nav('contact')}>CONTACT US</button>
           </div>
-          <div style={{ marginTop: 40, borderTop: '1px solid #222', paddingTop: 24 }}>
+
+          <div style={{ marginTop: 24, borderTop: '1px solid #222', paddingTop: 16 }}>
+            {currentUser ? (
+              <div>
+                <div style={{ fontSize: 13, color: '#aaa', marginBottom: 12 }}>
+                  Signed in as <strong style={{ color: '#fff' }}>{currentUser.name}</strong>
+                </div>
+                <button
+                  className="mobile-nav-link"
+                  onClick={() => this.setState({ showProfileModal: true, mobileMenuOpen: false })}
+                  style={{ textAlign: 'left', width: '100%', marginBottom: 12, fontSize: 13 }}
+                >
+                  👤 MY PROFILE & ADDRESSES
+                </button>
+                <button
+                  className="mobile-nav-link"
+                  onClick={this.handleLogout}
+                  style={{ textAlign: 'left', width: '100%', color: '#ef4444', fontSize: 13 }}
+                >
+                  SIGN OUT
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <a
+                  href="/login"
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    background: '#fff',
+                    color: '#000',
+                    padding: '10px 0',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    fontSize: 13
+                  }}
+                >
+                  SIGN IN
+                </a>
+                <a
+                  href="/signup"
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    border: '1px solid #fff',
+                    color: '#fff',
+                    padding: '10px 0',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    fontSize: 13
+                  }}
+                >
+                  REGISTER
+                </a>
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 28, borderTop: '1px solid #222', paddingTop: 20 }}>
             <div style={{ fontSize: 12, color: '#888', letterSpacing: 1.5, marginBottom: 16 }}>QUICK CATEGORIES</div>
             <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'all' })}>✦ All Products</button>
             <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'men' })}>✦ Men's Wear</button>
@@ -557,38 +706,40 @@ export default class StoreApp extends React.Component {
   footer() {
     return (
       <footer className="store-footer">
-        <div className="store-footer-grid">
-          <div>
-            <div style={{ fontSize: 28, letterSpacing: 4, marginBottom: 12 }}>ZYLO</div>
-            <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
-              Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
-            </p>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>SHOP</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-              <span onClick={() => this.goToView('collections', { colFilter: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>All collections</span>
-              <span onClick={() => this.goToView('collections', { colFilter: 'men' })} style={{ cursor: 'pointer', color: '#888' }}>Men</span>
-              <span onClick={() => this.goToView('collections', { colFilter: 'women' })} style={{ cursor: 'pointer', color: '#888' }}>Women</span>
-              <span onClick={() => this.goToView('collections', { colFilter: 'kids' })} style={{ cursor: 'pointer', color: '#888' }}>Kids</span>
+        <div className="store-footer-inner">
+          <div className="store-footer-grid">
+            <div>
+              <div style={{ fontSize: 28, letterSpacing: 4, marginBottom: 12 }}>ZYLO</div>
+              <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
+                Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
+              </p>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>SHOP</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                <span onClick={() => this.goToView('collections', { colFilter: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>All collections</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'men' })} style={{ cursor: 'pointer', color: '#888' }}>Men</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'women' })} style={{ cursor: 'pointer', color: '#888' }}>Women</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'kids' })} style={{ cursor: 'pointer', color: '#888' }}>Kids</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>HELP</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Contact us</span>
+                <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Shipping policy</span>
+                <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Returns & exchanges</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>PAYMENTS</div>
+              <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6 }}>Cash on delivery across Nepal. eSewa and Fonepay accepted.</p>
             </div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>HELP</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-              <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Contact us</span>
-              <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Shipping policy</span>
-              <span onClick={this.nav('contact')} style={{ cursor: 'pointer', color: '#888' }}>Returns & exchanges</span>
-            </div>
+          <div style={{ borderTop: '1px solid #222', paddingTop: 24, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', flexWrap: 'wrap', gap: 12 }}>
+            <span>&copy; {new Date().getFullYear()} Zylo Pvt. Ltd. All rights reserved.</span>
+            <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
           </div>
-          <div>
-            <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>PAYMENTS</div>
-            <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6 }}>Cash on delivery across Nepal. eSewa and Fonepay accepted.</p>
-          </div>
-        </div>
-        <div style={{ maxWidth: 1200, margin: '0 auto', borderTop: '1px solid #222', paddingTop: 24, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', flexWrap: 'wrap', gap: 12 }}>
-          <span>&copy; {new Date().getFullYear()} Zylo Pvt. Ltd. All rights reserved.</span>
-          <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
         </div>
       </footer>
     );
@@ -628,33 +779,35 @@ export default class StoreApp extends React.Component {
     ];
 
     return (
-      <div style={{ background: '#fff', width: '100%', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 1188, margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box' }}>
         {/* Collections Hero */}
-        <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-          <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <span style={{ fontSize: 12, background: '#fff', color: '#000', borderRadius: 999, padding: '4px 12px' }}>Shop</span>
-              <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '4px 12px' }}>The new season</span>
+        <div className="zylo-collections-hero-wrapper">
+          <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+            <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: 12, background: '#fff', color: '#000', borderRadius: 999, padding: '4px 12px' }}>Shop</span>
+                <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '4px 12px' }}>The new season</span>
+              </div>
+              <h1 className="zylo-hero-title">Elevate your daily wardrobe with ease</h1>
+              <p className="zylo-hero-sub">Explore our handpicked modern silhouettes crafted from sustainable fabrics.</p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  onClick={() => { const el = document.getElementById('col-grid'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
+                  style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
+                >
+                  Explore styles
+                </button>
+                <button
+                  onClick={() => this.goToView('contact')}
+                  style={{ ...font, fontSize: 13, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
+                >
+                  About us
+                </button>
+              </div>
             </div>
-            <h1 className="zylo-hero-title">Elevate your daily wardrobe with ease</h1>
-            <p className="zylo-hero-sub">Explore our handpicked modern silhouettes crafted from sustainable fabrics.</p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button
-                onClick={() => { const el = document.getElementById('col-grid'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
-                style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
-              >
-                Explore styles
-              </button>
-              <button
-                onClick={() => this.goToView('contact')}
-                style={{ ...font, fontSize: 13, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
-              >
-                About us
-              </button>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         {/* Category Filter Pills & Products Grid */}
         <div className="zylo-collections-content">
@@ -901,7 +1054,7 @@ export default class StoreApp extends React.Component {
       );
     }
     return (
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
         <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 28 }}>SHOPPING CART</h1>
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40 }}>
           <div>
@@ -949,7 +1102,7 @@ export default class StoreApp extends React.Component {
 
     if (!cart.length || subtotal <= 0) {
       return (
-        <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
+        <div style={{ width: '100%', maxWidth: 1188, margin: '80px auto', textAlign: 'center', padding: '0 24px', boxSizing: 'border-box' }}>
           <h2 style={{ fontSize: 32, fontWeight: 400, marginBottom: 12 }}>YOUR CART IS EMPTY</h2>
           <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>Please add items to your cart before proceeding to checkout.</p>
           <button onClick={() => this.goToView('collections', { colFilter: 'all' })} style={pillBtn(true)}>DISCOVER GARMENTS</button>
@@ -958,7 +1111,7 @@ export default class StoreApp extends React.Component {
     }
 
     return (
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
         <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 32 }}>CHECKOUT</h1>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
           {/* Left: Customer & Shipping Details */}
@@ -1159,7 +1312,7 @@ export default class StoreApp extends React.Component {
     ];
 
     return (
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
         <div style={{ marginBottom: 36 }}>
           <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 12 }}>
             CUSTOMER SUPPORT & INQUIRIES
@@ -1404,8 +1557,8 @@ export default class StoreApp extends React.Component {
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }}>
           {view === 'shop' && (
             <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
-              <div style={{ width: `${1188 * landingScale}px`, height: `${11684 * landingScale}px`, flexShrink: 0, position: 'relative' }}>
-                <div style={{ width: '1188px', height: '11684px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
+              <div style={{ width: `${1188 * landingScale}px`, height: `${9149 * landingScale}px`, flexShrink: 0, position: 'relative' }}>
+                <div style={{ width: '1188px', height: '9149px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
                   <Landing />
                 </div>
               </div>
@@ -1419,6 +1572,108 @@ export default class StoreApp extends React.Component {
           {view === 'contact' && this.renderContact()}
         </main>
         {view !== 'shop' && this.footer()}
+
+        {/* Customer Account & Saved Addresses Modal */}
+        {this.state.showProfileModal && this.state.currentUser && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: 20
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) this.setState({ showProfileModal: false }); }}
+          >
+            <div style={{
+              background: '#fff',
+              color: '#111',
+              borderRadius: 16,
+              maxWidth: 480,
+              width: '100%',
+              padding: 28,
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>CUSTOMER ACCOUNT</h3>
+                <button
+                  onClick={() => this.setState({ showProfileModal: false })}
+                  style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#666' }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>FULL NAME</span>
+                  <strong style={{ fontSize: 16 }}>{this.state.currentUser.name}</strong>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>EMAIL ADDRESS</span>
+                  <span>{this.state.currentUser.email}</span>
+                </div>
+
+                {this.state.currentUser.phone && (
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>PHONE NUMBER</span>
+                    <span>{this.state.currentUser.phone}</span>
+                  </div>
+                )}
+
+                <div style={{ background: '#f8f8f8', padding: 14, borderRadius: 10, border: '1px solid #eaeaea' }}>
+                  <div style={{ marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: 1, display: 'block', marginBottom: 2 }}>PERMANENT ADDRESS</span>
+                    <strong style={{ color: '#222' }}>{this.state.currentUser.permanentAddress || 'Not specified'}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: 1, display: 'block', marginBottom: 2 }}>TEMPORARY / CURRENT ADDRESS</span>
+                    <strong style={{ color: '#222' }}>{this.state.currentUser.temporaryAddress || 'Not specified'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee' }}>
+                <button
+                  onClick={this.handleLogout}
+                  style={{
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 16px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Sign Out
+                </button>
+                <button
+                  onClick={() => this.setState({ showProfileModal: false })}
+                  style={{
+                    background: '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 20px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

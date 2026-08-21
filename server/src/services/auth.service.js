@@ -9,7 +9,7 @@ import {
 } from '../utils/token.js';
 
 export async function register(data) {
-  const { email, password, name, phone } = data;
+  const { email, password, name, phone, permanentAddress, temporaryAddress } = data;
 
   if (!email || !password || !name) {
     throw ApiError.badRequest('Email, password, and name are required.');
@@ -20,8 +20,9 @@ export async function register(data) {
     throw ApiError.badRequest('A valid email address is required.');
   }
 
-  if (typeof password !== 'string' || password.length < 8) {
-    throw ApiError.badRequest('Password must be at least 8 characters long.');
+  const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+  if (typeof password !== 'string' || !passwordRegex.test(password)) {
+    throw ApiError.badRequest('Password must be at least 8 characters long and contain at least 1 alphabet, 1 number, and 1 special character.');
   }
 
   const existing = await User.findOne({ email: email.toLowerCase().trim() });
@@ -33,10 +34,12 @@ export async function register(data) {
   const passwordHash = await bcrypt.hash(password, salt);
 
   const user = await User.create({
-    email: email.toLowerCase(),
+    email: email.toLowerCase().trim(),
     passwordHash,
-    name,
-    phone: phone || '',
+    name: name.trim(),
+    phone: (phone || '').trim(),
+    permanentAddress: (permanentAddress || '').trim(),
+    temporaryAddress: (temporaryAddress || '').trim(),
     role: 'customer',
     isEmailVerified: false,
     isActive: true
