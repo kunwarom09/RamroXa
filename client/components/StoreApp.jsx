@@ -540,17 +540,36 @@ export default class StoreApp extends React.Component {
                 title="Shopping Cart"
               >
                 <div className="zylo-nav-cart-icon-wrap">
-                  <span className="zylo-nav-cart-count">{totalItems}</span>
-                  <svg className="zylo-nav-cart-svg" viewBox="0 0 38 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg className="zylo-nav-cart-svg" viewBox="0 0 46 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Top pill badge loop */}
+                    <rect x="16" y="2" width="13" height="15" rx="6.5" stroke="#ffffff" strokeWidth="2.2" fill="#000000" />
+                    
+                    {/* Cart body wireframe */}
                     <path
-                      d="M1 3h5.5l3.8 15h16.4l3.8-10.8H8.8"
+                      d="M 2 7 h 5.5 l 4.2 14.5 h 18.2 l 4.2 -11.5 H 9.5"
                       stroke="#ffffff"
-                      strokeWidth="2.4"
+                      strokeWidth="2.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    <circle cx="13" cy="24" r="2.2" fill="#ffffff" />
-                    <circle cx="25" cy="24" r="2.2" fill="#ffffff" />
+                    
+                    {/* Wheels */}
+                    <circle cx="14.5" cy="27.5" r="2.5" fill="#ffffff" />
+                    <circle cx="29.5" cy="27.5" r="2.5" fill="#ffffff" />
+
+                    {/* Centered locked white count */}
+                    <text
+                      x="22.5"
+                      y="10.5"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fill="#ffffff"
+                      fontSize="11.5"
+                      fontWeight="700"
+                      fontFamily="'Share Tech', sans-serif"
+                    >
+                      {totalItems}
+                    </text>
                   </svg>
                 </div>
                 <span className="zylo-nav-cart-label">Cart</span>
