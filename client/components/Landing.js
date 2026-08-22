@@ -907,16 +907,7 @@ function Container(_p = {}) {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: "relative",
-      overflow: "hidden",
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      flexWrap: "nowrap",
-      gap: "calc(var(--item-spacing-438) * 1px)",
-      flexShrink: 0,
-      alignSelf: "stretch"
+      display: "none"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
