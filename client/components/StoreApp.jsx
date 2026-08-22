@@ -44,6 +44,16 @@ const METHODS = [
   { id: 'fonepay', name: 'Fonepay', desc: "Nepal's QR / bank payment network. Scan a Fonepay QR with your bank app to pay before confirmation." },
 ];
 
+const HERO_PRESETS = [
+  { key: 'Urban', hash: '7f7ad2764f25606b', label: 'Urban' },
+  { key: 'Latest', hash: 'ed11bf6e660fdaa2', label: 'Latest' },
+  { key: 'Premium', hash: '78948356fa487da5', label: 'Premium' },
+  { key: 'Arctic', hash: 'dbacea851225e2bf', label: 'Arctic' },
+  { key: 'Casual', hash: '0ca944ebbae726b8', label: 'Casual' },
+  { key: 'Iconic', hash: '44312e50fe56c782', label: 'Iconic' },
+  { key: 'Unique', hash: 'c2dbe0a9de9b2d4c', label: 'Unique' }
+];
+
 const FREE_OVER = 5000;
 const rs = n => 'Rs ' + (n || 0).toLocaleString('en-US');
 const asset = h => `/assets/${h}.q.jpg`;
@@ -142,7 +152,8 @@ export default class StoreApp extends React.Component {
       mobileMenuOpen: false,
       landingScale: 1,
       currentUser: null,
-      showProfileModal: false
+      showProfileModal: false,
+      heroPreset: 'Arctic'
     };
   }
 
@@ -742,6 +753,77 @@ export default class StoreApp extends React.Component {
           </div>
         </div>
       </footer>
+    );
+  }
+
+  renderHomeHero() {
+    const { heroPreset = 'Arctic' } = this.state;
+    const currentPreset = HERO_PRESETS.find((p) => p.key === heroPreset) || HERO_PRESETS[3];
+
+    return (
+      <section className="zylo-home-hero-full">
+        <div
+          className="zylo-home-hero-bg"
+          style={{
+            backgroundImage: `url('${asset(currentPreset.hash)}')`
+          }}
+        />
+        <div className="zylo-home-hero-overlay" />
+
+        {/* Center Content */}
+        <div className="zylo-home-hero-center">
+          <div className="zylo-hero-badge">
+            <span className="zylo-hero-badge-tag">Soft</span>
+            <span className="zylo-hero-badge-sub">Warm Winter Layers</span>
+          </div>
+
+          <h1 className="zylo-home-hero-title">
+            Premium wear<br />for modern living
+          </h1>
+
+          <p className="zylo-home-hero-desc">
+            Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.
+          </p>
+
+          <div className="zylo-home-hero-actions">
+            <button
+              onClick={this.nav('collections', 'all')}
+              className="zylo-hero-btn-primary"
+            >
+              See all collections
+            </button>
+            <button
+              onClick={this.nav('contact')}
+              className="zylo-hero-btn-secondary"
+            >
+              Contact us
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Thumbnails Carousel */}
+        <div className="zylo-home-hero-thumbnails-wrap">
+          <div className="zylo-home-hero-thumbnails">
+            {HERO_PRESETS.map((preset) => {
+              const isActive = preset.key === heroPreset;
+              return (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => this.setState({ heroPreset: preset.key })}
+                  className={`zylo-hero-thumb-btn ${isActive ? 'active' : ''}`}
+                  style={{
+                    backgroundImage: `url('${asset(preset.hash)}')`
+                  }}
+                  title={`Switch to ${preset.label}`}
+                >
+                  <span className="zylo-hero-thumb-label">{preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     );
   }
 
@@ -1556,10 +1638,13 @@ export default class StoreApp extends React.Component {
         {this.header()}
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }}>
           {view === 'shop' && (
-            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
-              <div style={{ width: `${1188 * landingScale}px`, height: `${9149 * landingScale}px`, flexShrink: 0, position: 'relative' }}>
-                <div style={{ width: '1188px', height: '9149px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
-                  <Landing />
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center' }}>
+              {this.renderHomeHero()}
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
+                <div style={{ width: `${1188 * landingScale}px`, height: `${(9149 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ width: '1188px', height: '9149px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0 }}>
+                    <Landing />
+                  </div>
                 </div>
               </div>
             </div>

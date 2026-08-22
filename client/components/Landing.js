@@ -3827,7 +3827,7 @@ function Container(_p = {}) {
       width: 1188,
       height: 616,
       overflow: "hidden",
-      display: "flex",
+      display: "none",
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
