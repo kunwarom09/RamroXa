@@ -1638,11 +1638,11 @@ export default class StoreApp extends React.Component {
         {this.header()}
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }}>
           {view === 'shop' && (
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', background: '#000000' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', background: '#ffffff' }}>
               {this.renderHomeHero()}
-              <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden', background: '#000000' }}>
-                <div style={{ width: `${1188 * landingScale}px`, height: `${(8976 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#000000' }}>
-                  <div style={{ width: '1188px', height: '8976px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden', background: '#ffffff' }}>
+                <div style={{ width: `${1188 * landingScale}px`, height: `${(8976 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
+                  <div style={{ width: '1188px', height: '8976px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0, background: '#ffffff' }}>
                     <Landing />
                   </div>
                 </div>

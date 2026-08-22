@@ -69,7 +69,7 @@ function Container(_p = {}) {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
-      backgroundColor: "var(--color-grey-97)",
+      backgroundColor: "#ffffff",
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-start",
@@ -83,7 +83,7 @@ function Container(_p = {}) {
       width: 1188,
       height: 8976,
       overflow: "hidden",
-      backgroundColor: "#000000",
+      backgroundColor: "#ffffff",
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
