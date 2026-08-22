@@ -81,7 +81,7 @@ function Container(_p = {}) {
     style: {
       position: "relative",
       width: 1188,
-      height: 8090,
+      height: 8280,
       overflow: "hidden",
       backgroundColor: "#ffffff",
       flexShrink: 0
@@ -92,7 +92,7 @@ function Container(_p = {}) {
       left: 0,
       top: 7450,
       width: 1188,
-      height: 640,
+      height: 830,
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -571,7 +571,9 @@ function Container(_p = {}) {
       position: "relative",
       width: 1188,
       overflow: "hidden",
-      marginTop: 28,
+      marginTop: 32,
+      paddingTop: 10,
+      paddingBottom: 40,
       display: "flex",
       alignItems: "center"
     }
