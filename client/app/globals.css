@@ -932,18 +932,18 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-home-hero-title {
   font-family: 'Share Tech', sans-serif;
-  font-size: clamp(34px, 5.5vw, 62px);
+  font-size: clamp(34px, 5.5vw, 70px);
   font-weight: 600;
   line-height: 1.12;
   letter-spacing: -1.5px;
-  color: #ffffff;
+  color: #fff;
   margin: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
 }
 
 .zylo-home-hero-desc {
-  font-size: clamp(14px, 1.8vw, 18px);
-  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(14px, 1.8vw, 25px);
+  color: hsla(0, 0%, 100%, 0.88);
   max-width: 520px;
   margin: 0;
   line-height: 1.5;
