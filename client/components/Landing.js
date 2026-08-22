@@ -81,9 +81,9 @@ function Container(_p = {}) {
     style: {
       position: "relative",
       width: 1188,
-      height: 9149,
+      height: 8976,
       overflow: "hidden",
-      backgroundColor: "var(--color-grey-97)",
+      backgroundColor: "#000000",
       flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
