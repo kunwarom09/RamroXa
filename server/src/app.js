@@ -34,13 +34,14 @@ export function createApp() {
     env.FRONTEND_URL,
     'http://localhost:3000',
     'http://localhost:3001'
-  ];
+  ].flatMap(u => (u ? u.split(',').map(s => s.trim()) : []));
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, or same-origin)
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (mobile apps, server-to-server, curl)
+        // or allowed origins, or any *.vercel.app deployment
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
           callback(null, true);
         } else {
           callback(new Error(`Origin ${origin} not allowed by CORS`));
