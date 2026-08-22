@@ -467,22 +467,34 @@ export default function ProductForm({ productId = null }) {
         newArrival: !!formData.newArrival,
         bestSelling: !!formData.bestSelling
       },
-      images: formData.images || []
+      images: (formData.images || [])
+        .filter((img) => img && (typeof img === 'string' ? img.trim() : (img.url && typeof img.url === 'string' && img.url.trim())))
+        .map((img, idx) => {
+          if (typeof img === 'string') {
+            return { url: img.trim(), alt: formData.name || 'Product', isFeatured: idx === 0, format: 'webp' };
+          }
+          return {
+            url: img.url.trim(),
+            alt: img.alt || formData.name || 'Product',
+            isFeatured: img.isFeatured !== undefined ? !!img.isFeatured : idx === 0,
+            format: img.format || 'webp'
+          };
+        })
     };
 
     const newVariants = [];
-    variantGroups.forEach((vg) => {
-      (vg.values || []).forEach((val) => {
+    variantGroups.forEach((vg, vgIndex) => {
+      (vg.values || []).forEach((val, valIndex) => {
         const topAmount = val.amount !== '' && val.amount != null ? Number(val.amount) : masterPrice;
         const topPricePaisa = Math.round(topAmount * 100);
 
-        const subList = (val.subsets || []).map((sub) => {
+        const subList = (val.subsets || []).map((sub, subIndex) => {
           const subAmt = sub.amount !== '' && sub.amount != null ? Number(sub.amount) : topAmount;
           const isHidden = sub.status === 'Hidden';
           return {
             id: sub.id,
-            name: `${vg.name || 'Variant'}: ${val.name || 'Value'} / ${sub.name || 'Subset'}`,
-            sku: sub.sku || `${val.sku || 'SKU'}-S`,
+            name: `${vg.name || 'Variant'}: ${val.name || 'Value'} / ${sub.name || `Sub ${subIndex + 1}`}`,
+            sku: (sub.sku && sub.sku.trim()) || `${formData.sku || 'SKU'}-S${vgIndex + 1}-${valIndex + 1}-${subIndex + 1}`,
             price: Math.round(subAmt * 100),
             amount: Math.round(subAmt * 100),
             stock: Number(sub.stock) || 0,
@@ -496,8 +508,8 @@ export default function ProductForm({ productId = null }) {
         const isValHidden = val.status === 'Hidden';
         newVariants.push({
           id: val.id,
-          name: `${vg.name || 'Variant'}: ${val.name || 'Value'}`,
-          sku: val.sku || `${formData.sku || 'SKU'}-V`,
+          name: `${vg.name || 'Variant'}: ${val.name || `Value ${valIndex + 1}`}`,
+          sku: (val.sku && val.sku.trim()) || `${formData.sku || 'SKU'}-V${vgIndex + 1}-${valIndex + 1}`,
           price: topPricePaisa,
           amount: topPricePaisa,
           stock: Number(val.stock) || 0,
@@ -525,7 +537,9 @@ export default function ProductForm({ productId = null }) {
       showToast('Product saved successfully in MongoDB');
       router.push('/admin/products');
     } catch (apiErr) {
-      alert('Failed to save product in database: ' + (apiErr.message || 'Error'));
+      const errMsg = apiErr.message || 'Error';
+      const errDetails = apiErr.details ? (typeof apiErr.details === 'object' ? JSON.stringify(apiErr.details, null, 2) : String(apiErr.details)) : '';
+      alert(`Failed to save product in database: ${errMsg}${errDetails ? `\n\nDetails:\n${errDetails}` : ''}`);
     }
   };
 
@@ -727,11 +741,15 @@ export default function ProductForm({ productId = null }) {
             </div>
             <div className="field">
               <label>Gender</label>
-              <input
-                value={formData.gender}
+              <select
+                value={formData.gender || 'Unisex'}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                placeholder="e.g. Unisex"
-              />
+              >
+                <option value="Unisex">Unisex</option>
+                <option value="Men">Men</option>
+                <option value="Women">Women</option>
+                <option value="Kids">Kids</option>
+              </select>
             </div>
             <div className="field">
               <label>Season</label>

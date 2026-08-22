@@ -23,7 +23,8 @@ export const errorHandler = (err, req, res, next) => {
     // Mongoose validation error
     statusCode = 400;
     errorCode = 'VALIDATION_ERROR';
-    message = 'Validation failed';
+    const detailList = Object.keys(err.errors || {}).map((key) => `${key}: ${err.errors[key].message}`);
+    message = detailList.length > 0 ? `Validation failed: ${detailList.join('; ')}` : 'Validation failed';
     details = Object.keys(err.errors || {}).reduce((acc, key) => {
       acc[key] = err.errors[key].message;
       return acc;

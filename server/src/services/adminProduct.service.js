@@ -161,6 +161,26 @@ export async function createAdminProduct(data, user) {
     throw ApiError.conflict(`Product with slug '${finalSlug}' already exists.`);
   }
 
+  const validGenders = ['Men', 'Women', 'Unisex', 'Kids'];
+  const normalizedGender = validGenders.find((g) => g.toLowerCase() === String(gender || '').toLowerCase().trim()) || 'Unisex';
+
+  const validStatuses = ['draft', 'published', 'archived'];
+  const normalizedStatus = validStatuses.find((s) => s.toLowerCase() === String(status || '').toLowerCase().trim()) || 'published';
+
+  const validImages = (Array.isArray(images) ? images : [])
+    .filter((img) => img && (typeof img === 'string' ? img.trim() : (img.url && typeof img.url === 'string' && img.url.trim())))
+    .map((img, idx) => {
+      if (typeof img === 'string') {
+        return { url: img.trim(), alt: name, isFeatured: idx === 0, format: 'webp' };
+      }
+      return {
+        url: img.url.trim(),
+        alt: img.alt || name,
+        isFeatured: img.isFeatured !== undefined ? !!img.isFeatured : idx === 0,
+        format: img.format || 'webp'
+      };
+    });
+
   const product = await Product.create({
     id,
     name,
@@ -168,14 +188,14 @@ export async function createAdminProduct(data, user) {
     sku: finalSku,
     categoryId,
     brand,
-    gender,
+    gender: normalizedGender,
     season,
     tags,
     basePrice: finalPrice,
     price: finalPrice,
     mrp,
     cost,
-    status,
+    status: normalizedStatus,
     labels: {
       featured: labels.featured || false,
       trending: labels.trending || false,
@@ -184,17 +204,18 @@ export async function createAdminProduct(data, user) {
     },
     description,
     options,
-    images
+    images: validImages
   });
 
   // Create variants & subvariants
   const createdVariants = [];
 
   if (variants && variants.length) {
-    for (const v of variants) {
+    for (let vIndex = 0; vIndex < variants.length; vIndex++) {
+      const v = variants[vIndex];
       const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
-      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || 'Default Variant';
-      const vSku = v.sku || `${finalSku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'VAR'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || `Variant ${vIndex + 1}`;
+      const vSku = (v.sku && v.sku.trim()) || `${finalSku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'VAR'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       const vPrice = (v.amount !== undefined && v.amount !== null && v.amount !== '')
         ? Number(v.amount)
         : ((v.price !== undefined && v.price !== null && v.price !== '') ? Number(v.price) : finalPrice);
@@ -209,7 +230,7 @@ export async function createAdminProduct(data, user) {
         price: vPrice,
         hidden: !!v.hidden,
         published: v.published !== false && !v.hidden,
-        status: v.status || (v.hidden ? 'hidden' : (status === 'published' ? 'active' : 'draft'))
+        status: v.status || (v.hidden ? 'hidden' : (normalizedStatus === 'published' ? 'active' : 'draft'))
       });
 
       const stockQty = v.stock !== undefined ? v.stock : initialStock;
@@ -237,10 +258,11 @@ export async function createAdminProduct(data, user) {
 
       // Create SubVariants if provided
       const subList = v.subVariants || v.subvariants || [];
-      for (const sv of subList) {
+      for (let sIndex = 0; sIndex < subList.length; sIndex++) {
+        const sv = subList[sIndex];
         const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
-        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || 'SubVariant';
-        const svSku = sv.sku || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'SUB'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || `SubVariant ${sIndex + 1}`;
+        const svSku = (sv.sku && sv.sku.trim()) || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'SUB'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
         const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
           ? Number(sv.amount)
           : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
@@ -301,6 +323,30 @@ export async function updateAdminProduct(productId, updates, user) {
     if (existing) {
       throw ApiError.conflict(`Product with slug '${updates.slug}' already exists.`);
     }
+  }
+
+  if (updates.gender !== undefined) {
+    const validGenders = ['Men', 'Women', 'Unisex', 'Kids'];
+    updates.gender = validGenders.find((g) => g.toLowerCase() === String(updates.gender || '').toLowerCase().trim()) || 'Unisex';
+  }
+  if (updates.status !== undefined) {
+    const validStatuses = ['draft', 'published', 'archived'];
+    updates.status = validStatuses.find((s) => s.toLowerCase() === String(updates.status || '').toLowerCase().trim()) || 'published';
+  }
+  if (updates.images !== undefined && Array.isArray(updates.images)) {
+    updates.images = updates.images
+      .filter((img) => img && (typeof img === 'string' ? img.trim() : (img.url && typeof img.url === 'string' && img.url.trim())))
+      .map((img, idx) => {
+        if (typeof img === 'string') {
+          return { url: img.trim(), alt: updates.name || product.name, isFeatured: idx === 0, format: 'webp' };
+        }
+        return {
+          url: img.url.trim(),
+          alt: img.alt || updates.name || product.name,
+          isFeatured: img.isFeatured !== undefined ? !!img.isFeatured : idx === 0,
+          format: img.format || 'webp'
+        };
+      });
   }
 
   const allowedFields = [
