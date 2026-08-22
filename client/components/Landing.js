@@ -81,7 +81,7 @@ function Container(_p = {}) {
     style: {
       position: "relative",
       width: 1188,
-      height: 8976,
+      height: 8279,
       overflow: "hidden",
       backgroundColor: "#ffffff",
       flexShrink: 0
@@ -868,7 +868,7 @@ function Container(_p = {}) {
       width: 1188,
       overflow: "hidden",
       backgroundColor: "var(--color-black-solid)",
-      display: "flex",
+      display: "none",
       flexDirection: "row",
       padding: "86px 0px 15px 0px",
       justifyContent: "center",

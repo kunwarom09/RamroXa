@@ -751,6 +751,11 @@ export default class StoreApp extends React.Component {
             <span>&copy; {new Date().getFullYear()} Zylo Pvt. Ltd. All rights reserved.</span>
             <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
           </div>
+          <div style={{ width: '100%', overflow: 'hidden', textAlign: 'center', marginTop: 32, opacity: 0.16, pointerEvents: 'none', userSelect: 'none' }}>
+            <span style={{ fontFamily: "'Share Tech', sans-serif", fontSize: 'clamp(56px, 15vw, 210px)', fontWeight: 700, letterSpacing: 'clamp(8px, 2.5vw, 28px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
+              ZYLO
+            </span>
+          </div>
         </div>
       </footer>
     );
@@ -1641,8 +1646,8 @@ export default class StoreApp extends React.Component {
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', background: '#ffffff' }}>
               {this.renderHomeHero()}
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden', background: '#ffffff' }}>
-                <div style={{ width: `${1188 * landingScale}px`, height: `${(8976 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
-                  <div style={{ width: '1188px', height: '8976px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0, background: '#ffffff' }}>
+                <div style={{ width: `${1188 * landingScale}px`, height: `${(8279 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
+                  <div style={{ width: '1188px', height: '8279px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0, background: '#ffffff' }}>
                     <Landing />
                   </div>
                 </div>
@@ -1656,7 +1661,7 @@ export default class StoreApp extends React.Component {
           {view === 'confirmed' && this.renderConfirmed()}
           {view === 'contact' && this.renderContact()}
         </main>
-        {view !== 'shop' && this.footer()}
+        {this.footer()}
 
         {/* Customer Account & Saved Addresses Modal */}
         {this.state.showProfileModal && this.state.currentUser && (
