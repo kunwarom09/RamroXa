@@ -1109,18 +1109,8 @@ export default function ProductForm({ productId = null }) {
                                   placeholder="Subset (e.g. Blue)"
                                   value={sub.name || ''}
                                   onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { name: e.target.value })}
-                                  style={{
-                                    flex: 1,
-                                    height: '34px',
-                                    padding: '0 10px',
-                                    fontSize: '12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    background: 'var(--canvas)',
-                                    color: 'var(--primary)'
-                                  }}
                                 />
-                                <div className="val-price-group" style={{ height: '34px', width: '150px' }}>
+                                <div className="val-price-group" style={{ height: '34px', width: '160px' }}>
                                   <span className="val-currency-prefix" style={{ fontSize: '12px' }}>Rs.</span>
                                   <input
                                     className="sub-amount"
@@ -1128,7 +1118,6 @@ export default function ProductForm({ productId = null }) {
                                     placeholder={`${effectiveValPrice} (inherit)`}
                                     value={sub.amount !== undefined ? sub.amount : ''}
                                     onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { amount: e.target.value })}
-                                    style={{ fontSize: '12px' }}
                                   />
                                 </div>
                                 <button
@@ -1148,16 +1137,6 @@ export default function ProductForm({ productId = null }) {
                                   placeholder="Image URL (optional)"
                                   value={sub.image || ''}
                                   onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { image: e.target.value })}
-                                  style={{
-                                    flex: 2,
-                                    height: '34px',
-                                    padding: '0 10px',
-                                    fontSize: '12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    background: 'var(--canvas)',
-                                    color: 'var(--primary)'
-                                  }}
                                 />
                                 <input
                                   className="sub-stock"
@@ -1165,48 +1144,17 @@ export default function ProductForm({ productId = null }) {
                                   placeholder="0"
                                   value={sub.stock !== undefined ? sub.stock : 0}
                                   onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { stock: e.target.value })}
-                                  style={{
-                                    width: '80px',
-                                    height: '34px',
-                                    padding: '0 8px',
-                                    fontSize: '12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    background: 'var(--canvas)',
-                                    color: 'var(--primary)',
-                                    textAlign: 'center'
-                                  }}
                                 />
                                 <input
                                   className="sub-sku"
                                   placeholder="SKU (auto)"
                                   value={sub.sku || ''}
                                   onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { sku: e.target.value })}
-                                  style={{
-                                    flex: 1.5,
-                                    height: '34px',
-                                    padding: '0 10px',
-                                    fontSize: '12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    background: 'var(--canvas)',
-                                    color: 'var(--primary)'
-                                  }}
                                 />
                                 <select
                                   className="sub-status"
                                   value={sub.status || 'Draft'}
                                   onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { status: e.target.value })}
-                                  style={{
-                                    width: '110px',
-                                    height: '34px',
-                                    padding: '0 8px',
-                                    fontSize: '12px',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: '6px',
-                                    background: 'var(--canvas)',
-                                    color: 'var(--primary)'
-                                  }}
                                 >
                                   <option value="Draft">Draft</option>
                                   <option value="Published">Published</option>

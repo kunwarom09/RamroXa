@@ -454,6 +454,7 @@ html.dark .val-name {
   background: var(--canvas);
   width: 170px;
   gap: 6px;
+  box-sizing: border-box;
 }
 html.dark .val-price-group {
   background: #121212;
@@ -464,17 +465,28 @@ html.dark .val-price-group {
   color: var(--muted-foreground);
   font-weight: 500;
   user-select: none;
+  flex-shrink: 0;
 }
-.val-amount {
+.val-amount,
+.sub-amount {
   border: none !important;
-  background: none !important;
+  background: transparent !important;
   outline: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  height: auto !important;
+  height: 100% !important;
   width: 100% !important;
   font-size: 13px !important;
   color: var(--primary) !important;
+  font-family: inherit !important;
+}
+.sub-amount {
+  font-size: 12px !important;
+}
+.val-amount::placeholder,
+.sub-amount::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.65;
 }
 .btn-add-subset {
   height: 38px;
@@ -565,7 +577,7 @@ html.dark .val-status {
   border-color: #2c2c2c;
 }
 
-/* Subset Container */
+/* Subset Container & Elements */
 .subsets-container {
   margin-top: 10px;
   padding-left: 12px;
@@ -581,6 +593,77 @@ html.dark .val-status {
 html.dark .subset-card {
   background: #161616;
   border-color: #282828;
+}
+.sub-name {
+  flex: 1;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .sub-name {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.sub-image {
+  flex: 2;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .sub-image {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.sub-stock {
+  width: 80px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--primary);
+  text-align: center;
+}
+html.dark .sub-stock {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.sub-sku {
+  flex: 1.5;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .sub-sku {
+  background: #121212;
+  border-color: #2c2c2c;
+}
+.sub-status {
+  width: 110px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--primary);
+}
+html.dark .sub-status {
+  background: #121212;
+  border-color: #2c2c2c;
 }
 
 @media (max-width: 768px) {
