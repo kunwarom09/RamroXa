@@ -332,51 +332,6 @@ export default class StoreApp extends React.Component {
     };
     document.addEventListener('click', this._click, true);
 
-    // community marquee injection on landing page
-    this._marqueeT = setInterval(() => {
-      if (this.state.view !== 'shop') return;
-      const target = [...document.querySelectorAll('div')].find(d => d.style.height === '828.7px' && d.style.width === '1188px' && !d.dataset.wxMarquee);
-      if (!target) return;
-      target.dataset.wxMarquee = '1';
-      target.innerHTML = '';
-      Object.assign(target.style, { display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', gap: '44px', overflow: 'hidden' });
-      const head = document.createElement('div');
-      head.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;max-width:560px;margin:0 auto;font-family:'Share Tech',sans-serif;color:#000;";
-      const mkBtn = (labelTxt, dark, onclick) => {
-        const b = document.createElement('button');
-        b.textContent = labelTxt;
-        b.style.cssText = `font-family:'Share Tech',sans-serif;font-size:14px;border-radius:999px;padding:11px 22px;cursor:pointer;border:1px solid #000;${dark ? 'background:#000;color:#fff;' : 'background:#fff;color:#000;'}`;
-        b.onclick = ev => { ev.stopPropagation(); onclick(); window.scrollTo(0, 0); };
-        return b;
-      };
-      const pill = document.createElement('span');
-      pill.textContent = 'Stay connected';
-      pill.style.cssText = 'font-size:12px;background:#000;color:#fff;border-radius:999px;padding:5px 14px;';
-      const h = document.createElement('div');
-      h.textContent = 'See our community in modern silhouettes';
-      h.style.cssText = 'font-size:38px;line-height:1.2;';
-      const sub = document.createElement('div');
-      sub.textContent = 'Connect with us on social media for a daily dose of fresh style, featuring exclusive looks from our community.';
-      sub.style.cssText = 'font-size:14px;color:#6e6e6e;line-height:1.6;max-width:420px;';
-      const btns = document.createElement('div');
-      btns.style.cssText = 'display:flex;gap:10px;margin-top:4px;';
-      btns.appendChild(mkBtn('See collections', true, () => this.goToView('collections', { colFilter: 'all' })));
-      btns.appendChild(mkBtn('Contact us', false, () => this.goToView('contact')));
-      head.append(pill, h, sub, btns);
-      target.appendChild(head);
-      const photos = ['0a2b25e8589810d9', 'da603fa7c11e12e8', '9c231fc7d5547a35', '9a4bd33b220401bc', 'e0350954131e3cc1', '68d15b42fff470e0', '4f278f47b512c52f'];
-      const dims = [[200, 260, -3], [165, 215, 2], [150, 190, -2], [165, 215, 3], [200, 260, -2], [165, 215, 2], [150, 190, -3]];
-      const track = document.createElement('div');
-      track.style.cssText = 'display:flex;gap:28px;align-items:center;width:max-content;animation:wx-marquee 32s linear infinite;padding-left:28px;';
-      for (let rep = 0; rep < 2; rep++) for (let i = 0; i < photos.length; i++) {
-        const [w, hh, rot] = dims[i];
-        const card = document.createElement('div');
-        card.style.cssText = `width:${w}px;height:${hh}px;border-radius:16px;flex:none;transform:rotate(${rot}deg);box-shadow:0 8px 22px rgba(0,0,0,0.15);background:url('${asset(photos[i])}') 50% 15% / cover no-repeat #eee;`;
-        track.appendChild(card);
-      }
-      target.appendChild(track);
-    }, 600);
-
     // ZYLO wordmark swap
     this._logoT = setInterval(() => {
       const logo = document.querySelector('.logo-area');
@@ -390,7 +345,6 @@ export default class StoreApp extends React.Component {
     window.removeEventListener('resize', this.updateLandingScale);
     window.removeEventListener('popstate', this._popstateHandler);
     document.removeEventListener('click', this._click, true);
-    clearInterval(this._marqueeT);
     clearInterval(this._logoT);
     clearTimeout(this._toastT);
   }

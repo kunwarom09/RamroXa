@@ -569,6 +569,51 @@ function Container(_p = {}) {
   }))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
+      width: 1188,
+      overflow: "hidden",
+      marginTop: 28,
+      display: "flex",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "28px",
+      alignItems: "center",
+      width: "max-content",
+      animation: "wx-marquee 36s linear infinite",
+      paddingLeft: "28px"
+    }
+  }, [
+    { img: '/assets/0a2b25e8589810d9.q.jpg', w: 200, h: 260, r: -3 },
+    { img: '/assets/da603fa7c11e12e8.q.jpg', w: 165, h: 215, r: 2 },
+    { img: '/assets/9c231fc7d5547a35.q.jpg', w: 150, h: 190, r: -2 },
+    { img: '/assets/9a4bd33b220401bc.q.jpg', w: 165, h: 215, r: 3 },
+    { img: '/assets/e0350954131e3cc1.q.jpg', w: 200, h: 260, r: -2 },
+    { img: '/assets/68d15b42fff470e0.q.jpg', w: 165, h: 215, r: 2 },
+    { img: '/assets/4f278f47b512c52f.q.jpg', w: 150, h: 190, r: -3 },
+    { img: '/assets/0a2b25e8589810d9.q.jpg', w: 200, h: 260, r: -3 },
+    { img: '/assets/da603fa7c11e12e8.q.jpg', w: 165, h: 215, r: 2 },
+    { img: '/assets/9c231fc7d5547a35.q.jpg', w: 150, h: 190, r: -2 },
+    { img: '/assets/9a4bd33b220401bc.q.jpg', w: 165, h: 215, r: 3 },
+    { img: '/assets/e0350954131e3cc1.q.jpg', w: 200, h: 260, r: -2 },
+    { img: '/assets/68d15b42fff470e0.q.jpg', w: 165, h: 215, r: 2 },
+    { img: '/assets/4f278f47b512c52f.q.jpg', w: 150, h: 190, r: -3 }
+  ].map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      width: c.w,
+      height: c.h,
+      borderRadius: 16,
+      flex: 'none',
+      transform: `rotate(${c.r}deg)`,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      background: `url('${c.img}') 50% 15% / cover no-repeat #eee`,
+      overflow: 'hidden'
+    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-start",
@@ -577,14 +622,7 @@ function Container(_p = {}) {
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      position: "relative",
-      width: 1200,
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      flexWrap: "nowrap",
-      flexShrink: 0
+      display: "none"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
