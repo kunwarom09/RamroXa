@@ -1136,11 +1136,11 @@ tbody tr:hover { background: var(--muted); }
 .zylo-nav-cart-btn {
   display: inline-flex;
   align-items: flex-end;
-  gap: 6px;
-  padding: 4px 10px 4px 8px;
+  gap: 5px;
+  padding: 4px 8px 3px 6px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
   color: #ffffff;
@@ -1150,7 +1150,7 @@ tbody tr:hover { background: var(--muted); }
 }
 
 .zylo-nav-cart-btn:hover {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -1160,30 +1160,33 @@ tbody tr:hover { background: var(--muted); }
   height: 28px;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .zylo-nav-cart-count {
   position: absolute;
   top: -3px;
-  left: 17px;
-  color: #f59e0b;
-  font-size: 14px;
-  font-weight: 800;
+  left: 14px;
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 700;
   font-family: 'Share Tech', sans-serif;
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  width: 16px;
 }
 
 .zylo-nav-cart-svg {
-  width: 36px;
-  height: 26px;
+  width: 38px;
+  height: 28px;
+  display: block;
 }
 
 .zylo-nav-cart-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   padding-bottom: 2px;
+  line-height: 1;
 }

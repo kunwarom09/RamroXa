@@ -588,9 +588,15 @@ export default class StoreApp extends React.Component {
                 <div className="zylo-nav-cart-icon-wrap">
                   <span className="zylo-nav-cart-count">{totalItems}</span>
                   <svg className="zylo-nav-cart-svg" viewBox="0 0 38 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 3h4.5l3.8 15.2a2 2 0 0 0 2 1.5h16.4a2 2 0 0 0 2-1.6L33 8H8.5" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="14" cy="24" r="2.2" fill="#ffffff"/>
-                    <circle cx="28" cy="24" r="2.2" fill="#ffffff"/>
+                    <path
+                      d="M1 3h5.5l3.8 15h16.4l3.8-10.8H8.8"
+                      stroke="#ffffff"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="13" cy="24" r="2.2" fill="#ffffff" />
+                    <circle cx="25" cy="24" r="2.2" fill="#ffffff" />
                   </svg>
                 </div>
                 <span className="zylo-nav-cart-label">Cart</span>
