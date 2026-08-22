@@ -551,79 +551,49 @@ export default class StoreApp extends React.Component {
                 {link('CONTACT', view === 'contact', this.nav('contact'))}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
               {currentUser ? (
                 <button
                   onClick={() => this.setState((s) => ({ showProfileModal: !s.showProfileModal }))}
-                  style={{
-                    ...font,
-                    background: '#000',
-                    border: '1.5px solid #ffffff',
-                    borderRadius: 9999,
-                    padding: '4px 5px 4px 14px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    transition: 'transform 0.15s ease, background 0.15s ease',
-                    outline: 'none'
-                  }}
-                  title="Account Profile & Addresses"
+                  className="zylo-nav-account-btn"
+                  title="Account Profile & Saved Addresses"
                 >
-                  <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>
-                    {currentUser.name ? currentUser.name.split(' ')[0].toUpperCase() : 'ACCOUNT'}
+                  <span className="zylo-nav-account-hello">
+                    Hello, {currentUser.name ? currentUser.name.split(' ')[0] : 'Member'}
                   </span>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                    👤
-                  </span>
+                  <div className="zylo-nav-account-title-row">
+                    <span className="zylo-nav-account-title">Account &amp; Lists</span>
+                    <span className="zylo-nav-account-arrow">▾</span>
+                  </div>
                 </button>
               ) : (
                 <a
                   href="/login"
-                  style={{
-                    ...font,
-                    background: '#000',
-                    border: '1.5px solid #ffffff',
-                    borderRadius: 9999,
-                    padding: '4px 5px 4px 14px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    textDecoration: 'none',
-                    transition: 'transform 0.15s ease, background 0.15s ease',
-                    outline: 'none'
-                  }}
+                  className="zylo-nav-account-btn"
+                  title="Sign in to your account"
                 >
-                  <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>
-                    SIGN IN
-                  </span>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                    👤
-                  </span>
+                  <span className="zylo-nav-account-hello">Hello, sign in</span>
+                  <div className="zylo-nav-account-title-row">
+                    <span className="zylo-nav-account-title">Account &amp; Lists</span>
+                    <span className="zylo-nav-account-arrow">▾</span>
+                  </div>
                 </a>
               )}
 
               <button
                 onClick={this.nav('cart')}
-                style={{
-                  ...font,
-                  background: '#000',
-                  border: '1.5px solid #ffffff',
-                  borderRadius: 9999,
-                  padding: '4px 5px 4px 14px',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  transition: 'transform 0.15s ease, background 0.15s ease',
-                  outline: 'none'
-                }}
+                className="zylo-nav-cart-btn"
+                title="Shopping Cart"
               >
-                <span style={{ fontSize: 13, letterSpacing: 1.5, color: '#ffffff', fontWeight: 600 }}>CART</span>
-                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffffff', color: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
-                  {totalItems}
-                </span>
+                <div className="zylo-nav-cart-icon-wrap">
+                  <span className="zylo-nav-cart-count">{totalItems}</span>
+                  <svg className="zylo-nav-cart-svg" viewBox="0 0 38 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 3h4.5l3.8 15.2a2 2 0 0 0 2 1.5h16.4a2 2 0 0 0 2-1.6L33 8H8.5" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="14" cy="24" r="2.2" fill="#ffffff"/>
+                    <circle cx="28" cy="24" r="2.2" fill="#ffffff"/>
+                  </svg>
+                </div>
+                <span className="zylo-nav-cart-label">Cart</span>
               </button>
             </div>
           </div>

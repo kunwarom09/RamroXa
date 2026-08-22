@@ -1072,3 +1072,118 @@ tbody tr:hover { background: var(--muted); }
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* ==========================================================================
+   Header Account & Cart Badges (Amazon/Modern Inspired)
+   ========================================================================== */
+.zylo-nav-account-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4px 8px 3px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #ffffff;
+  font-family: 'Share Tech', sans-serif;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  line-height: 1.15;
+  outline: none;
+}
+
+.zylo-nav-account-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.zylo-nav-account-hello {
+  font-size: 11px;
+  color: #a3a3a3;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+}
+
+.zylo-nav-account-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zylo-nav-account-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.zylo-nav-account-arrow {
+  font-size: 9px;
+  color: #a3a3a3;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(1px);
+}
+
+/* Header Cart Button */
+.zylo-nav-cart-btn {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #ffffff;
+  font-family: 'Share Tech', sans-serif;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  outline: none;
+}
+
+.zylo-nav-cart-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.zylo-nav-cart-icon-wrap {
+  position: relative;
+  width: 38px;
+  height: 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.zylo-nav-cart-count {
+  position: absolute;
+  top: -3px;
+  left: 17px;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: 'Share Tech', sans-serif;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.zylo-nav-cart-svg {
+  width: 36px;
+  height: 26px;
+}
+
+.zylo-nav-cart-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  padding-bottom: 2px;
+}
