@@ -81,7 +81,7 @@ function Container(_p = {}) {
     style: {
       position: "relative",
       width: 1188,
-      height: 8279,
+      height: 8090,
       overflow: "hidden",
       backgroundColor: "#ffffff",
       flexShrink: 0
@@ -92,7 +92,7 @@ function Container(_p = {}) {
       left: 0,
       top: 7450,
       width: 1188,
-      height: 828.7,
+      height: 640,
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -17926,14 +17926,14 @@ function Container(_p = {}) {
     style: {
       position: "relative",
       width: 950,
-      height: 504.3,
+      height: 320,
       overflow: "hidden",
       borderRadius: 12,
       backgroundColor: "var(--color-white-solid)",
       display: "flex",
       flexDirection: "column",
       gap: "calc(var(--opacity-60) * 1px)",
-      padding: "80px 0px 80px 0px",
+      padding: "48px 0px 0px 0px",
       alignItems: "center",
       flexWrap: "nowrap",
       boxSizing: "border-box",

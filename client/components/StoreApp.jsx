@@ -1646,8 +1646,8 @@ export default class StoreApp extends React.Component {
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', background: '#ffffff' }}>
               {this.renderHomeHero()}
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden', background: '#ffffff' }}>
-                <div style={{ width: `${1188 * landingScale}px`, height: `${(8279 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
-                  <div style={{ width: '1188px', height: '8279px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0, background: '#ffffff' }}>
+                <div style={{ width: `${1188 * landingScale}px`, height: `${(8090 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
+                  <div style={{ width: '1188px', height: '8090px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: -616, left: 0, background: '#ffffff' }}>
                     <Landing />
                   </div>
                 </div>
