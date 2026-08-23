@@ -17969,7 +17969,7 @@ function Container(_p = {}) {
       height: 320,
       overflow: "hidden",
       borderRadius: 12,
-      backgroundColor: "var(--color-white-solid)",
+      backgroundColor: "var(--color-grey-93)",
       display: "flex",
       flexDirection: "column",
       gap: "calc(var(--opacity-60) * 1px)",
