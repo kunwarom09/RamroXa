@@ -125,4 +125,13 @@ export const me = asyncHandler(async (req, res) => {
   });
 });
 
-export default { register, login, adminLogin, refresh, logout, me };
+export const updateMe = asyncHandler(async (req, res) => {
+  const user = await authService.updateProfile(req.user._id, req.body);
+  res.status(200).json({
+    message: 'Profile updated successfully.',
+    data: { user }
+  });
+});
+
+export default { register, login, adminLogin, refresh, logout, me, updateMe };
+

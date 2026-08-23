@@ -156,4 +156,26 @@ export async function logout({ sessionId, rawRefreshToken }) {
   return true;
 }
 
-export default { register, login, refreshTokens, logout };
+export async function updateProfile(userId, data) {
+  const { name, phone, permanentAddress, temporaryAddress } = data;
+  const user = await User.findById(userId);
+  if (!user || user.deletedAt) {
+    throw ApiError.notFound('User not found.');
+  }
+
+  if (name !== undefined && name.trim()) user.name = name.trim();
+  if (phone !== undefined) user.phone = phone.trim();
+  if (permanentAddress !== undefined) user.permanentAddress = permanentAddress.trim();
+  if (temporaryAddress !== undefined) user.temporaryAddress = temporaryAddress.trim();
+
+  await user.save();
+  return user;
+}
+
+export default { 
+  register, 
+  login, 
+  refreshTokens, 
+  logout,
+  updateProfile 
+};

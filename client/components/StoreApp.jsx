@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
 import Landing from './Landing';
-import { placeOrderApi } from '../services/orderService';
+import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
 import { fetchProducts } from '../services/productService';
+import { api } from '../services/apiClient';
 
 const DEFAULT_CATALOG = [];
 
@@ -16,6 +17,7 @@ function formatProductItem(p) {
   return {
     name: p.name,
     tag: p.labels?.newArrival ? 'NEW ARRIVAL' : (p.labels?.bestSelling ? 'BEST SELLER' : (p.labels?.featured ? 'FEATURED' : 'LATEST DROP')),
+    labels: p.labels || {},
     price: priceNpr,
     compare: mrpNpr || priceNpr,
     desc: p.description || '',
@@ -23,10 +25,12 @@ function formatProductItem(p) {
     img2: secondImg?.url || p.img2 || featuredImg?.url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
     slug: p.slug || slugForProduct(p, 0),
     gender: p.gender || 'Unisex',
+    brand: p.brand || p.brandName || (p.tags && p.tags.length ? p.tags[0] : 'Zylo'),
     category: p.category || p.categoryId || '',
     categoryId: p.categoryId || '',
     tags: p.tags || [],
     options: p.options || {},
+    createdAt: p.createdAt || new Date().toISOString(),
     id: p.id
   };
 }
@@ -132,6 +136,15 @@ export default class StoreApp extends React.Component {
     this.state = {
       catalog: initialCatalog,
       view: props.initialView || 'shop',
+      accountTab: props.initialAccountTab || 'orders',
+      userOrders: [],
+      loadingOrders: false,
+      profileName: '',
+      profilePhone: '',
+      profilePermanentAddress: '',
+      profileTemporaryAddress: '',
+      savingProfile: false,
+      accountDropdownOpen: false,
       cart: initialCart,
       pay: 'cod',
       orderId: null,
@@ -148,7 +161,13 @@ export default class StoreApp extends React.Component {
       cMsg: '',
       cTopic: 'Order status',
       contactSent: false,
-      colFilter: 'all',
+      colFilter: props.initialColFilter || 'all',
+      filterPriceBucket: 'all',
+      filterMinPrice: '',
+      filterMaxPrice: '',
+      filterBrands: [],
+      sortBy: 'featured',
+      showMobileFilters: false,
       mobileMenuOpen: false,
       landingScale: 1,
       currentUser: null,
@@ -168,11 +187,17 @@ export default class StoreApp extends React.Component {
       cart: '/cart',
       checkout: '/checkout',
       contact: '/contact',
-      confirmed: '/order-confirmed'
+      confirmed: '/order-confirmed',
+      account: '/account'
     };
 
     let targetUrl = urlMap[v] || '/';
-    if (v === 'detail') {
+    if (v === 'account') {
+      const tab = extraState.accountTab !== undefined ? extraState.accountTab : this.state.accountTab;
+      if (tab === 'orders') {
+        targetUrl = '/account/orders';
+      }
+    } else if (v === 'detail') {
       const selIndex = extraState.sel !== undefined ? extraState.sel : this.state.sel;
       const cat = this.getCatalog();
       const p = cat[selIndex] || cat[0];
@@ -185,6 +210,10 @@ export default class StoreApp extends React.Component {
 
     this.setState({ view: v, mobileMenuOpen: false, ...extraState });
     window.scrollTo(0, 0);
+
+    if (v === 'account' && (extraState.accountTab === 'orders' || (!extraState.accountTab && this.state.accountTab === 'orders'))) {
+      this.loadUserOrders();
+    }
   };
 
   nav = (v, colFilter) => () => {
@@ -237,21 +266,39 @@ export default class StoreApp extends React.Component {
 
     const checkAuthSession = async () => {
       try {
+        let user = null;
         if (typeof window !== 'undefined') {
           const stored = localStorage.getItem('zylo_user');
           if (stored) {
-            this.setState({ currentUser: JSON.parse(stored) });
+            user = JSON.parse(stored);
+            this.setState({
+              currentUser: user,
+              profileName: user.name || '',
+              profilePhone: user.phone || '',
+              profilePermanentAddress: user.permanentAddress || '',
+              profileTemporaryAddress: user.temporaryAddress || ''
+            });
           }
         }
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
         if (meRes.ok) {
           const meData = await meRes.json();
           if (meData?.data?.user) {
-            this.setState({ currentUser: meData.data.user });
+            user = meData.data.user;
+            this.setState({
+              currentUser: user,
+              profileName: user.name || '',
+              profilePhone: user.phone || '',
+              profilePermanentAddress: user.permanentAddress || '',
+              profileTemporaryAddress: user.temporaryAddress || ''
+            });
             if (typeof window !== 'undefined') {
-              localStorage.setItem('zylo_user', JSON.stringify(meData.data.user));
+              localStorage.setItem('zylo_user', JSON.stringify(user));
             }
           }
+        }
+        if (user && (this.state.view === 'account' || this.props.initialView === 'account')) {
+          this.loadUserOrders();
         }
       } catch (e) {}
     };
@@ -285,6 +332,11 @@ export default class StoreApp extends React.Component {
         this.setState({ view: 'contact', mobileMenuOpen: false });
       } else if (path === '/order-confirmed') {
         this.setState({ view: 'confirmed', mobileMenuOpen: false });
+      } else if (path === '/account/orders' || path === '/orders') {
+        this.setState({ view: 'account', accountTab: 'orders', mobileMenuOpen: false });
+        this.loadUserOrders();
+      } else if (path === '/account' || path.startsWith('/account')) {
+        this.setState({ view: 'account', accountTab: 'profile', mobileMenuOpen: false });
       } else if (path.startsWith('/product/')) {
         const slug = path.replace('/product/', '').replace(/\/$/, '');
         const idx = cat.findIndex((p, i) => slugForProduct(p, i) === slug || p.slug === slug || p.id === slug || String(i) === slug);
@@ -469,6 +521,48 @@ export default class StoreApp extends React.Component {
     });
   };
 
+  loadUserOrders = async () => {
+    if (!this.state.currentUser) return;
+    this.setState({ loadingOrders: true });
+    try {
+      const orders = await fetchUserOrdersApi();
+      this.setState({ userOrders: Array.isArray(orders) ? orders : [], loadingOrders: false });
+    } catch (e) {
+      console.warn('loadUserOrders notice:', e.message);
+      this.setState({ loadingOrders: false });
+    }
+  };
+
+  handleSaveProfile = async (e) => {
+    if (e) e.preventDefault();
+    this.setState({ savingProfile: true });
+    try {
+      const res = await api.put('/api/auth/me', {
+        name: this.state.profileName,
+        phone: this.state.profilePhone,
+        permanentAddress: this.state.profilePermanentAddress,
+        temporaryAddress: this.state.profileTemporaryAddress
+      });
+      if (res?.data?.user) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('zylo_user', JSON.stringify(res.data.user));
+        }
+        this.setState({
+          currentUser: res.data.user,
+          toast: 'Profile updated successfully!',
+          savingProfile: false
+        });
+        setTimeout(() => this.setState({ toast: null }), 3000);
+      }
+    } catch (err) {
+      this.setState({
+        savingProfile: false,
+        toast: err.message || 'Failed to update profile'
+      });
+      setTimeout(() => this.setState({ toast: null }), 3000);
+    }
+  };
+
   handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -476,7 +570,16 @@ export default class StoreApp extends React.Component {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('zylo_user');
     }
-    this.setState({ currentUser: null, showProfileModal: false, toast: 'Signed out successfully' });
+    this.setState({
+      currentUser: null,
+      showProfileModal: false,
+      accountDropdownOpen: false,
+      userOrders: [],
+      toast: 'Signed out successfully'
+    });
+    if (this.state.view === 'account') {
+      this.goToView('shop');
+    }
     setTimeout(() => this.setState({ toast: null }), 3000);
   };
 
@@ -506,33 +609,156 @@ export default class StoreApp extends React.Component {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-              {currentUser ? (
-                <button
-                  onClick={() => this.setState((s) => ({ showProfileModal: !s.showProfileModal }))}
-                  className="zylo-nav-account-btn"
-                  title="Account Profile & Saved Addresses"
-                >
-                  <span className="zylo-nav-account-hello">
-                    Hello, {currentUser.name ? currentUser.name.split(' ')[0] : 'Member'}
-                  </span>
-                  <div className="zylo-nav-account-title-row">
-                    <span className="zylo-nav-account-title">Account &amp; Lists</span>
-                    <span className="zylo-nav-account-arrow">▾</span>
+              {/* Amazon-style Account & Lists Button with Flyout Dropdown */}
+              <div
+                className="zylo-nav-account-wrapper"
+                onMouseEnter={() => this.setState({ accountDropdownOpen: true })}
+                onMouseLeave={() => this.setState({ accountDropdownOpen: false })}
+              >
+                {currentUser ? (
+                  <button
+                    onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
+                    className="zylo-nav-account-btn"
+                    title="Account Profile & Saved Addresses"
+                  >
+                    <span className="zylo-nav-account-hello">
+                      Hello, {currentUser.name ? currentUser.name.split(' ')[0] : 'Member'}
+                    </span>
+                    <div className="zylo-nav-account-title-row">
+                      <span className="zylo-nav-account-title">Account &amp; Lists</span>
+                      <span className="zylo-nav-account-arrow">▾</span>
+                    </div>
+                  </button>
+                ) : (
+                  <a
+                    href="/login"
+                    className="zylo-nav-account-btn"
+                    title="Sign in to your account"
+                  >
+                    <span className="zylo-nav-account-hello">Hello, sign in</span>
+                    <div className="zylo-nav-account-title-row">
+                      <span className="zylo-nav-account-title">Account &amp; Lists</span>
+                      <span className="zylo-nav-account-arrow">▾</span>
+                    </div>
+                  </a>
+                )}
+
+                {/* Flyout Menu */}
+                <div className={`zylo-account-flyout ${this.state.accountDropdownOpen ? 'open' : ''}`}>
+                  <div className="zylo-account-flyout-arrow" />
+
+                  <div className="zylo-account-flyout-card">
+                    {!currentUser ? (
+                      <div className="zylo-flyout-auth-header">
+                        <a href="/login" className="zylo-flyout-signin-btn">
+                          Sign in
+                        </a>
+                        <div className="zylo-flyout-new-customer">
+                          New customer? <a href="/signup" className="zylo-flyout-start-link">Start here.</a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="zylo-flyout-auth-header logged-in">
+                        <div className="zylo-flyout-user-info">
+                          <span className="zylo-flyout-greeting">Hello,</span>
+                          <strong className="zylo-flyout-username">{currentUser.name}</strong>
+                          <span className="zylo-flyout-email">{currentUser.email}</span>
+                        </div>
+                        <button
+                          onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
+                          className="zylo-flyout-profile-btn"
+                        >
+                          Manage Profile
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="zylo-flyout-divider" />
+
+                    <div className="zylo-flyout-columns">
+                      {/* Left Column: Your Lists */}
+                      <div className="zylo-flyout-col">
+                        <h4 className="zylo-flyout-col-title">Your Lists</h4>
+                        <ul className="zylo-flyout-list">
+                          <li>
+                            <button onClick={() => { this.goToView('collections', 'all'); this.setState({ accountDropdownOpen: false }); }}>
+                              Explore Collections
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => { this.goToView('shop'); this.setState({ accountDropdownOpen: false }); }}>
+                              New Arrivals &amp; Drops
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => { this.goToView('cart'); this.setState({ accountDropdownOpen: false }); }}>
+                              Shopping Cart ({totalItems})
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Right Column: Your Account */}
+                      <div className="zylo-flyout-col">
+                        <h4 className="zylo-flyout-col-title">Your Account</h4>
+                        <ul className="zylo-flyout-list">
+                          <li>
+                            <button onClick={() => {
+                              if (currentUser) {
+                                this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false });
+                              } else {
+                                window.location.href = '/login';
+                              }
+                            }}>
+                              Account Profile
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => {
+                              if (currentUser) {
+                                this.goToView('account', { accountTab: 'orders', accountDropdownOpen: false });
+                              } else {
+                                window.location.href = '/login';
+                              }
+                            }}>
+                              Orders &amp; Purchases
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => {
+                              if (currentUser) {
+                                this.goToView('account', { accountTab: 'addresses', accountDropdownOpen: false });
+                              } else {
+                                window.location.href = '/login';
+                              }
+                            }}>
+                              Saved Addresses
+                            </button>
+                          </li>
+                          <li>
+                            <button onClick={() => { this.goToView('contact'); this.setState({ accountDropdownOpen: false }); }}>
+                              Help &amp; Contact Us
+                            </button>
+                          </li>
+                          {currentUser && (
+                            <li className="zylo-flyout-signout-item">
+                              <button
+                                onClick={() => {
+                                  this.handleLogout();
+                                  this.setState({ accountDropdownOpen: false });
+                                }}
+                                className="zylo-flyout-signout-btn"
+                              >
+                                Sign Out
+                              </button>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                </button>
-              ) : (
-                <a
-                  href="/login"
-                  className="zylo-nav-account-btn"
-                  title="Sign in to your account"
-                >
-                  <span className="zylo-nav-account-hello">Hello, sign in</span>
-                  <div className="zylo-nav-account-title-row">
-                    <span className="zylo-nav-account-title">Account &amp; Lists</span>
-                    <span className="zylo-nav-account-arrow">▾</span>
-                  </div>
-                </a>
-              )}
+                </div>
+              </div>
 
               <button
                 onClick={this.nav('cart')}
@@ -599,10 +825,10 @@ export default class StoreApp extends React.Component {
                 </div>
                 <button
                   className="mobile-nav-link"
-                  onClick={() => this.setState({ showProfileModal: true, mobileMenuOpen: false })}
+                  onClick={() => this.goToView('account', { accountTab: 'profile', mobileMenuOpen: false })}
                   style={{ textAlign: 'left', width: '100%', marginBottom: 12, fontSize: 13 }}
                 >
-                  👤 MY PROFILE & ADDRESSES
+                  MY ACCOUNT &amp; ORDERS
                 </button>
                 <button
                   className="mobile-nav-link"
@@ -782,42 +1008,224 @@ export default class StoreApp extends React.Component {
   }
 
   renderCollections() {
-    const { colFilter } = this.state;
-    const catList = this.getCatalog();
-    let items = [];
-    if (colFilter === 'all') {
-      items = catList.map((p, idx) => ({ ...p, idx }));
-    } else if (colFilter === 'men') {
-      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+    const {
+      colFilter,
+      filterPriceBucket,
+      filterMinPrice,
+      filterMaxPrice,
+      filterBrands,
+      sortBy,
+      showMobileFilters
+    } = this.state;
+
+    const catList = this.getCatalog().map((p, idx) => ({
+      ...p,
+      idx,
+      brand: p.brand || 'Zylo',
+      gender: p.gender || 'Unisex',
+      price: p.price || 0
+    }));
+
+    // 1. Dynamic Brands List & Counts
+    const allBrands = Array.from(new Set(catList.map(p => p.brand).filter(Boolean)));
+    const brandCounts = allBrands.reduce((acc, b) => {
+      acc[b] = catList.filter(p => p.brand === b).length;
+      return acc;
+    }, {});
+
+    // 2. Dynamic Gender Counts
+    const genderCounts = {
+      all: catList.length,
+      men: catList.filter(p => {
         const g = (p.gender || '').toLowerCase();
         const c = (p.category || p.categoryId || '').toLowerCase();
         return g === 'men' || g === 'unisex' || c.includes('men');
-      });
-    } else if (colFilter === 'women') {
-      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+      }).length,
+      women: catList.filter(p => {
         const g = (p.gender || '').toLowerCase();
         const c = (p.category || p.categoryId || '').toLowerCase();
         return g === 'women' || g === 'unisex' || c.includes('women');
-      });
-    } else if (colFilter === 'kids') {
-      items = catList.map((p, idx) => ({ ...p, idx })).filter(p => {
+      }).length,
+      kids: catList.filter(p => {
         const g = (p.gender || '').toLowerCase();
         const c = (p.category || p.categoryId || '').toLowerCase();
         return g === 'kids' || c.includes('kids');
-      });
+      }).length,
+      unisex: catList.filter(p => (p.gender || '').toLowerCase() === 'unisex').length
+    };
+
+    // 3. Filter Items
+    let items = catList.filter(p => {
+      // Gender Filter
+      if (colFilter && colFilter !== 'all') {
+        const g = (p.gender || '').toLowerCase();
+        const c = (p.category || p.categoryId || '').toLowerCase();
+        if (colFilter === 'men' && !(g === 'men' || g === 'unisex' || c.includes('men'))) return false;
+        if (colFilter === 'women' && !(g === 'women' || g === 'unisex' || c.includes('women'))) return false;
+        if (colFilter === 'kids' && !(g === 'kids' || c.includes('kids'))) return false;
+        if (colFilter === 'unisex' && g !== 'unisex') return false;
+      }
+
+      // Price Bucket Filter
+      const price = p.price;
+      if (filterPriceBucket === 'under-2000' && price >= 2000) return false;
+      if (filterPriceBucket === '2000-5000' && (price < 2000 || price > 5000)) return false;
+      if (filterPriceBucket === '5000-10000' && (price < 5000 || price > 10000)) return false;
+      if (filterPriceBucket === 'above-10000' && price <= 10000) return false;
+
+      // Custom Min/Max Price Filter
+      if (filterMinPrice !== '' && !isNaN(Number(filterMinPrice)) && price < Number(filterMinPrice)) return false;
+      if (filterMaxPrice !== '' && !isNaN(Number(filterMaxPrice)) && price > Number(filterMaxPrice)) return false;
+
+      // Brand Filter
+      if (filterBrands && filterBrands.length > 0 && !filterBrands.includes(p.brand)) return false;
+
+      return true;
+    });
+
+    // 4. Sort Items
+    if (sortBy === 'price-asc') {
+      items.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (sortBy === 'price-desc') {
+      items.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (sortBy === 'newest') {
+      items.sort((a, b) => (b.labels?.newArrival ? 1 : 0) - (a.labels?.newArrival ? 1 : 0) || new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (sortBy === 'bestselling') {
+      items.sort((a, b) => (b.labels?.bestSelling ? 1 : 0) - (a.labels?.bestSelling ? 1 : 0));
+    } else if (sortBy === 'name-asc') {
+      items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
-    const filterTabs = [
-      ['all', 'All Products'],
-      ['men', 'Men'],
-      ['women', 'Women'],
-      ['kids', 'Kids']
-    ];
+    const hasActiveFilters = colFilter !== 'all' || filterPriceBucket !== 'all' || (filterBrands && filterBrands.length > 0) || filterMinPrice !== '' || filterMaxPrice !== '';
+
+    const renderFilterControls = () => (
+      <div className="zylo-filter-sidebar-inner">
+        <div className="zylo-filter-sidebar-header">
+          <h3 className="zylo-filter-main-title">Filters</h3>
+          {hasActiveFilters && (
+            <button
+              onClick={() => this.setState({
+                colFilter: 'all',
+                filterPriceBucket: 'all',
+                filterMinPrice: '',
+                filterMaxPrice: '',
+                filterBrands: []
+              })}
+              className="zylo-filter-clear-btn"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* 1. Gender Filter */}
+        <div className="zylo-filter-section">
+          <h4 className="zylo-filter-section-title">Gender</h4>
+          <div className="zylo-filter-options-list">
+            {[
+              { id: 'all', label: 'All Products', count: genderCounts.all },
+              { id: 'men', label: 'Men', count: genderCounts.men },
+              { id: 'women', label: 'Women', count: genderCounts.women },
+              { id: 'kids', label: 'Kids', count: genderCounts.kids },
+              { id: 'unisex', label: 'Unisex', count: genderCounts.unisex }
+            ].map(({ id, label, count }) => (
+              <label key={id} className={`zylo-filter-option-row ${colFilter === id ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="sidebarColFilter"
+                  checked={colFilter === id}
+                  onChange={() => this.goToView('collections', { colFilter: id })}
+                  className="zylo-filter-radio"
+                />
+                <span className="zylo-filter-option-name">{label}</span>
+                <span className="zylo-filter-option-count">({count})</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* 2. Price Range Filter */}
+        <div className="zylo-filter-section">
+          <h4 className="zylo-filter-section-title">Price Range</h4>
+          <div className="zylo-filter-options-list">
+            {[
+              { id: 'all', label: 'All Prices' },
+              { id: 'under-2000', label: 'Under Rs 2,000' },
+              { id: '2000-5000', label: 'Rs 2,000 – Rs 5,000' },
+              { id: '5000-10000', label: 'Rs 5,000 – Rs 10,000' },
+              { id: 'above-10000', label: 'Above Rs 10,000' }
+            ].map(({ id, label }) => (
+              <label key={id} className={`zylo-filter-option-row ${filterPriceBucket === id ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="sidebarPriceBucket"
+                  checked={filterPriceBucket === id}
+                  onChange={() => this.setState({ filterPriceBucket: id, filterMinPrice: '', filterMaxPrice: '' })}
+                  className="zylo-filter-radio"
+                />
+                <span className="zylo-filter-option-name">{label}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Custom Min / Max Price Inputs */}
+          <div className="zylo-custom-price-block">
+            <span className="zylo-custom-price-title">Custom Range (Rs)</span>
+            <div className="zylo-custom-price-row">
+              <input
+                type="number"
+                placeholder="Min"
+                value={filterMinPrice}
+                onChange={(e) => this.setState({ filterMinPrice: e.target.value, filterPriceBucket: 'custom' })}
+                className="zylo-price-input"
+              />
+              <span className="zylo-price-divider">–</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={filterMaxPrice}
+                onChange={(e) => this.setState({ filterMaxPrice: e.target.value, filterPriceBucket: 'custom' })}
+                className="zylo-price-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Brands Filter */}
+        {allBrands.length > 0 && (
+          <div className="zylo-filter-section">
+            <h4 className="zylo-filter-section-title">Brands</h4>
+            <div className="zylo-filter-options-list">
+              {allBrands.map(brandName => {
+                const isChecked = filterBrands.includes(brandName);
+                return (
+                  <label key={brandName} className={`zylo-filter-option-row ${isChecked ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const next = isChecked
+                          ? filterBrands.filter(b => b !== brandName)
+                          : [...filterBrands, brandName];
+                        this.setState({ filterBrands: next });
+                      }}
+                      className="zylo-filter-checkbox"
+                    />
+                    <span className="zylo-filter-option-name">{brandName}</span>
+                    <span className="zylo-filter-option-count">({brandCounts[brandName] || 0})</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
 
     return (
-      <div style={{ background: '#fff', width: '100%', maxWidth: 1188, margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: 1240, margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box', padding: '0 20px 80px 20px' }}>
         {/* Collections Hero */}
-        <div className="zylo-collections-hero-wrapper">
+        <div className="zylo-collections-hero-wrapper" style={{ marginBottom: 32 }}>
           <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
             <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
@@ -829,7 +1237,7 @@ export default class StoreApp extends React.Component {
               <p className="zylo-hero-sub">Explore our handpicked modern silhouettes crafted from sustainable fabrics.</p>
               <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button
-                  onClick={() => { const el = document.getElementById('col-grid'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
+                  onClick={() => { const el = document.getElementById('zylo-shop-main'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
                   style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
                 >
                   Explore styles
@@ -845,53 +1253,185 @@ export default class StoreApp extends React.Component {
           </section>
         </div>
 
-        {/* Category Filter Pills & Products Grid */}
-        <div className="zylo-collections-content">
-          <div id="col-grid" className="zylo-filter-pills">
-            {filterTabs.map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => this.goToView('collections', { colFilter: id })}
-                className="zylo-filter-pill-btn"
-                style={{
-                  border: id === colFilter ? '1px solid #000' : '1px solid #ddd',
-                  background: id === colFilter ? '#000' : '#fff',
-                  color: id === colFilter ? '#fff' : '#000'
-                }}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Collections Toolbar: Results Title & Count on Left, Sort & Mobile Filters on Right */}
+        <div id="zylo-shop-main" className="zylo-collections-toolbar">
+          <div className="zylo-toolbar-left">
+            <h2 className="zylo-toolbar-title">
+              {colFilter === 'all' ? 'All Products' : (colFilter === 'men' ? "Men's Collection" : (colFilter === 'women' ? "Women's Collection" : (colFilter === 'kids' ? "Kids' Collection" : "Unisex Collection")))}
+            </h2>
+            <span className="zylo-toolbar-count">Showing {items.length} {items.length === 1 ? 'item' : 'items'}</span>
           </div>
 
-          <div className="zylo-products-grid">
-            {items.map(p => {
-              const best = p.tag === 'BEST SELLER';
-              return (
-                <div key={p.idx} onClick={() => this.openProduct(p.idx)} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ position: 'relative', aspectRatio: '368/420', width: '100%', borderRadius: 12, background: img(p.img1), backgroundColor: '#eee', backgroundSize: 'cover', backgroundPosition: 'center', overflow: 'hidden' }}>
-                    <span style={{ position: 'absolute', left: 8, top: 8, fontSize: 10, background: best ? '#000' : '#fff', color: best ? '#fff' : '#000', border: '1px solid #000', borderRadius: 999, padding: '2px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {best ? '★ Best seller' : '✦ New'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, width: '100%', minWidth: 0 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1, overflow: 'hidden' }}>
-                      <span style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{p.name}</span>
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>{rs(p.price)}</span>
-                        {p.compare > p.price && <span style={{ fontSize: 11, color: '#a1a1a1', textDecoration: 'line-through' }}>{rs(p.compare)}</span>}
-                      </div>
-                    </div>
-                    <div className="zylo-swatch-group" style={{ display: 'flex', gap: 3, flexShrink: 0, marginTop: 2 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img1), backgroundColor: '#eee' }} />
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img2 || p.img1), backgroundColor: '#eee' }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="zylo-toolbar-right">
+            {/* Mobile Filter Toggle Button */}
+            <button
+              onClick={() => this.setState({ showMobileFilters: true })}
+              className="zylo-mobile-filter-btn"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+              <span>Filters {hasActiveFilters ? '•' : ''}</span>
+            </button>
+
+            {/* Top Right Sort Option */}
+            <div className="zylo-sort-wrapper">
+              <label htmlFor="zylo-sort-select" className="zylo-sort-label">Sort by:</label>
+              <select
+                id="zylo-sort-select"
+                value={sortBy}
+                onChange={(e) => this.setState({ sortBy: e.target.value })}
+                className="zylo-sort-select"
+              >
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="newest">Newest Arrivals</option>
+                <option value="bestselling">Best Sellers</option>
+                <option value="name-asc">Product Name: A to Z</option>
+              </select>
+            </div>
           </div>
         </div>
+
+        {/* Active Filter Chips / Pills */}
+        {hasActiveFilters && (
+          <div className="zylo-active-filter-chips">
+            <span className="zylo-active-chips-label">Active Filters:</span>
+            {colFilter !== 'all' && (
+              <span className="zylo-filter-chip">
+                Gender: {colFilter.toUpperCase()}
+                <button onClick={() => this.goToView('collections', { colFilter: 'all' })}>&times;</button>
+              </span>
+            )}
+            {filterPriceBucket !== 'all' && filterPriceBucket !== 'custom' && (
+              <span className="zylo-filter-chip">
+                Price: {filterPriceBucket.replace('-', ' to ').replace('under-', 'Under Rs ').replace('above-', 'Above Rs ')}
+                <button onClick={() => this.setState({ filterPriceBucket: 'all' })}>&times;</button>
+              </span>
+            )}
+            {(filterMinPrice !== '' || filterMaxPrice !== '') && (
+              <span className="zylo-filter-chip">
+                Price: Rs {filterMinPrice || '0'} – Rs {filterMaxPrice || '∞'}
+                <button onClick={() => this.setState({ filterMinPrice: '', filterMaxPrice: '', filterPriceBucket: 'all' })}>&times;</button>
+              </span>
+            )}
+            {filterBrands.map(b => (
+              <span key={b} className="zylo-filter-chip">
+                Brand: {b}
+                <button onClick={() => this.setState(s => ({ filterBrands: s.filterBrands.filter(brand => brand !== b) }))}>&times;</button>
+              </span>
+            ))}
+            <button
+              onClick={() => this.setState({
+                colFilter: 'all',
+                filterPriceBucket: 'all',
+                filterMinPrice: '',
+                filterMaxPrice: '',
+                filterBrands: []
+              })}
+              className="zylo-clear-all-chips-btn"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+
+        {/* Main 2-Column Layout: Left Filters Sidebar + Right Product Grid */}
+        <div className="zylo-shop-layout">
+          {/* Desktop Left Sidebar */}
+          <aside className="zylo-filter-sidebar">
+            {renderFilterControls()}
+          </aside>
+
+          {/* Right Column: Products Grid */}
+          <div className="zylo-shop-products-column">
+            {items.length === 0 ? (
+              <div className="zylo-no-products-box">
+                <div className="zylo-no-products-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </div>
+                <h3>No products match your filters</h3>
+                <p>Try adjusting your gender, price range, or brand criteria to see available items.</p>
+                <button
+                  onClick={() => this.setState({
+                    colFilter: 'all',
+                    filterPriceBucket: 'all',
+                    filterMinPrice: '',
+                    filterMaxPrice: '',
+                    filterBrands: []
+                  })}
+                  className="zylo-reset-filters-btn"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="zylo-products-grid">
+                {items.map(p => {
+                  const best = p.tag === 'BEST SELLER';
+                  return (
+                    <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
+                      <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee' }}>
+                        <span className={`zylo-product-tag-badge ${best ? 'best-seller' : 'new'}`}>
+                          {best ? '★ Best seller' : (p.tag || '✦ New')}
+                        </span>
+                      </div>
+                      <div className="zylo-product-card-body">
+                        <div className="zylo-product-card-info">
+                          <span className="zylo-product-brand-tag">{p.brand || 'Zylo'}</span>
+                          <span className="zylo-product-name">{p.name}</span>
+                          <div className="zylo-product-price-row">
+                            <span className="zylo-product-price">{rs(p.price)}</span>
+                            {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
+                          </div>
+                        </div>
+                        <div className="zylo-swatch-group">
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img1), backgroundColor: '#eee' }} />
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img2 || p.img1), backgroundColor: '#eee' }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Filter Slide-in Drawer Modal */}
+        {showMobileFilters && (
+          <div className="zylo-mobile-filter-modal-overlay" onClick={() => this.setState({ showMobileFilters: false })}>
+            <div className="zylo-mobile-filter-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="zylo-mobile-filter-modal-header">
+                <h3>Filters</h3>
+                <button onClick={() => this.setState({ showMobileFilters: false })}>&times;</button>
+              </div>
+              <div className="zylo-mobile-filter-modal-body">
+                {renderFilterControls()}
+              </div>
+              <div className="zylo-mobile-filter-modal-footer">
+                <button
+                  onClick={() => this.setState({ showMobileFilters: false })}
+                  className="zylo-mobile-apply-btn"
+                >
+                  Show {items.length} {items.length === 1 ? 'Result' : 'Results'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1580,6 +2120,640 @@ export default class StoreApp extends React.Component {
     );
   }
 
+  renderAccount = () => {
+    const { currentUser, accountTab, userOrders, loadingOrders, savingProfile, profileName, profilePhone, profilePermanentAddress, profileTemporaryAddress } = this.state;
+
+    if (!currentUser) {
+      return (
+        <div style={{ maxWidth: 640, margin: '60px auto 100px auto', padding: '0 20px', textAlign: 'center' }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: '48px 32px', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px 0', letterSpacing: 0.5 }}>Sign In to Your Account</h2>
+            <p style={{ fontSize: 14, color: '#666', margin: '0 0 28px 0', lineHeight: 1.6 }}>
+              View your order history, track past purchases, manage your delivery addresses, and update your personal information.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
+              <a
+                href="/login"
+                style={{
+                  display: 'block',
+                  background: '#000',
+                  color: '#fff',
+                  padding: '12px 24px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: 1.5,
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                SIGN IN
+              </a>
+              <a
+                href="/signup"
+                style={{
+                  display: 'block',
+                  background: '#fff',
+                  color: '#000',
+                  border: '1px solid #000',
+                  padding: '12px 24px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: 1.5,
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                CREATE AN ACCOUNT
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const initials = (currentUser.name || 'Member')
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+
+    const activeTab = accountTab || 'orders';
+
+    return (
+      <div style={{ maxWidth: 1080, width: '100%', margin: '0 auto', padding: '40px 20px 80px 20px' }}>
+        {/* Back Link */}
+        <div style={{ marginBottom: 24 }}>
+          <button
+            onClick={() => this.goToView('shop')}
+            style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}
+          >
+            &larr; Back to Shopping
+          </button>
+        </div>
+
+        {/* User Hero Header Card */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e5e5e5',
+          borderRadius: 16,
+          padding: '28px 32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 20,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+          marginBottom: 32
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div style={{
+              width: 60,
+              height: 60,
+              borderRadius: '50%',
+              background: '#000',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22,
+              fontWeight: 700,
+              letterSpacing: 1,
+              flexShrink: 0
+            }}>
+              {initials}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: 0.5, color: '#111' }}>
+                  {currentUser.name}
+                </h1>
+                <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f0f0', color: '#444', padding: '3px 8px', borderRadius: 999, letterSpacing: 1 }}>
+                  {currentUser.role === 'admin' ? 'ADMIN' : 'VERIFIED MEMBER'}
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#666' }}>
+                {currentUser.email} {currentUser.phone ? `• ${currentUser.phone}` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={this.handleLogout}
+              style={{
+                background: '#fff',
+                border: '1px solid #e5e5e5',
+                color: '#b91c1c',
+                padding: '8px 16px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'border-color 0.15s ease, background 0.15s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#e5e5e5'; }}
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div style={{
+          display: 'flex',
+          gap: 10,
+          borderBottom: '1px solid #e5e5e5',
+          marginBottom: 32,
+          overflowX: 'auto',
+          paddingBottom: 4
+        }}>
+          <button
+            onClick={() => { this.goToView('account', { accountTab: 'orders' }); this.loadUserOrders(); }}
+            style={{
+              background: activeTab === 'orders' ? '#000' : '#f5f5f5',
+              color: activeTab === 'orders' ? '#fff' : '#444',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              padding: '12px 20px',
+              fontSize: 13.5,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>Orders &amp; Purchases</span>
+            <span style={{
+              background: activeTab === 'orders' ? 'rgba(255,255,255,0.25)' : '#e5e5e5',
+              color: activeTab === 'orders' ? '#fff' : '#222',
+              fontSize: 11,
+              padding: '1px 6px',
+              borderRadius: 999,
+              fontWeight: 700
+            }}>
+              {userOrders.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => this.goToView('account', { accountTab: 'profile' })}
+            style={{
+              background: activeTab === 'profile' ? '#000' : '#f5f5f5',
+              color: activeTab === 'profile' ? '#fff' : '#444',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              padding: '12px 20px',
+              fontSize: 13.5,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>Personal Profile</span>
+          </button>
+
+          <button
+            onClick={() => this.goToView('account', { accountTab: 'addresses' })}
+            style={{
+              background: activeTab === 'addresses' ? '#000' : '#f5f5f5',
+              color: activeTab === 'addresses' ? '#fff' : '#444',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              padding: '12px 20px',
+              fontSize: 13.5,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>Saved Addresses</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Orders & Purchases */}
+        {activeTab === 'orders' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111' }}>Your Order History</h2>
+                <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>Track, view, and manage all your past orders.</p>
+              </div>
+              <button
+                onClick={this.loadUserOrders}
+                style={{ background: '#f5f5f5', border: '1px solid #e0e0e0', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Refresh
+              </button>
+            </div>
+
+            {loadingOrders ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16 }}>
+                <p style={{ fontSize: 14, color: '#666', margin: 0 }}>Loading your orders...</p>
+              </div>
+            ) : userOrders.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                background: '#fff',
+                border: '1px solid #e5e5e5',
+                borderRadius: 16,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 6px 0', color: '#111' }}>No orders placed yet</h3>
+                <p style={{ fontSize: 13, color: '#666', maxWidth: 400, margin: '0 auto 20px auto', lineHeight: 1.5 }}>
+                  You have not placed any orders yet. Discover our curated collections and place your first order today!
+                </p>
+                <button
+                  onClick={() => this.goToView('shop')}
+                  style={{
+                    background: '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 24px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    cursor: 'pointer'
+                  }}
+                >
+                  START SHOPPING &rarr;
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {userOrders.map((ord) => {
+                  const statusColors = {
+                    delivered: { bg: '#dcfce7', text: '#166534', border: '#bbf7d0', label: 'DELIVERED' },
+                    shipped: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', label: 'SHIPPED' },
+                    processing: { bg: '#f3e8ff', text: '#6b21a8', border: '#e9d5ff', label: 'PROCESSING' },
+                    confirmed: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe', label: 'CONFIRMED' },
+                    pending: { bg: '#fef9c3', text: '#854d0e', border: '#fde047', label: 'PENDING' },
+                    cancelled: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca', label: 'CANCELLED' }
+                  };
+                  const st = statusColors[(ord.fulfillmentStatus || 'pending').toLowerCase()] || statusColors.pending;
+                  const orderDate = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+                  const totalNpr = ord.grandTotal !== undefined ? (ord.grandTotal / 100) : (ord.total || 0);
+
+                  return (
+                    <div key={ord._id || ord.orderNo} style={{
+                      background: '#fff',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: 14,
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+                    }}>
+                      {/* Order Header */}
+                      <div style={{
+                        background: '#fafafa',
+                        borderBottom: '1px solid #e5e5e5',
+                        padding: '14px 20px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 12
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', letterSpacing: 0.5 }}>ORDER NUMBER</span>
+                            <strong style={{ fontSize: 14, color: '#111' }}>{ord.orderNo}</strong>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', letterSpacing: 0.5 }}>ORDER DATE</span>
+                            <span style={{ fontSize: 13, color: '#333' }}>{orderDate}</span>
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', letterSpacing: 0.5 }}>PAYMENT METHOD</span>
+                            <span style={{ fontSize: 13, color: '#333', textTransform: 'uppercase' }}>{ord.paymentMethod || 'COD'}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{
+                            background: st.bg,
+                            color: st.text,
+                            border: `1px solid ${st.border}`,
+                            padding: '4px 10px',
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: 0.5
+                          }}>
+                            {st.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Order Items */}
+                      <div style={{ padding: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+                          {(ord.items || []).map((it, idx) => {
+                            const itemPrice = it.price !== undefined ? (it.price / 100) : (it.unitPrice || 0);
+                            const itemImg = it.image || it.img || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300';
+                            return (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: idx < ord.items.length - 1 ? '1px solid #f0f0f0' : 'none', paddingBottom: idx < ord.items.length - 1 ? 14 : 0 }}>
+                                <div style={{
+                                  width: 54,
+                                  height: 68,
+                                  borderRadius: 8,
+                                  overflow: 'hidden',
+                                  background: '#f5f5f5',
+                                  flexShrink: 0
+                                }}>
+                                  <img src={itemImg} alt={it.name || 'Item'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111' }}>{it.name || 'Zylo Garment'}</h4>
+                                  <div style={{ fontSize: 12, color: '#666', marginTop: 3 }}>
+                                    {it.size ? `Size: ${it.size} • ` : ''}Quantity: {it.qty || 1}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <strong style={{ fontSize: 14, color: '#111' }}>{rs(itemPrice * (it.qty || 1))}</strong>
+                                  <div style={{ fontSize: 11, color: '#888' }}>{rs(itemPrice)} each</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Order Address & Totals Footer */}
+                        <div style={{
+                          borderTop: '1px solid #eee',
+                          paddingTop: 14,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-end',
+                          flexWrap: 'wrap',
+                          gap: 16
+                        }}>
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', letterSpacing: 0.5 }}>SHIPPING TO</span>
+                            <div style={{ fontSize: 12.5, color: '#333', marginTop: 2 }}>
+                              <strong>{ord.shippingAddress?.fullName || currentUser.name}</strong> • {ord.shippingAddress?.phone || currentUser.phone}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#666' }}>
+                              {ord.shippingAddress?.address1 || ord.shippingAddress?.street || ord.shippingAddress?.line1}, {ord.shippingAddress?.city || 'Nepal'}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: '#888', display: 'block', letterSpacing: 0.5 }}>GRAND TOTAL</span>
+                              <span style={{ fontSize: 18, fontWeight: 700, color: '#000' }}>{rs(totalNpr)}</span>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                const newItems = (ord.items || []).map(i => ({
+                                  id: i.productId || i.id,
+                                  idx: 0,
+                                  name: i.name,
+                                  size: i.size || 'M',
+                                  price: i.price !== undefined ? Math.round(i.price / 100) : (i.unitPrice || 0),
+                                  qty: i.qty || 1,
+                                  img: i.image || i.img
+                                }));
+                                this.setState(s => ({
+                                  cart: [...s.cart, ...newItems],
+                                  toast: `Added ${newItems.length} items to cart!`
+                                }));
+                                saveStoredCart([...this.state.cart, ...newItems]);
+                                setTimeout(() => this.setState({ toast: null }), 3000);
+                              }}
+                              style={{
+                                background: '#000',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '8px 16px',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                letterSpacing: 0.5,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              BUY AGAIN
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Personal Profile */}
+        {activeTab === 'profile' && (
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+            <div style={{ marginBottom: 24, borderBottom: '1px solid #f0f0f0', paddingBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111' }}>Personal Information</h2>
+              <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>Manage your basic profile information and contact details.</p>
+            </div>
+
+            <form onSubmit={this.handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 540 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                  FULL NAME
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={profileName}
+                  onChange={(e) => this.setState({ profileName: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #d4d4d4',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                  EMAIL ADDRESS
+                </label>
+                <input
+                  type="email"
+                  disabled
+                  value={currentUser.email}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #e5e5e5',
+                    fontSize: 14,
+                    background: '#f9f9f9',
+                    color: '#666',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    cursor: 'not-allowed'
+                  }}
+                />
+                <span style={{ fontSize: 11, color: '#888', marginTop: 4, display: 'block' }}>Email address is registered to this account.</span>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                  PHONE NUMBER
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 9801234567"
+                  value={profilePhone}
+                  onChange={(e) => this.setState({ profilePhone: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #d4d4d4',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ paddingTop: 10 }}>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  style={{
+                    background: savingProfile ? '#666' : '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 28px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: 1.5,
+                    cursor: savingProfile ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {savingProfile ? 'SAVING...' : 'SAVE CHANGES'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Tab 3: Saved Addresses */}
+        {activeTab === 'addresses' && (
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+            <div style={{ marginBottom: 24, borderBottom: '1px solid #f0f0f0', paddingBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111' }}>Saved Delivery Addresses</h2>
+              <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>Keep your shipping addresses up to date for rapid checkout.</p>
+            </div>
+
+            <form onSubmit={this.handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 540 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                  PERMANENT ADDRESS
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ward 4, Baluwatar, Kathmandu"
+                  value={profilePermanentAddress}
+                  onChange={(e) => this.setState({ profilePermanentAddress: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #d4d4d4',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                  TEMPORARY / CURRENT DELIVERY ADDRESS
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Pulchowk, Lalitpur (Opposite Labim Mall)"
+                  value={profileTemporaryAddress}
+                  onChange={(e) => this.setState({ profileTemporaryAddress: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #d4d4d4',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ paddingTop: 10 }}>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  style={{
+                    background: savingProfile ? '#666' : '#000',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 28px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: 1.5,
+                    cursor: savingProfile ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {savingProfile ? 'SAVING...' : 'SAVE ADDRESSES'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   render() {
     const { view, toast, landingScale } = this.state;
     return (
@@ -1609,111 +2783,11 @@ export default class StoreApp extends React.Component {
           {view === 'checkout' && this.renderCheckout()}
           {view === 'confirmed' && this.renderConfirmed()}
           {view === 'contact' && this.renderContact()}
+          {view === 'account' && this.renderAccount()}
         </main>
         {this.footer()}
-
-        {/* Customer Account & Saved Addresses Modal */}
-        {this.state.showProfileModal && this.state.currentUser && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.7)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: 20
-            }}
-            onClick={(e) => { if (e.target === e.currentTarget) this.setState({ showProfileModal: false }); }}
-          >
-            <div style={{
-              background: '#fff',
-              color: '#111',
-              borderRadius: 16,
-              maxWidth: 480,
-              width: '100%',
-              padding: 28,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: 1 }}>CUSTOMER ACCOUNT</h3>
-                <button
-                  onClick={() => this.setState({ showProfileModal: false })}
-                  style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#666' }}
-                >
-                  &times;
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14 }}>
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>FULL NAME</span>
-                  <strong style={{ fontSize: 16 }}>{this.state.currentUser.name}</strong>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>EMAIL ADDRESS</span>
-                  <span>{this.state.currentUser.email}</span>
-                </div>
-
-                {this.state.currentUser.phone && (
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#888', letterSpacing: 1, display: 'block' }}>PHONE NUMBER</span>
-                    <span>{this.state.currentUser.phone}</span>
-                  </div>
-                )}
-
-                <div style={{ background: '#f8f8f8', padding: 14, borderRadius: 10, border: '1px solid #eaeaea' }}>
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: 1, display: 'block', marginBottom: 2 }}>PERMANENT ADDRESS</span>
-                    <strong style={{ color: '#222' }}>{this.state.currentUser.permanentAddress || 'Not specified'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#666', letterSpacing: 1, display: 'block', marginBottom: 2 }}>TEMPORARY / CURRENT ADDRESS</span>
-                    <strong style={{ color: '#222' }}>{this.state.currentUser.temporaryAddress || 'Not specified'}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, paddingTop: 16, borderTop: '1px solid #eee' }}>
-                <button
-                  onClick={this.handleLogout}
-                  style={{
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 16px',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Sign Out
-                </button>
-                <button
-                  onClick={() => this.setState({ showProfileModal: false })}
-                  style={{
-                    background: '#000',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 20px',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 }
+

@@ -16,6 +16,11 @@ export async function fetchOrderApi(orderId, orderNo) {
   return res.data?.order || null;
 }
 
+export async function fetchUserOrdersApi() {
+  const res = await api.get('/api/orders');
+  return res.data?.orders || [];
+}
+
 export async function getOrders() {
   const res = await api.get('/api/admin/orders');
   return res.data?.orders || res.data || [];
@@ -25,3 +30,4 @@ export async function updateOrderStatus(orderNo, status) {
   const res = await api.patch(`/api/admin/orders/${orderNo}/status`, { fulfillmentStatus: status });
   return res.data?.order || null;
 }
+

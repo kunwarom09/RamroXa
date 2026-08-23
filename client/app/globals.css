@@ -801,43 +801,576 @@ tbody tr:hover { background: var(--muted); }
   }
 }
 
-.zylo-filter-pills {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+/* ==========================================================================
+   Collections Toolbar, Left Sidebar Filters, and Products Grid
+   ========================================================================== */
+
+.zylo-collections-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 0 20px 0;
+  border-bottom: 1px solid #eeeeee;
+  margin-bottom: 20px;
+}
+
+.zylo-toolbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.zylo-toolbar-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: -0.3px;
+}
+
+.zylo-toolbar-count {
+  font-size: 13px;
+  color: #666666;
+  font-weight: 500;
+}
+
+.zylo-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zylo-mobile-filter-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111111;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zylo-mobile-filter-btn:hover {
+  background: #ebebeb;
+}
+
+.zylo-sort-wrapper {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.zylo-sort-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555555;
+  white-space: nowrap;
+}
+
+.zylo-sort-select {
+  background: #ffffff;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111111;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.zylo-sort-select:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Active Filter Chips */
+.zylo-active-filter-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #e5e5e5;
+}
+
+.zylo-active-chips-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+
+.zylo-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #222222;
+}
+
+.zylo-filter-chip button {
+  background: none;
+  border: none;
+  color: #888888;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.zylo-filter-chip button:hover {
+  color: #000000;
+}
+
+.zylo-clear-all-chips-btn {
+  background: none;
+  border: none;
+  color: #c40000;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* Main Shop Layout */
+.zylo-shop-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
   width: 100%;
+}
+
+.zylo-filter-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.zylo-filter-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.zylo-filter-main-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: -0.2px;
+}
+
+.zylo-filter-clear-btn {
+  background: none;
+  border: none;
+  color: #c40000;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.zylo-filter-clear-btn:hover {
+  text-decoration: underline;
+}
+
+.zylo-filter-section {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.zylo-filter-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.zylo-filter-section-title {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.zylo-filter-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zylo-filter-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #444444;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.zylo-filter-option-row:hover {
+  color: #000000;
+}
+
+.zylo-filter-option-row.selected {
+  color: #000000;
+  font-weight: 600;
+}
+
+.zylo-filter-radio,
+.zylo-filter-checkbox {
+  accent-color: #000000;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.zylo-filter-option-name {
+  flex: 1;
+}
+
+.zylo-filter-option-count {
+  font-size: 11.5px;
+  color: #888888;
+}
+
+.zylo-custom-price-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #f0f0f0;
+}
+
+.zylo-custom-price-title {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #666666;
+  margin-bottom: 6px;
+}
+
+.zylo-custom-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zylo-price-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  outline: none;
   box-sizing: border-box;
 }
 
-@media (min-width: 600px) {
-  .zylo-filter-pills {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-  }
+.zylo-price-input:focus {
+  border-color: #000000;
+}
+
+.zylo-price-divider {
+  color: #888888;
+  font-weight: 600;
+}
+
+/* Products Column */
+.zylo-shop-products-column {
+  flex: 1;
+  min-width: 0;
 }
 
 .zylo-products-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 10px;
-  margin-top: 20px;
+  gap: 16px 12px;
   width: 100%;
   box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .zylo-products-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px 16px;
-    margin-top: 28px;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 990px) {
   .zylo-products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px 24px;
-    margin-top: 32px;
+    gap: 24px 20px;
+  }
+}
+
+.zylo-product-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.zylo-product-card:hover {
+  transform: translateY(-3px);
+}
+
+.zylo-product-img-wrap {
+  position: relative;
+  aspect-ratio: 368 / 420;
+  width: 100%;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.zylo-product-tag-badge {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.zylo-product-tag-badge.best-seller {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+}
+
+.zylo-product-tag-badge.new {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #000000;
+}
+
+.zylo-product-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.zylo-product-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.zylo-product-brand-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.zylo-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.zylo-product-price-row {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.zylo-product-price {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.zylo-product-compare {
+  font-size: 11px;
+  color: #a1a1a1;
+  text-decoration: line-through;
+}
+
+/* Empty State */
+.zylo-no-products-box {
+  text-align: center;
+  padding: 60px 20px;
+  background: #fafafa;
+  border: 1px dashed #d4d4d4;
+  border-radius: 16px;
+  margin: 20px 0;
+}
+
+.zylo-no-products-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #eeeeee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+}
+
+.zylo-no-products-box h3 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.zylo-no-products-box p {
+  font-size: 13px;
+  color: #666666;
+  max-width: 400px;
+  margin: 0 auto 20px auto;
+  line-height: 1.5;
+}
+
+.zylo-reset-filters-btn {
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+/* Mobile Filter Modal */
+.zylo-mobile-filter-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.zylo-mobile-filter-modal {
+  background: #ffffff;
+  width: 85%;
+  max-width: 340px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.2);
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.zylo-mobile-filter-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.zylo-mobile-filter-modal-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.zylo-mobile-filter-modal-header button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666666;
+}
+
+.zylo-mobile-filter-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.zylo-mobile-filter-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #eeeeee;
+  background: #ffffff;
+}
+
+.zylo-mobile-apply-btn {
+  width: 100%;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 860px) {
+  .zylo-filter-sidebar {
+    display: none;
+  }
+  .zylo-mobile-filter-btn {
+    display: flex;
   }
 }
 
@@ -1174,3 +1707,240 @@ tbody tr:hover { background: var(--muted); }
   letter-spacing: 0.3px;
   line-height: 1;
 }
+
+/* ==========================================================================
+   Amazon-Style Account & Lists Flyout Menu
+   ========================================================================== */
+.zylo-nav-account-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.zylo-account-flyout {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: -10px;
+  width: 440px;
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid #d5d9d9;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  z-index: 150;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+/* Show on hover or when open class active */
+.zylo-nav-account-wrapper:hover .zylo-account-flyout,
+.zylo-account-flyout.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Triangle Pointer */
+.zylo-account-flyout-arrow {
+  position: absolute;
+  top: -7px;
+  right: 28px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #ffffff;
+  filter: drop-shadow(0 -1.5px 1px rgba(0, 0, 0, 0.12));
+}
+
+.zylo-account-flyout-card {
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Auth Header */
+.zylo-flyout-auth-header {
+  padding: 16px 20px 14px 20px;
+  text-align: center;
+  background: #ffffff;
+}
+
+.zylo-flyout-auth-header.logged-in {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  background: #fcfcfc;
+  padding: 14px 18px;
+}
+
+.zylo-flyout-signin-btn {
+  display: block;
+  width: 200px;
+  margin: 0 auto 8px auto;
+  padding: 8px 0;
+  background: #000000;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.zylo-flyout-signin-btn:hover {
+  background: #222222;
+  border-color: #222222;
+  color: #ffffff;
+}
+
+.zylo-flyout-new-customer {
+  font-size: 11.5px;
+  color: #555555;
+}
+
+.zylo-flyout-start-link {
+  color: #000000;
+  text-decoration: underline;
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.zylo-flyout-start-link:hover {
+  color: #666666;
+  text-decoration: underline;
+}
+
+.zylo-flyout-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.zylo-flyout-greeting {
+  font-size: 11px;
+  color: #666666;
+}
+
+.zylo-flyout-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.zylo-flyout-email {
+  font-size: 11.5px;
+  color: #777777;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zylo-flyout-profile-btn {
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #d5d9d9;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111111;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.zylo-flyout-profile-btn:hover {
+  background: #f7f7f7;
+  border-color: #a6a6a6;
+}
+
+.zylo-flyout-divider {
+  height: 1px;
+  background: #eaeded;
+  width: 100%;
+}
+
+/* Two Columns */
+.zylo-flyout-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 14px 18px 18px 18px;
+  background: #ffffff;
+}
+
+.zylo-flyout-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.zylo-flyout-col:last-child {
+  border-left: 1px solid #eaeded;
+  padding-left: 18px;
+}
+
+.zylo-flyout-col-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0F1111;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.2px;
+}
+
+.zylo-flyout-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zylo-flyout-list li {
+  margin: 0;
+  padding: 0;
+}
+
+.zylo-flyout-list button {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-size: 12.5px;
+  color: #444444;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.zylo-flyout-list button:hover {
+  color: #000000;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.zylo-flyout-signout-item {
+  margin-top: 6px;
+  padding-top: 8px !important;
+  border-top: 1px dashed #eaeded;
+}
+
+.zylo-flyout-signout-btn {
+  color: #c40000 !important;
+  font-weight: 600;
+}
+
+.zylo-flyout-signout-btn:hover {
+  color: #990000 !important;
+  text-decoration: underline;
+}
+
