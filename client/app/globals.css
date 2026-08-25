@@ -832,8 +832,8 @@ tbody tr:hover { background: var(--muted); }
 }
 
 .zylo-toolbar-count {
-  font-size: 13px;
-  color: #666666;
+  font-size: 16px;
+  color: #666;
   font-weight: 500;
 }
 
