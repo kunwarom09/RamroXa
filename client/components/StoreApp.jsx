@@ -307,8 +307,8 @@ export default class StoreApp extends React.Component {
     this.updateLandingScale = () => {
       if (typeof window === 'undefined') return;
       const vw = window.innerWidth;
-      const scale = Math.min(1, Math.max(0.2, vw / 1188));
-      if (Math.abs(scale - (this.state.landingScale || 1)) > 0.005) {
+      const scale = vw / 1188;
+      if (Math.abs(scale - (this.state.landingScale || 1)) > 0.002) {
         this.setState({ landingScale: scale });
       }
     };
