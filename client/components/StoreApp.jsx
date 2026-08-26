@@ -68,7 +68,7 @@ const img = (h) => {
   }
   return `url('/assets/${h}.q.jpg') 50% 20% / cover no-repeat`;
 };
-const font = { fontFamily: "'Share Tech', sans-serif" };
+const font = { fontFamily: "'Geist', -apple-system, BlinkMacSystemFont, sans-serif" };
 const pillBtn = (dark) => ({ ...font, fontSize: 14, letterSpacing: 1, background: dark ? '#000' : '#fff', color: dark ? '#fff' : '#000', border: '1px solid #000', borderRadius: 999, padding: '14px 28px', cursor: 'pointer' });
 const input = { ...font, fontSize: 14, border: '1px solid #000', borderRadius: 8, padding: 12, outline: 'none', background: '#fff' };
 
@@ -792,7 +792,7 @@ export default class StoreApp extends React.Component {
                       fill="#ffffff"
                       fontSize="11.5"
                       fontWeight="700"
-                      fontFamily="'Share Tech', sans-serif"
+                      fontFamily="'Geist', sans-serif"
                     >
                       {totalItems}
                     </text>
@@ -927,7 +927,7 @@ export default class StoreApp extends React.Component {
             <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
           </div>
           <div style={{ width: '100%', overflow: 'hidden', textAlign: 'center', marginTop: 32, opacity: 0.16, pointerEvents: 'none', userSelect: 'none' }}>
-            <span style={{ fontFamily: "'Share Tech', sans-serif", fontSize: 'clamp(56px, 15vw, 210px)', fontWeight: 700, letterSpacing: 'clamp(8px, 2.5vw, 28px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
+            <span style={{ fontFamily: "'Geist', sans-serif", fontSize: 'clamp(56px, 15vw, 210px)', fontWeight: 700, letterSpacing: 'clamp(8px, 2.5vw, 28px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
               ZYLO
             </span>
           </div>
