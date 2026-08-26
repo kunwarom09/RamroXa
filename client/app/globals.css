@@ -1607,6 +1607,64 @@ tbody tr:hover { background: var(--muted); }
   pointer-events: none;
 }
 
+@media (max-width: 768px) {
+  .zylo-home-hero-full {
+    height: auto;
+    min-height: calc(100svh - 60px);
+    padding: 32px 16px 20px 16px;
+    gap: 24px;
+  }
+  .zylo-home-hero-center {
+    gap: 12px;
+    margin-top: auto;
+    margin-bottom: 8px;
+  }
+  .zylo-home-hero-title {
+    font-size: clamp(28px, 7.5vw, 44px);
+    letter-spacing: -0.8px;
+    line-height: 1.14;
+  }
+  .zylo-home-hero-desc {
+    font-size: 14px;
+    line-height: 1.45;
+    max-width: 320px;
+  }
+  .zylo-home-hero-actions {
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .zylo-hero-btn-primary,
+  .zylo-hero-btn-secondary {
+    padding: 10px 22px;
+    font-size: 13px;
+  }
+  .zylo-home-hero-thumbnails-wrap {
+    padding: 0;
+    overflow: hidden;
+  }
+  .zylo-home-hero-thumbnails {
+    justify-content: flex-start;
+    padding: 6px 12px;
+    gap: 6px;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  .zylo-hero-thumb-btn {
+    width: 68px;
+    height: 52px;
+    border-radius: 6px;
+  }
+  .zylo-hero-thumb-btn.active {
+    width: 78px;
+    height: 60px;
+  }
+  .zylo-hero-thumb-label {
+    font-size: 10px;
+    padding: 1px 6px;
+    bottom: 3px;
+  }
+}
+
 /* ==========================================================================
    Header Account & Cart Badges (Amazon/Modern Inspired)
    ========================================================================== */
