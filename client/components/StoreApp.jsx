@@ -354,12 +354,7 @@ export default class StoreApp extends React.Component {
       const HERO_SWAP = { Urban: '7f7ad2764f25606b', Latest: 'ed11bf6e660fdaa2', Premium: '78948356fa487da5', Arctic: 'dbacea851225e2bf', Casual: '0ca944ebbae726b8', Iconic: '44312e50fe56c782', Unique: 'c2dbe0a9de9b2d4c' };
       if (HERO_SWAP[label]) {
         stop();
-        const hero = [...document.querySelectorAll('div')].find(d => d.style.width === '1188px' && d.style.height === '616px' && (d.style.background || '').includes('/assets/'));
-        if (hero) {
-          hero.style.transition = 'opacity 0.25s';
-          hero.style.opacity = '0.15';
-          setTimeout(() => { hero.style.background = `url('${asset(HERO_SWAP[label])}') 50% 30% / cover no-repeat`; hero.style.opacity = '1'; }, 250);
-        }
+        this.setState({ heroPreset: label });
         return;
       }
       if (label.length < 30) {
@@ -943,6 +938,7 @@ export default class StoreApp extends React.Component {
     return (
       <section className="zylo-home-hero-full">
         <div
+          key={currentPreset.key}
           className="zylo-home-hero-bg"
           style={{
             backgroundImage: `url('${asset(currentPreset.hash)}')`
@@ -990,12 +986,16 @@ export default class StoreApp extends React.Component {
                 <button
                   key={preset.key}
                   type="button"
-                  onClick={() => this.setState({ heroPreset: preset.key })}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.setState({ heroPreset: preset.key });
+                  }}
                   className={`zylo-hero-thumb-btn ${isActive ? 'active' : ''}`}
                   style={{
                     backgroundImage: `url('${asset(preset.hash)}')`
                   }}
-                  title={`Switch to ${preset.label}`}
+                  title={`Switch background to ${preset.label}`}
                 >
                   <span className="zylo-hero-thumb-label">{preset.label}</span>
                 </button>
