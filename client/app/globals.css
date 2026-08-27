@@ -2410,6 +2410,32 @@ tbody tr:hover { background: var(--muted); }
   flex-direction: column;
   gap: 4px;
 }
+.rmx-product-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rmx-product-color-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rmx-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.rmx-color-more {
+  font-size: 10px;
+  font-weight: 600;
+  color: #777;
+  line-height: 1;
+}
 .rmx-product-brand {
   font-size: 11px;
   letter-spacing: 0.1em;

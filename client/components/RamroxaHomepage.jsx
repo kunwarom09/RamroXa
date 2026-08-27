@@ -241,7 +241,35 @@ function IconChevronRight() {
   );
 }
 
-// ─── PRODUCT CARD (matches existing storefront card style) ────────────────────
+const COLOR_HEX_MAP = {
+  black: '#111111',
+  white: '#ffffff',
+  khaki: '#c3b091',
+  oatmeal: '#e3dac9',
+  natural: '#f2eecb',
+  blue: '#3b5998',
+  indigo: '#2e4482',
+  denim: '#466d98',
+  brown: '#6e4a2e',
+  grey: '#888888',
+  gray: '#888888',
+  'heather grey': '#9e9e9e',
+  charcoal: '#374151',
+  olive: '#556b2f',
+  sage: '#9caf88',
+  navy: '#1e293b',
+  cream: '#fdfbf7',
+  beige: '#e6dfd5',
+  red: '#dc2626',
+  burgundy: '#800020',
+  orange: '#ea580c',
+  yellow: '#eab308',
+  green: '#16a34a',
+  pink: '#ec4899',
+  purple: '#8b5cf6'
+};
+
+// ─── PRODUCT CARD (matches existing storefront card style with color tags) ────
 function ProductCard({ product, onOpen }) {
   const best = product.labels?.bestSelling;
   const featured = product.labels?.featured;
@@ -252,13 +280,42 @@ function ProductCard({ product, onOpen }) {
   const featuredImg = (product.images || []).find(i => i.isFeatured) || (product.images || [])[0];
   const imgSrc = featuredImg?.url || product.img1 || '';
 
+  // Extract available color options
+  const pColors = (Array.isArray(product.colors) && product.colors.length > 0)
+    ? product.colors
+    : (Array.isArray(product.options?.Colour || product.options?.Color || product.options?.colours || product.options?.colors)
+      ? (product.options?.Colour || product.options?.Color || product.options?.colours || product.options?.colors)
+      : (Array.isArray(product.variants)
+        ? Array.from(new Set(product.variants.map(v => v.name || v.color || v.option).filter(Boolean)))
+        : []));
+
   return (
     <div className="rmx-product-card" onClick={() => onOpen(product)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onOpen(product)}>
       <div className="rmx-product-img-wrap" style={{ backgroundImage: imgSrc ? `url('${imgSrc}')` : undefined }}>
         <span className={`rmx-product-badge ${best ? 'best-seller' : ''}`}>{badgeText}</span>
       </div>
       <div className="rmx-product-card-body">
-        <span className="rmx-product-brand">{product.brand || 'Ramroxa'}</span>
+        <div className="rmx-product-meta-row">
+          <span className="rmx-product-brand">{product.brand || 'Ramroxa'}</span>
+          {pColors && pColors.length > 0 && (
+            <div className="rmx-product-color-swatches" title={`Available in: ${pColors.join(', ')}`}>
+              {pColors.slice(0, 4).map(col => {
+                const hex = COLOR_HEX_MAP[String(col).toLowerCase().trim()] || '#333333';
+                return (
+                  <span
+                    key={col}
+                    className="rmx-color-dot"
+                    style={{ backgroundColor: hex }}
+                    title={String(col)}
+                  />
+                );
+              })}
+              {pColors.length > 4 && (
+                <span className="rmx-color-more">+{pColors.length - 4}</span>
+              )}
+            </div>
+          )}
+        </div>
         <span className="rmx-product-name">{product.name}</span>
         <div className="rmx-product-prices">
           <span className="rmx-price">{rs(priceNpr)}</span>
