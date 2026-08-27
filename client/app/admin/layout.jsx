@@ -199,7 +199,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="sidebar-logo">Zylo admin</div>
+        <div className="sidebar-logo">Ramroxa admin</div>
         {navItems.map((item, idx) => {
           if (item.section) {
             return <div key={idx} className="sidebar-section-label">{item.section}</div>;

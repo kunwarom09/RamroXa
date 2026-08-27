@@ -29,7 +29,7 @@ function LoginForm() {
 
   return (
     <div className="login-card">
-      <p className="brand">Zylo</p>
+      <p className="brand">Ramroxa</p>
       <h1>Sign in to admin</h1>
       <form onSubmit={handleSubmit}>
         <div className="field">
