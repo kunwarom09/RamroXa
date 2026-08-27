@@ -22,7 +22,8 @@ import {
   updateOrderStatus,
   refundOrder,
   listCustomers,
-  getCustomer
+  getCustomer,
+  getDashboardStats
 } from '../controllers/admin.controller.js';
 import {
   listAdminCoupons,
@@ -54,6 +55,10 @@ export const router = express.Router();
 
 // Enforce authentication and admin RBAC across all /api/admin routes
 router.use(requireAuth, requireAdmin);
+
+// Dashboard Live Stats
+router.get('/dashboard/stats', getDashboardStats);
+router.get('/dashboard', getDashboardStats);
 
 // Categories
 router.get('/categories', listCategories);

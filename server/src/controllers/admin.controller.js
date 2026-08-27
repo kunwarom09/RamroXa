@@ -150,6 +150,13 @@ export const getCustomer = asyncHandler(async (req, res) => {
   res.status(200).json({ data: result });
 });
 
+// --- Dashboard Live Stats ---
+export const getDashboardStats = asyncHandler(async (req, res) => {
+  const { getDashboardStats: fetchStats } = await import('../services/dashboard.service.js');
+  const result = await fetchStats(req.query);
+  res.status(200).json({ data: result });
+});
+
 export default {
   listCategories,
   createCategory,
@@ -169,5 +176,6 @@ export default {
   updateOrderStatus,
   refundOrder,
   listCustomers,
-  getCustomer
+  getCustomer,
+  getDashboardStats
 };
