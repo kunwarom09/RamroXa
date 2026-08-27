@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import Landing from './Landing';
+import RamroxaHomepage from './RamroxaHomepage';
 import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
 import { fetchProducts } from '../services/productService';
 import { api } from '../services/apiClient';
@@ -2927,16 +2928,11 @@ export default class StoreApp extends React.Component {
         {this.header()}
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }}>
           {view === 'shop' && (
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', background: '#ffffff' }}>
-              {this.renderHomeHero()}
-              <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden', background: '#ffffff' }}>
-                <div style={{ width: `${1188 * landingScale}px`, height: `${(8280 - 616) * landingScale}px`, flexShrink: 0, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
-                  <div style={{ width: '1188px', height: '8280px', transform: `scale(${landingScale})`, transformOrigin: 'top left', position: 'absolute', top: `${-616 * landingScale}px`, left: 0, background: '#ffffff' }}>
-                    <Landing />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <RamroxaHomepage
+              catalog={this.getCatalog()}
+              onOpenProduct={this.openProduct}
+              onNav={this.goToView}
+            />
           )}
           {view === 'collections' && this.renderCollections()}
           {view === 'detail' && this.renderDetail()}
