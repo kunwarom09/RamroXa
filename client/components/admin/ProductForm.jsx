@@ -1242,16 +1242,6 @@ export default function ProductForm({ productId = null }) {
             + Add Variant
           </button>
         </div>
-
-        {/* Action Bar */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '24px', marginBottom: '40px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
-          <button type="button" className="btn" onClick={() => router.push('/admin/products')}>Back to list</button>
-          <button type="button" className="btn" onClick={() => setPreviewMode(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <Icon name="eye" size={14} /> Preview
-          </button>
-          <button type="button" className="btn" onClick={() => saveMasterProduct(false)}>Save master product</button>
-          <button type="button" className="btn btn-primary" onClick={() => saveMasterProduct(true)}>Publish + all variants</button>
-        </div>
       </div>
 
       {/* Image Editor Modal for Product Images */}
