@@ -360,7 +360,17 @@ function HeroSlider({ config, onNav }) {
 
 // ─── BEST SELLERS ─────────────────────────────────────────────────────────────
 function BestSellers({ catalog, onOpenProduct, onNav }) {
-  const products = catalog.filter(p => p.labels?.bestSelling).slice(0, 3);
+  const isBestSelling = (p) => {
+    if (p.labels?.bestSelling) return true;
+    const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
+    return /best[\s-]?selling|bestseller|top[\s-]?pick/i.test(tags);
+  };
+
+  let products = catalog.filter(isBestSelling).slice(0, 3);
+  // Graceful fallback if no products tagged yet
+  if (!products.length && catalog.length > 0) {
+    products = catalog.slice(0, 3);
+  }
   if (!products.length) return null;
 
   return (
@@ -579,7 +589,17 @@ function ServiceBenefits({ config }) {
 // ─── FEATURED PRODUCTS ───────────────────────────────────────────────────────
 function FeaturedProducts({ catalog, config, onOpenProduct, onNav }) {
   const limit = config.limit || 8;
-  const products = catalog.filter(p => p.labels?.featured).slice(0, limit);
+  const isFeatured = (p) => {
+    if (p.labels?.featured) return true;
+    const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
+    return /featured|hand[\s-]?picked/i.test(tags);
+  };
+
+  let products = catalog.filter(isFeatured).slice(0, limit);
+  // Graceful fallback if no products tagged yet
+  if (!products.length && catalog.length > 0) {
+    products = catalog.slice(0, limit);
+  }
   if (!products.length) return null;
 
   return (
