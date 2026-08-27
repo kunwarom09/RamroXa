@@ -165,6 +165,8 @@ export default class StoreApp extends React.Component {
       filterPriceBucket: 'all',
       filterMinPrice: '',
       filterMaxPrice: '',
+      debouncedMinPrice: '',
+      debouncedMaxPrice: '',
       filterBrands: [],
       sortBy: 'featured',
       showMobileFilters: false,
@@ -1073,9 +1075,18 @@ export default class StoreApp extends React.Component {
       if (filterPriceBucket === '5000-10000' && (price < 5000 || price > 10000)) return false;
       if (filterPriceBucket === 'above-10000' && price <= 10000) return false;
 
-      // Custom Min/Max Price Filter
-      if (filterMinPrice !== '' && !isNaN(Number(filterMinPrice)) && price < Number(filterMinPrice)) return false;
-      if (filterMaxPrice !== '' && !isNaN(Number(filterMaxPrice)) && price > Number(filterMaxPrice)) return false;
+      // Custom Min/Max Price Filter (uses debounced values to avoid filtering mid-keystroke)
+      const { debouncedMinPrice, debouncedMaxPrice } = this.state;
+      const minVal = debouncedMinPrice !== '' ? Number(debouncedMinPrice) : null;
+      const maxVal = debouncedMaxPrice !== '' ? Number(debouncedMaxPrice) : null;
+      const hasValidMin = minVal !== null && !isNaN(minVal) && minVal > 0;
+      const hasValidMax = maxVal !== null && !isNaN(maxVal) && maxVal > 0;
+      // Skip filtering when min > max (invalid range)
+      const rangeInvalid = hasValidMin && hasValidMax && minVal > maxVal;
+      if (!rangeInvalid) {
+        if (hasValidMin && price < minVal) return false;
+        if (hasValidMax && price > maxVal) return false;
+      }
 
       // Brand Filter
       if (filterBrands && filterBrands.length > 0 && !filterBrands.includes(p.brand)) return false;
@@ -1174,17 +1185,39 @@ export default class StoreApp extends React.Component {
             <div className="zylo-custom-price-row">
               <input
                 type="number"
+                min="0"
                 placeholder="Min"
                 value={filterMinPrice}
-                onChange={(e) => this.setState({ filterMinPrice: e.target.value, filterPriceBucket: 'custom' })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  this.setState({
+                    filterMinPrice: val,
+                    filterPriceBucket: (val !== '' || filterMaxPrice !== '') ? 'custom' : 'all'
+                  });
+                  clearTimeout(this._minPriceDebounce);
+                  this._minPriceDebounce = setTimeout(() => {
+                    this.setState({ debouncedMinPrice: val });
+                  }, 600);
+                }}
                 className="zylo-price-input"
               />
               <span className="zylo-price-divider">–</span>
               <input
                 type="number"
+                min="0"
                 placeholder="Max"
                 value={filterMaxPrice}
-                onChange={(e) => this.setState({ filterMaxPrice: e.target.value, filterPriceBucket: 'custom' })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  this.setState({
+                    filterMaxPrice: val,
+                    filterPriceBucket: (filterMinPrice !== '' || val !== '') ? 'custom' : 'all'
+                  });
+                  clearTimeout(this._maxPriceDebounce);
+                  this._maxPriceDebounce = setTimeout(() => {
+                    this.setState({ debouncedMaxPrice: val });
+                  }, 600);
+                }}
                 className="zylo-price-input"
               />
             </div>
@@ -1223,9 +1256,9 @@ export default class StoreApp extends React.Component {
     );
 
     return (
-      <div style={{ background: '#fff', width: '100%', maxWidth: 1240, margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box', padding: '0 20px 80px 20px' }}>
+      <div style={{ background: '#fff', width: '100%', margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box', padding: 0 }}>
         {/* Collections Hero */}
-        <div className="zylo-collections-hero-wrapper" style={{ marginBottom: 32 }}>
+        <div className="zylo-collections-hero-fullwidth">
           <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
             <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
@@ -1253,6 +1286,8 @@ export default class StoreApp extends React.Component {
           </section>
         </div>
 
+        {/* Collections Content Area */}
+        <div className="zylo-collections-content">
         {/* Collections Toolbar: Results Title & Count on Left, Sort & Mobile Filters on Right */}
         <div id="zylo-shop-main" className="zylo-collections-toolbar">
           <div className="zylo-toolbar-left">
@@ -1409,6 +1444,7 @@ export default class StoreApp extends React.Component {
             )}
           </div>
         </div>
+        </div>{/* end zylo-collections-content */}
 
         {/* Mobile Filter Slide-in Drawer Modal */}
         {showMobileFilters && (
