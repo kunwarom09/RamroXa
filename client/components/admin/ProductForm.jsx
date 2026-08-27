@@ -677,12 +677,35 @@ export default function ProductForm({ productId = null }) {
           <h1>{editTitle}</h1>
           <p>{editSub}</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button type="button" className="btn btn-sm" onClick={() => setPreviewMode(true)}>
-            <Icon name="eye" size={15} /> Preview
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => router.push('/admin/products')}
+          >
+            Back to list
           </button>
-          <button type="button" className="btn btn-sm btn-primary" onClick={() => saveMasterProduct(false)}>
-            Save product
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setPreviewMode(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Icon name="eye" size={14} /> Preview
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => saveMasterProduct(false)}
+          >
+            Save master product
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={() => saveMasterProduct(true)}
+          >
+            Publish + all variants
           </button>
         </div>
       </div>
@@ -1221,11 +1244,13 @@ export default function ProductForm({ productId = null }) {
         </div>
 
         {/* Action Bar */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px', marginBottom: '40px' }}>
-          <button className="btn btn-primary" onClick={() => saveMasterProduct(false)}>Save master product</button>
-          <button className="btn" onClick={() => saveMasterProduct(true)}>Publish + all variants</button>
-          <button className="btn" onClick={() => setPreviewMode(true)}>Preview</button>
-          <button className="btn" onClick={() => router.push('/admin/products')}>Back to list</button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '24px', marginBottom: '40px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+          <button type="button" className="btn" onClick={() => router.push('/admin/products')}>Back to list</button>
+          <button type="button" className="btn" onClick={() => setPreviewMode(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Icon name="eye" size={14} /> Preview
+          </button>
+          <button type="button" className="btn" onClick={() => saveMasterProduct(false)}>Save master product</button>
+          <button type="button" className="btn btn-primary" onClick={() => saveMasterProduct(true)}>Publish + all variants</button>
         </div>
       </div>
 
