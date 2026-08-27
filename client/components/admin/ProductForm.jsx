@@ -64,12 +64,25 @@ export default function ProductForm({ productId = null }) {
 
   // Image Studio state
   const [editingImageIdx, setEditingImageIdx] = useState(null);
+  const [editingVariantTarget, setEditingVariantTarget] = useState(null);
   const [uploadingImages, setUploadingImages] = useState(false);
   const fileInputRef = useRef(null);
 
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  const handleSaveEditedVariantImage = (editedUrl) => {
+    if (!editingVariantTarget) return;
+    const { vgIdx, valIdx, subIdx } = editingVariantTarget;
+    if (subIdx !== null && subIdx !== undefined) {
+      handleUpdateSubset(vgIdx, valIdx, subIdx, { image: editedUrl });
+    } else {
+      handleUpdateValue(vgIdx, valIdx, { image: editedUrl });
+    }
+    setEditingVariantTarget(null);
+    showToast('Variant image updated');
   };
 
   const generateMasterSku = (catId) => {
@@ -1087,11 +1100,10 @@ export default function ProductForm({ productId = null }) {
                       </div>
 
                       <div className="value-row-2">
-                        <input
-                          className="val-image"
-                          placeholder="Image URL (optional)"
+                        <VariantImageUploader
                           value={val.image || ''}
-                          onChange={(e) => handleUpdateValue(vgIdx, valIdx, { image: e.target.value })}
+                          onChange={(imgUrl) => handleUpdateValue(vgIdx, valIdx, { image: imgUrl })}
+                          onOpenStudio={val.image ? () => setEditingVariantTarget({ vgIdx, valIdx, subIdx: null, image: { url: val.image } }) : null}
                         />
                         <input
                           className="val-stock"
@@ -1150,11 +1162,10 @@ export default function ProductForm({ productId = null }) {
                               </div>
 
                               <div className="value-row-2">
-                                <input
-                                  className="sub-image"
-                                  placeholder="Image URL (optional)"
+                                <VariantImageUploader
                                   value={sub.image || ''}
-                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { image: e.target.value })}
+                                  onChange={(imgUrl) => handleUpdateSubset(vgIdx, valIdx, subIdx, { image: imgUrl })}
+                                  onOpenStudio={sub.image ? () => setEditingVariantTarget({ vgIdx, valIdx, subIdx, image: { url: sub.image } }) : null}
                                 />
                                 <input
                                   className="sub-stock"
@@ -1218,13 +1229,98 @@ export default function ProductForm({ productId = null }) {
         </div>
       </div>
 
-      {/* Image Editor Modal */}
+      {/* Image Editor Modal for Product Images */}
       {editingImageIdx !== null && (formData.images || [])[editingImageIdx] && (
         <ImageEditorModal
           image={(formData.images || [])[editingImageIdx]}
           onSave={handleSaveEditedImage}
           onClose={() => setEditingImageIdx(null)}
         />
+      )}
+
+      {/* Image Editor Modal for Variant / Subset Images */}
+      {editingVariantTarget !== null && editingVariantTarget.image && (
+        <ImageEditorModal
+          image={editingVariantTarget.image}
+          onSave={handleSaveEditedVariantImage}
+          onClose={() => setEditingVariantTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function VariantImageUploader({ value, onChange, onOpenStudio }) {
+  const [processing, setProcessing] = useState(false);
+  const fileRef = useRef(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProcessing(true);
+    try {
+      const res = await convertToWebP(file, 200);
+      onChange(res.url);
+    } catch (err) {
+      alert('Image conversion failed: ' + err.message);
+    } finally {
+      setProcessing(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className={`variant-img-uploader ${value ? 'has-image' : ''}`}>
+      <input
+        type="file"
+        ref={fileRef}
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFile}
+      />
+      {processing ? (
+        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>Processing WebP...</span>
+      ) : value ? (
+        <>
+          <img src={value} alt="Variant" className="variant-img-thumb" />
+          <div className="variant-img-actions">
+            {onOpenStudio && (
+              <button
+                type="button"
+                className="variant-img-btn-sm"
+                title="Edit Studio (rotate, bg removal)"
+                onClick={onOpenStudio}
+              >
+                <Icon name="wand" size={11} /> Studio
+              </button>
+            )}
+            <button
+              type="button"
+              className="variant-img-btn-sm"
+              title="Change Image"
+              onClick={() => fileRef.current?.click()}
+            >
+              <Icon name="camera" size={11} /> Change
+            </button>
+            <button
+              type="button"
+              className="variant-img-btn-remove"
+              title="Remove image"
+              onClick={() => onChange('')}
+            >
+              &times;
+            </button>
+          </div>
+        </>
+      ) : (
+        <div
+          className="variant-img-empty-btn"
+          onClick={() => fileRef.current?.click()}
+          title="Upload Variant Image (Auto WebP < 200KB)"
+        >
+          <Icon name="camera" size={14} />
+          <span>Upload Image</span>
+        </div>
       )}
     </div>
   );
