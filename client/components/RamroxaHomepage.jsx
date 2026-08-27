@@ -130,26 +130,57 @@ function ProductCard({ product, onOpen, compact = false }) {
 // ─── 1. HERO BANNER WIDGETS ──────────────────────────────────────────────────
 function HeroSection({ section, onNav }) {
   const { widgetType = 'hero_overlay', config = {} } = section;
-  const slides = config.slides || [];
+  
+  const defaultSlides = [
+    {
+      id: 'slide-1',
+      image: '/hero-slide-1.jpg',
+      eyebrow: 'Footwear',
+      heading: 'Premium wear\nfor modern living',
+      description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
+      primaryCta: 'See all collections',
+      primaryCtaUrl: '/shop',
+      secondaryCta: 'Contact us',
+      secondaryCtaUrl: '/contact'
+    },
+    {
+      id: 'slide-2',
+      image: '/hero-slide-2.jpg',
+      eyebrow: 'Footwear',
+      heading: 'Premium wear\nfor modern living',
+      description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
+      primaryCta: 'See all collections',
+      primaryCtaUrl: '/shop',
+      secondaryCta: 'Contact us',
+      secondaryCtaUrl: '/contact'
+    }
+  ];
+
+  const rawSlides = config.slides || [];
+  const slides = (rawSlides.length > 0 ? rawSlides : defaultSlides).map((s, i) => ({
+    ...s,
+    image: s.image || s.url || (i % 2 === 0 ? '/hero-slide-1.jpg' : '/hero-slide-2.jpg')
+  }));
+
   const [current, setCurrent] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
 
   const goTo = useCallback((idx) => {
-    if (transitioning) return;
+    if (transitioning || !slides.length) return;
     setTransitioning(true);
+    setCurrent((idx + slides.length) % slides.length);
     setTimeout(() => {
-      setCurrent(idx);
       setTransitioning(false);
-    }, 350);
-  }, [transitioning]);
+    }, 400);
+  }, [transitioning, slides.length]);
 
   useEffect(() => {
     if (!config.autoplay || slides.length <= 1) return;
     const interval = setInterval(() => {
-      goTo((current + 1) % slides.length);
+      setCurrent((prev) => (prev + 1) % slides.length);
     }, config.slideDuration || 6000);
     return () => clearInterval(interval);
-  }, [current, slides.length, config.autoplay, config.slideDuration, goTo]);
+  }, [slides.length, config.autoplay, config.slideDuration]);
 
   if (!slides.length) return null;
   const slide = slides[current] || slides[0];
@@ -264,6 +295,29 @@ function HeroSection({ section, onNav }) {
         </div>
       </div>
 
+      {/* Navigation Arrows */}
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            className="rmx-hero-arrow prev"
+            onClick={() => goTo(current - 1)}
+            aria-label="Previous slide"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="rmx-hero-arrow next"
+            onClick={() => goTo(current + 1)}
+            aria-label="Next slide"
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Thumbnail / Dot indicators */}
       {slides.length > 1 && (
         <div className="rmx-hero-dots" role="tablist">
           {slides.map((_, i) => (

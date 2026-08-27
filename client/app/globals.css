@@ -2202,17 +2202,30 @@ tbody tr:hover { background: var(--muted); }
   overflow: hidden;
   background: #111;
 }
+.rmx-hero-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rmx-hero-slide,
 .rmx-hero-bg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center 25%;
   background-repeat: no-repeat;
-  transition: opacity 0.35s ease;
-  will-change: opacity;
-}
-.rmx-hero-bg.fading {
   opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  will-change: opacity;
+  pointer-events: none;
+}
+.rmx-hero-slide.active,
+.rmx-hero-bg.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 .rmx-hero-overlay {
   position: absolute;
@@ -2328,6 +2341,38 @@ tbody tr:hover { background: var(--muted); }
   background: rgba(255,255,255,0.25);
   border-color: #ffffff;
   transform: translateY(-1px);
+}
+
+/* Hero Navigation Arrows */
+.rmx-hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 4;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, transform 0.2s;
+  padding: 0 0 2px 0;
+}
+.rmx-hero-arrow:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: translateY(-50%) scale(1.08);
+}
+.rmx-hero-arrow.prev { left: 24px; }
+.rmx-hero-arrow.next { right: 24px; }
+@media (max-width: 768px) {
+  .rmx-hero-arrow { display: none; }
 }
 
 /* Hero dots */
