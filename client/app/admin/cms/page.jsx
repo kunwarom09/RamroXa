@@ -9,6 +9,7 @@ import {
   saveHomepageConfig,
   resetHomepageConfig
 } from '../../../services/homepageCms';
+import { ImagePickerField } from '../../../components/admin/MediaPickerModal';
 
 export default function AdminCmsPage() {
   // Static content pages
@@ -339,8 +340,8 @@ export default function AdminCmsPage() {
                         </div>
 
                         {(sec.config?.slides || []).map((slide, sIdx) => (
-                          <div key={slide.id || sIdx} style={{ padding: '12px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                          <div key={slide.id || sIdx} style={{ padding: '14px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '10px' }}>
                               Slide #{sIdx + 1}
                             </span>
                             <div className="form-grid-2">
@@ -352,14 +353,12 @@ export default function AdminCmsPage() {
                                   placeholder="e.g. Footwear"
                                 />
                               </div>
-                              <div className="field">
-                                <label>Image URL / Asset</label>
-                                <input
-                                  value={slide.image || ''}
-                                  onChange={(e) => handleConfigChange(sec.id, `slides.${sIdx}.image`, e.target.value)}
-                                  placeholder="/hero-slide-1.jpg"
-                                />
-                              </div>
+                              <ImagePickerField
+                                label="Slide Image"
+                                value={slide.image || ''}
+                                onChange={(val) => handleConfigChange(sec.id, `slides.${sIdx}.image`, val)}
+                                placeholder="Choose slide image..."
+                              />
                             </div>
                             <div className="field" style={{ marginTop: '8px' }}>
                               <label>Heading (Use newline for 2-line title)</label>
@@ -455,7 +454,7 @@ export default function AdminCmsPage() {
 
                     {/* ─── Categories Spotlight Config ─── */}
                     {sec.type === 'categories' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         <div className="form-grid-2">
                           <div className="field">
                             <label>Section Eyebrow</label>
@@ -474,9 +473,9 @@ export default function AdminCmsPage() {
                         </div>
 
                         {(sec.config?.items || []).map((cat, cIdx) => (
-                          <div key={cat.id || cIdx} style={{ padding: '12px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
-                              Card {cIdx + 1}: {cat.title || 'Category'}
+                          <div key={cat.id || cIdx} style={{ padding: '14px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '10px' }}>
+                              Card #{cIdx + 1}: {cat.title || 'Category'}
                             </span>
                             <div className="form-grid-2">
                               <div className="field">
@@ -493,20 +492,21 @@ export default function AdminCmsPage() {
                                   onChange={(e) => handleConfigChange(sec.id, `items.${cIdx}.heading`, e.target.value)}
                                 />
                               </div>
+                            </div>
+                            <div className="form-grid-2" style={{ marginTop: '8px' }}>
                               <div className="field">
-                                <label>Button CTA</label>
+                                <label>Button CTA Label</label>
                                 <input
                                   value={cat.cta || ''}
                                   onChange={(e) => handleConfigChange(sec.id, `items.${cIdx}.cta`, e.target.value)}
                                 />
                               </div>
-                              <div className="field">
-                                <label>Image URL</label>
-                                <input
-                                  value={cat.image || ''}
-                                  onChange={(e) => handleConfigChange(sec.id, `items.${cIdx}.image`, e.target.value)}
-                                />
-                              </div>
+                              <ImagePickerField
+                                label="Card Background Image"
+                                value={cat.image || ''}
+                                onChange={(val) => handleConfigChange(sec.id, `items.${cIdx}.image`, val)}
+                                placeholder="Choose category image..."
+                              />
                             </div>
                           </div>
                         ))}
@@ -524,14 +524,12 @@ export default function AdminCmsPage() {
                             placeholder="https://..."
                           />
                         </div>
-                        <div className="field">
-                          <label>Poster Image</label>
-                          <input
-                            value={sec.config?.posterImage || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'posterImage', e.target.value)}
-                            placeholder="/assets/..."
-                          />
-                        </div>
+                        <ImagePickerField
+                          label="Video Poster Image"
+                          value={sec.config?.posterImage || ''}
+                          onChange={(val) => handleConfigChange(sec.id, 'posterImage', val)}
+                          placeholder="Choose poster image..."
+                        />
                         <div className="field">
                           <label>Heading</label>
                           <input
@@ -554,6 +552,68 @@ export default function AdminCmsPage() {
                             />
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* ─── Editorial Story Blocks Config ─── */}
+                    {sec.type === 'editorial' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {(sec.config?.items || []).map((ed, edIdx) => (
+                          <div key={ed.id || edIdx} style={{ padding: '14px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '10px' }}>
+                              Editorial Block #{edIdx + 1}
+                            </span>
+                            <div className="form-grid-2">
+                              <div className="field">
+                                <label>Eyebrow Tag</label>
+                                <input
+                                  value={ed.eyebrow || ''}
+                                  onChange={(e) => handleConfigChange(sec.id, `items.${edIdx}.eyebrow`, e.target.value)}
+                                  placeholder="e.g. PREMIUM COLLECTION"
+                                />
+                              </div>
+                              <div className="field">
+                                <label>Heading</label>
+                                <input
+                                  value={ed.heading || ''}
+                                  onChange={(e) => handleConfigChange(sec.id, `items.${edIdx}.heading`, e.target.value)}
+                                  placeholder="e.g. Modern essentials for him"
+                                />
+                              </div>
+                            </div>
+                            <div className="field" style={{ marginTop: '8px' }}>
+                              <label>Description</label>
+                              <textarea
+                                rows="2"
+                                value={ed.description || ''}
+                                onChange={(e) => handleConfigChange(sec.id, `items.${edIdx}.description`, e.target.value)}
+                              />
+                            </div>
+                            <div className="form-grid-2" style={{ marginTop: '8px' }}>
+                              <div className="field">
+                                <label>Button CTA Label &amp; Link</label>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <input
+                                    value={ed.primaryCta || ''}
+                                    onChange={(e) => handleConfigChange(sec.id, `items.${edIdx}.primaryCta`, e.target.value)}
+                                    placeholder="Explore Men"
+                                  />
+                                  <input
+                                    value={ed.primaryCtaUrl || ''}
+                                    onChange={(e) => handleConfigChange(sec.id, `items.${edIdx}.primaryCtaUrl`, e.target.value)}
+                                    placeholder="/shop?gender=men"
+                                  />
+                                </div>
+                              </div>
+                              <ImagePickerField
+                                label="Story Image"
+                                value={ed.image || ''}
+                                onChange={(val) => handleConfigChange(sec.id, `items.${edIdx}.image`, val)}
+                                placeholder="Choose story image..."
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
 

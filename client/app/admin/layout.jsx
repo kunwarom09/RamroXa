@@ -166,6 +166,7 @@ export default function AdminLayout({ children }) {
     { label: 'IRD / VAT', route: '/admin/ird', icon: 'ird' },
     { section: 'Content' },
     { label: 'CMS', route: '/admin/cms', icon: 'cms' },
+    { label: 'Library', route: '/admin/library', icon: 'image' },
     { label: 'Settings', route: '/admin/settings', icon: 'settings' }
   ];
 
