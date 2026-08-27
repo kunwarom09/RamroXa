@@ -30,6 +30,11 @@ function formatProductItem(p) {
     categoryId: p.categoryId || '',
     tags: p.tags || [],
     options: p.options || {},
+    colors: Array.isArray(p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
+      ? (p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
+      : ((p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
+        ? [p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors]
+        : []),
     createdAt: p.createdAt || new Date().toISOString(),
     id: p.id
   };
@@ -57,6 +62,30 @@ const HERO_PRESETS = [
   { key: 'Iconic', hash: '44312e50fe56c782', label: 'Iconic' },
   { key: 'Unique', hash: 'c2dbe0a9de9b2d4c', label: 'Unique' }
 ];
+
+const COLOR_HEX_MAP = {
+  black: '#111111',
+  white: '#ffffff',
+  khaki: '#c3b091',
+  oatmeal: '#e3dac9',
+  natural: '#f2eecb',
+  blue: '#3b5998',
+  indigo: '#2e4482',
+  denim: '#466d98',
+  brown: '#6e4a2e',
+  grey: '#888888',
+  'heather grey': '#9e9e9e',
+  charcoal: '#374151',
+  olive: '#556b2f',
+  sage: '#9caf88',
+  navy: '#1e293b',
+  cream: '#fdfbf7',
+  beige: '#e6dfd5',
+  red: '#dc2626',
+  burgundy: '#800020',
+  orange: '#ea580c',
+  yellow: '#eab308'
+};
 
 const FREE_OVER = 5000;
 const rs = n => 'Rs ' + (n || 0).toLocaleString('en-US');
@@ -168,6 +197,7 @@ export default class StoreApp extends React.Component {
       debouncedMinPrice: '',
       debouncedMaxPrice: '',
       filterBrands: [],
+      filterColors: [],
       sortBy: 'featured',
       showMobileFilters: false,
       mobileMenuOpen: false,
@@ -1015,7 +1045,10 @@ export default class StoreApp extends React.Component {
       filterPriceBucket,
       filterMinPrice,
       filterMaxPrice,
+      debouncedMinPrice,
+      debouncedMaxPrice,
       filterBrands,
+      filterColors,
       sortBy,
       showMobileFilters
     } = this.state;
@@ -1025,7 +1058,8 @@ export default class StoreApp extends React.Component {
       idx,
       brand: p.brand || 'Zylo',
       gender: p.gender || 'Unisex',
-      price: p.price || 0
+      price: p.price || 0,
+      colors: p.colors || p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || []
     }));
 
     // 1. Dynamic Brands List & Counts
@@ -1035,7 +1069,20 @@ export default class StoreApp extends React.Component {
       return acc;
     }, {});
 
-    // 2. Dynamic Gender Counts
+    // 2. Dynamic Colors List & Counts
+    const allColors = Array.from(
+      new Set(
+        catList.flatMap(p => (p.colors || []).map(c => String(c).trim())).filter(Boolean)
+      )
+    );
+    const colorCounts = allColors.reduce((acc, col) => {
+      acc[col] = catList.filter(p =>
+        (p.colors || []).map(c => String(c).toLowerCase()).includes(String(col).toLowerCase())
+      ).length;
+      return acc;
+    }, {});
+
+    // 3. Dynamic Gender Counts
     const genderCounts = {
       all: catList.length,
       men: catList.filter(p => {
@@ -1056,7 +1103,7 @@ export default class StoreApp extends React.Component {
       unisex: catList.filter(p => (p.gender || '').toLowerCase() === 'unisex').length
     };
 
-    // 3. Filter Items
+    // 4. Filter Items
     let items = catList.filter(p => {
       // Gender Filter
       if (colFilter && colFilter !== 'all') {
@@ -1075,13 +1122,11 @@ export default class StoreApp extends React.Component {
       if (filterPriceBucket === '5000-10000' && (price < 5000 || price > 10000)) return false;
       if (filterPriceBucket === 'above-10000' && price <= 10000) return false;
 
-      // Custom Min/Max Price Filter (uses debounced values to avoid filtering mid-keystroke)
-      const { debouncedMinPrice, debouncedMaxPrice } = this.state;
+      // Custom Min/Max Price Filter
       const minVal = debouncedMinPrice !== '' ? Number(debouncedMinPrice) : null;
       const maxVal = debouncedMaxPrice !== '' ? Number(debouncedMaxPrice) : null;
       const hasValidMin = minVal !== null && !isNaN(minVal) && minVal > 0;
       const hasValidMax = maxVal !== null && !isNaN(maxVal) && maxVal > 0;
-      // Skip filtering when min > max (invalid range)
       const rangeInvalid = hasValidMin && hasValidMax && minVal > maxVal;
       if (!rangeInvalid) {
         if (hasValidMin && price < minVal) return false;
@@ -1091,10 +1136,17 @@ export default class StoreApp extends React.Component {
       // Brand Filter
       if (filterBrands && filterBrands.length > 0 && !filterBrands.includes(p.brand)) return false;
 
+      // Color Filter
+      if (filterColors && filterColors.length > 0) {
+        const pCols = (p.colors || []).map(c => String(c).toLowerCase());
+        const match = filterColors.some(c => pCols.includes(String(c).toLowerCase()));
+        if (!match) return false;
+      }
+
       return true;
     });
 
-    // 4. Sort Items
+    // 5. Sort Items
     if (sortBy === 'price-asc') {
       items.sort((a, b) => (a.price || 0) - (b.price || 0));
     } else if (sortBy === 'price-desc') {
@@ -1107,7 +1159,14 @@ export default class StoreApp extends React.Component {
       items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
-    const hasActiveFilters = colFilter !== 'all' || filterPriceBucket !== 'all' || (filterBrands && filterBrands.length > 0) || filterMinPrice !== '' || filterMaxPrice !== '';
+    const hasActiveFilters = colFilter !== 'all' ||
+      filterPriceBucket !== 'all' ||
+      (filterBrands && filterBrands.length > 0) ||
+      (filterColors && filterColors.length > 0) ||
+      filterMinPrice !== '' ||
+      filterMaxPrice !== '' ||
+      debouncedMinPrice !== '' ||
+      debouncedMaxPrice !== '';
 
     const renderFilterControls = () => (
       <div className="zylo-filter-sidebar-inner">
@@ -1120,7 +1179,10 @@ export default class StoreApp extends React.Component {
                 filterPriceBucket: 'all',
                 filterMinPrice: '',
                 filterMaxPrice: '',
-                filterBrands: []
+                debouncedMinPrice: '',
+                debouncedMaxPrice: '',
+                filterBrands: [],
+                filterColors: []
               })}
               className="zylo-filter-clear-btn"
             >
@@ -1145,7 +1207,7 @@ export default class StoreApp extends React.Component {
                   type="radio"
                   name="sidebarColFilter"
                   checked={colFilter === id}
-                  onChange={() => this.goToView('collections', { colFilter: id })}
+                  onChange={() => this.setState({ colFilter: id })}
                   className="zylo-filter-radio"
                 />
                 <span className="zylo-filter-option-name">{label}</span>
@@ -1252,6 +1314,42 @@ export default class StoreApp extends React.Component {
             </div>
           </div>
         )}
+
+        {/* 4. Color Filter */}
+        {allColors.length > 0 && (
+          <div className="zylo-filter-section">
+            <h4 className="zylo-filter-section-title">Colour</h4>
+            <div className="zylo-filter-options-list">
+              {allColors.map(colName => {
+                const isChecked = filterColors.includes(colName);
+                const hex = COLOR_HEX_MAP[colName.toLowerCase()] || '#cccccc';
+                return (
+                  <label key={colName} className={`zylo-filter-option-row ${isChecked ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const next = isChecked
+                          ? filterColors.filter(c => c !== colName)
+                          : [...filterColors, colName];
+                        this.setState({ filterColors: next });
+                      }}
+                      className="zylo-filter-checkbox"
+                    />
+                    <span className="zylo-filter-option-name">
+                      <span
+                        className="zylo-color-swatch-dot"
+                        style={{ backgroundColor: hex }}
+                      />
+                      {colName}
+                    </span>
+                    <span className="zylo-filter-option-count">({colorCounts[colName] || 0})</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
 
@@ -1344,7 +1442,7 @@ export default class StoreApp extends React.Component {
             {colFilter !== 'all' && (
               <span className="zylo-filter-chip">
                 Gender: {colFilter.toUpperCase()}
-                <button onClick={() => this.goToView('collections', { colFilter: 'all' })}>&times;</button>
+                <button onClick={() => this.setState({ colFilter: 'all' })}>&times;</button>
               </span>
             )}
             {filterPriceBucket !== 'all' && filterPriceBucket !== 'custom' && (
@@ -1353,10 +1451,10 @@ export default class StoreApp extends React.Component {
                 <button onClick={() => this.setState({ filterPriceBucket: 'all' })}>&times;</button>
               </span>
             )}
-            {(filterMinPrice !== '' || filterMaxPrice !== '') && (
+            {(filterMinPrice !== '' || filterMaxPrice !== '' || debouncedMinPrice !== '' || debouncedMaxPrice !== '') && (
               <span className="zylo-filter-chip">
-                Price: Rs {filterMinPrice || '0'} – Rs {filterMaxPrice || '∞'}
-                <button onClick={() => this.setState({ filterMinPrice: '', filterMaxPrice: '', filterPriceBucket: 'all' })}>&times;</button>
+                Price: Rs {filterMinPrice || debouncedMinPrice || '0'} – Rs {filterMaxPrice || debouncedMaxPrice || '∞'}
+                <button onClick={() => this.setState({ filterMinPrice: '', filterMaxPrice: '', debouncedMinPrice: '', debouncedMaxPrice: '', filterPriceBucket: 'all' })}>&times;</button>
               </span>
             )}
             {filterBrands.map(b => (
@@ -1365,13 +1463,22 @@ export default class StoreApp extends React.Component {
                 <button onClick={() => this.setState(s => ({ filterBrands: s.filterBrands.filter(brand => brand !== b) }))}>&times;</button>
               </span>
             ))}
+            {filterColors.map(c => (
+              <span key={c} className="zylo-filter-chip">
+                Color: {c}
+                <button onClick={() => this.setState(s => ({ filterColors: s.filterColors.filter(color => color !== c) }))}>&times;</button>
+              </span>
+            ))}
             <button
               onClick={() => this.setState({
                 colFilter: 'all',
                 filterPriceBucket: 'all',
                 filterMinPrice: '',
                 filterMaxPrice: '',
-                filterBrands: []
+                debouncedMinPrice: '',
+                debouncedMaxPrice: '',
+                filterBrands: [],
+                filterColors: []
               })}
               className="zylo-clear-all-chips-btn"
             >
@@ -1398,14 +1505,17 @@ export default class StoreApp extends React.Component {
                   </svg>
                 </div>
                 <h3>No products match your filters</h3>
-                <p>Try adjusting your gender, price range, or brand criteria to see available items.</p>
+                <p>Try adjusting your gender, price range, brand, or color criteria to see available items.</p>
                 <button
                   onClick={() => this.setState({
                     colFilter: 'all',
                     filterPriceBucket: 'all',
                     filterMinPrice: '',
                     filterMaxPrice: '',
-                    filterBrands: []
+                    debouncedMinPrice: '',
+                    debouncedMaxPrice: '',
+                    filterBrands: [],
+                    filterColors: []
                   })}
                   className="zylo-reset-filters-btn"
                 >
@@ -1416,6 +1526,9 @@ export default class StoreApp extends React.Component {
               <div className="zylo-products-grid">
                 {items.map(p => {
                   const best = p.tag === 'BEST SELLER';
+                  const pColors = (p.colors && p.colors.length > 0)
+                    ? p.colors
+                    : (p.options?.Colour || p.options?.Color || []);
                   return (
                     <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
                       <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee' }}>
@@ -1428,13 +1541,25 @@ export default class StoreApp extends React.Component {
                           <span className="zylo-product-brand-tag">{p.brand || 'Zylo'}</span>
                           <span className="zylo-product-name">{p.name}</span>
                           <div className="zylo-product-price-row">
-                            <span className="zylo-product-price">{rs(p.price)}</span>
-                            {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
+                            <div className="zylo-product-prices">
+                              <span className="zylo-product-price">{rs(p.price)}</span>
+                              {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
+                            </div>
+                            {pColors && pColors.length > 0 && (
+                              <div className="zylo-card-color-swatches" title={`Available in: ${pColors.join(', ')}`}>
+                                {pColors.map(col => {
+                                  const hex = COLOR_HEX_MAP[String(col).toLowerCase().trim()] || '#333333';
+                                  return (
+                                    <span
+                                      key={col}
+                                      className="zylo-card-color-dot"
+                                      style={{ backgroundColor: hex }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <div className="zylo-swatch-group">
-                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img1), backgroundColor: '#eee' }} />
-                          <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #ddd', background: img(p.img2 || p.img1), backgroundColor: '#eee' }} />
                         </div>
                       </div>
                     </div>

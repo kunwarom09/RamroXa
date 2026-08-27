@@ -1083,6 +1083,19 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-filter-option-name {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zylo-color-swatch-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+  display: inline-block;
+  box-shadow: inset 0 0 1px rgba(0,0,0,0.2);
 }
 
 .zylo-filter-option-count {
@@ -1256,20 +1269,47 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-product-price-row {
   display: flex;
-  gap: 4px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.zylo-product-prices {
+  display: flex;
+  gap: 5px;
   align-items: baseline;
   flex-wrap: wrap;
 }
 
 .zylo-product-price {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
+  color: #111111;
 }
 
 .zylo-product-compare {
   font-size: 11px;
   color: #a1a1a1;
   text-decoration: line-through;
+}
+
+.zylo-card-color-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.zylo-card-color-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 /* Empty State */
