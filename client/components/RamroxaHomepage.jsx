@@ -56,9 +56,10 @@ const DEFAULT_CMS = {
         active: true,
         order: 1,
         title: 'MEN',
+        heading: 'Built for Daily\nConfidence',
         description: 'Modern essentials for him.',
-        image: '/assets/dbacea851225e2bf.q.jpg',
-        mobileImage: '/assets/dbacea851225e2bf.q.jpg',
+        image: '/assets/44312e50fe56c782.q.jpg',
+        mobileImage: '/assets/44312e50fe56c782.q.jpg',
         cta: 'Shop Men',
         url: '/shop?gender=men',
       },
@@ -67,9 +68,10 @@ const DEFAULT_CMS = {
         active: true,
         order: 2,
         title: 'WOMEN',
+        heading: 'Designed For\nModern Living',
         description: 'Designed for everyday confidence.',
-        image: '/assets/78948356fa487da5.q.jpg',
-        mobileImage: '/assets/78948356fa487da5.q.jpg',
+        image: '/assets/7f7ad2764f25606b.q.jpg',
+        mobileImage: '/assets/7f7ad2764f25606b.q.jpg',
         cta: 'Shop Women',
         url: '/shop?gender=women',
       },
@@ -78,9 +80,10 @@ const DEFAULT_CMS = {
         active: true,
         order: 3,
         title: 'KIDS',
+        heading: 'Comfort For\nEvery Adventure',
         description: 'Comfort for every adventure.',
-        image: '/assets/0ca944ebbae726b8.q.jpg',
-        mobileImage: '/assets/0ca944ebbae726b8.q.jpg',
+        image: '/assets/0ffbe14d4cba1d4a.q.jpg',
+        mobileImage: '/assets/0ffbe14d4cba1d4a.q.jpg',
         cta: 'Shop Kids',
         url: '/shop?gender=kids',
       },
@@ -384,10 +387,31 @@ function BestSellers({ catalog, onOpenProduct, onNav }) {
 
 // ─── SHOP BY CATEGORY ─────────────────────────────────────────────────────────
 function ShopByCategory({ config, onNav }) {
-  const items = (config.items || []).filter(c => c.active).sort((a, b) => a.order - b.order);
-  if (!items.length) return null;
+  const items = config.items || [];
+  const men = items.find(i => i.id === 'cat-men') || items[0] || {
+    title: 'MEN',
+    heading: 'Built for Daily\nConfidence',
+    image: '/assets/44312e50fe56c782.q.jpg',
+    cta: 'Shop Men',
+    url: '/shop?gender=men'
+  };
+  const women = items.find(i => i.id === 'cat-women') || items[1] || {
+    title: 'WOMEN',
+    heading: 'Designed For\nModern Living',
+    image: '/assets/7f7ad2764f25606b.q.jpg',
+    cta: 'Shop Women',
+    url: '/shop?gender=women'
+  };
+  const kids = items.find(i => i.id === 'cat-kids') || items[2] || {
+    title: 'KIDS',
+    heading: 'Comfort For\nEvery Adventure',
+    image: '/assets/0ffbe14d4cba1d4a.q.jpg',
+    cta: 'Shop Kids',
+    url: '/shop?gender=kids'
+  };
 
   const handleCatClick = (url) => {
+    if (!url) return;
     if (url.includes('gender=men')) onNav('collections', { colFilter: 'men' });
     else if (url.includes('gender=women')) onNav('collections', { colFilter: 'women' });
     else if (url.includes('gender=kids')) onNav('collections', { colFilter: 'kids' });
@@ -400,22 +424,70 @@ function ShopByCategory({ config, onNav }) {
         <div className="rmx-section-head">
           <div>
             <span className="rmx-section-eyebrow">Collections</span>
-            <h2 className="rmx-section-title">Shop by Category</h2>
+            <h2 className="rmx-section-title">Shop by Categories</h2>
           </div>
         </div>
-        <div className="rmx-cat-grid">
-          {items.map((cat) => (
-            <div key={cat.id} className="rmx-cat-card" onClick={() => handleCatClick(cat.url)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleCatClick(cat.url)}>
-              <div className="rmx-cat-img" style={{ backgroundImage: `url('${cat.image}')` }}>
-                <div className="rmx-cat-overlay" />
-                <div className="rmx-cat-content">
-                  <h3 className="rmx-cat-title">{cat.title}</h3>
-                  {cat.description && <p className="rmx-cat-desc">{cat.description}</p>}
-                  <span className="rmx-cat-cta">{cat.cta}</span>
-                </div>
+
+        <div className="rmx-bento-grid">
+          {/* Left Column: Tall Men Card */}
+          <div
+            className="rmx-bento-card rmx-bento-men"
+            onClick={() => handleCatClick(men.url)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && handleCatClick(men.url)}
+          >
+            <div className="rmx-bento-img" style={{ backgroundImage: `url('${men.image}')` }} />
+            <div className="rmx-bento-overlay" />
+            <div className="rmx-bento-content">
+              <span className="rmx-bento-tag">{men.title || 'MEN'}</span>
+              <h3 className="rmx-bento-heading">{men.heading || 'Built for Daily\nConfidence'}</h3>
+              <button className="rmx-bento-btn" onClick={(e) => { e.stopPropagation(); handleCatClick(men.url); }}>
+                {men.cta || 'Shop Men'}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Stack of Women and Kids */}
+          <div className="rmx-bento-stack">
+            {/* Top Right: Women */}
+            <div
+              className="rmx-bento-card rmx-bento-women"
+              onClick={() => handleCatClick(women.url)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && handleCatClick(women.url)}
+            >
+              <div className="rmx-bento-img" style={{ backgroundImage: `url('${women.image}')` }} />
+              <div className="rmx-bento-overlay" />
+              <div className="rmx-bento-content">
+                <span className="rmx-bento-tag">{women.title || 'WOMEN'}</span>
+                <h3 className="rmx-bento-heading">{women.heading || 'Designed For\nModern Living'}</h3>
+                <button className="rmx-bento-btn" onClick={(e) => { e.stopPropagation(); handleCatClick(women.url); }}>
+                  {women.cta || 'Shop Women'}
+                </button>
               </div>
             </div>
-          ))}
+
+            {/* Bottom Right: Kids */}
+            <div
+              className="rmx-bento-card rmx-bento-kids"
+              onClick={() => handleCatClick(kids.url)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && handleCatClick(kids.url)}
+            >
+              <div className="rmx-bento-img" style={{ backgroundImage: `url('${kids.image}')` }} />
+              <div className="rmx-bento-overlay" />
+              <div className="rmx-bento-content">
+                <span className="rmx-bento-tag">{kids.title || 'KIDS'}</span>
+                <h3 className="rmx-bento-heading">{kids.heading || 'Comfort For\nEvery Adventure'}</h3>
+                <button className="rmx-bento-btn" onClick={(e) => { e.stopPropagation(); handleCatClick(kids.url); }}>
+                  {kids.cta || 'Shop Kids'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
