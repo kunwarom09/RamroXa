@@ -1,245 +1,12 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  DEFAULT_HOMEPAGE_CONFIG,
+  loadHomepageConfig
+} from '../services/homepageCms';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const rs = (n) => 'Rs ' + (n || 0).toLocaleString('en-US');
-const img = (h) => {
-  if (!h) return '';
-  if (String(h).startsWith('http') || String(h).startsWith('/') || String(h).startsWith('data:')) {
-    return h;
-  }
-  return `/assets/${h}.q.jpg`;
-};
-const DEFAULT_HERO_IMAGE_1 = '/hero-slide-1.jpg';
-const DEFAULT_HERO_IMAGE_2 = '/hero-slide-2.jpg';
-
-// ─── DEFAULT CMS CONFIG ──────────────────────────────────────────────────────
-const DEFAULT_CMS = {
-  hero: {
-    autoplay: true,
-    slideDuration: 6000,
-    slides: [
-      {
-        id: 'slide-1',
-        active: true,
-        order: 1,
-        image: DEFAULT_HERO_IMAGE_1,
-        mobileImage: DEFAULT_HERO_IMAGE_1,
-        eyebrow: 'Footwear',
-        heading: 'Premium wear\nfor modern living',
-        description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
-        primaryCta: 'See all collections',
-        primaryCtaUrl: '/shop',
-        secondaryCta: 'Contact us',
-        secondaryCtaUrl: '/contact',
-      },
-      {
-        id: 'slide-2',
-        active: true,
-        order: 2,
-        image: DEFAULT_HERO_IMAGE_2,
-        mobileImage: DEFAULT_HERO_IMAGE_2,
-        eyebrow: 'Footwear',
-        heading: 'Premium wear\nfor modern living',
-        description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
-        primaryCta: 'See all collections',
-        primaryCtaUrl: '/shop',
-        secondaryCta: 'Contact us',
-        secondaryCtaUrl: '/contact',
-      },
-    ],
-  },
-  categories: {
-    items: [
-      {
-        id: 'cat-men',
-        active: true,
-        order: 1,
-        title: 'MEN',
-        heading: 'Built for Daily\nConfidence',
-        description: 'Modern essentials for him.',
-        image: '/assets/44312e50fe56c782.q.jpg',
-        mobileImage: '/assets/44312e50fe56c782.q.jpg',
-        cta: 'Shop Men',
-        url: '/shop?gender=men',
-      },
-      {
-        id: 'cat-women',
-        active: true,
-        order: 2,
-        title: 'WOMEN',
-        heading: 'Designed For\nModern Living',
-        description: 'Designed for everyday confidence.',
-        image: '/assets/7f7ad2764f25606b.q.jpg',
-        mobileImage: '/assets/7f7ad2764f25606b.q.jpg',
-        cta: 'Shop Women',
-        url: '/shop?gender=women',
-      },
-      {
-        id: 'cat-kids',
-        active: true,
-        order: 3,
-        title: 'KIDS',
-        heading: 'Comfort For\nEvery Adventure',
-        description: 'Comfort for every adventure.',
-        image: '/assets/0ffbe14d4cba1d4a.q.jpg',
-        mobileImage: '/assets/0ffbe14d4cba1d4a.q.jpg',
-        cta: 'Shop Kids',
-        url: '/shop?gender=kids',
-      },
-    ],
-  },
-  video: {
-    active: true,
-    videoUrl: '',
-    posterImage: '/assets/44312e50fe56c782.q.jpg',
-    mobilePoster: '/assets/44312e50fe56c782.q.jpg',
-    autoplay: false,
-    muted: true,
-    loop: true,
-    eyebrow: 'THE RAMROXA WAY',
-    heading: 'Move with Ramroxa',
-    description: 'Step into style that moves with you.',
-    cta: 'Explore Collection',
-    ctaUrl: '/shop',
-  },
-  benefits: {
-    items: [
-      { id: 'b1', icon: 'truck', title: 'FREE SHIPPING', desc: 'On orders over Rs 500' },
-      { id: 'b2', icon: 'return', title: '5-DAY HASSLE-FREE RETURNS', desc: 'Easy returns within 5 days' },
-      { id: 'b3', icon: 'support', title: 'CUSTOMER SUPPORT', desc: "We're here to help" },
-    ],
-  },
-  featured: {
-    limit: 8,
-  },
-  editorial: {
-    items: [
-      {
-        id: 'ed-1',
-        active: true,
-        order: 1,
-        layout: 'image-left',
-        image: '/assets/7f7ad2764f25606b.q.jpg',
-        mobileImage: '/assets/7f7ad2764f25606b.q.jpg',
-        eyebrow: 'PREMIUM COLLECTION',
-        heading: 'Modern essentials for him',
-        description: 'Discover refined everyday pieces designed for modern living. Premium fabrics, precise cuts.',
-        primaryCta: 'Explore Men',
-        primaryCtaUrl: '/shop?gender=men',
-        secondaryCta: '',
-        secondaryCtaUrl: '',
-      },
-      {
-        id: 'ed-2',
-        active: true,
-        order: 2,
-        layout: 'image-right',
-        image: '/assets/ed11bf6e660fdaa2.q.jpg',
-        mobileImage: '/assets/ed11bf6e660fdaa2.q.jpg',
-        eyebrow: 'EVERYDAY STYLE',
-        heading: 'Modern looks for women',
-        description: 'Timeless pieces that move from morning to evening effortlessly. Style meets substance.',
-        primaryCta: 'Explore Women',
-        primaryCtaUrl: '/shop?gender=women',
-        secondaryCta: '',
-        secondaryCtaUrl: '',
-      },
-      {
-        id: 'ed-3',
-        active: true,
-        order: 3,
-        layout: 'image-left',
-        image: '/assets/c2dbe0a9de9b2d4c.q.jpg',
-        mobileImage: '/assets/c2dbe0a9de9b2d4c.q.jpg',
-        eyebrow: 'EASY STYLE',
-        heading: 'Made for the next generation',
-        description: 'Fun, durable and comfortable styles for growing adventurers. Built to keep up with them.',
-        primaryCta: 'Explore Kids',
-        primaryCtaUrl: '/shop?gender=kids',
-        secondaryCta: '',
-        secondaryCtaUrl: '',
-      },
-    ],
-  },
-  community: {
-    heading: 'See our community',
-    subheading: 'in modern silhouettes',
-    description: 'Discover how our community styles their favourite pieces.',
-    cta: 'Follow Us',
-    ctaUrl: 'https://instagram.com',
-    images: [
-      { id: 'ci-1', src: '/assets/dbacea851225e2bf.q.jpg', url: '/shop' },
-      { id: 'ci-2', src: '/assets/78948356fa487da5.q.jpg', url: '/shop' },
-      { id: 'ci-3', src: '/assets/7f7ad2764f25606b.q.jpg', url: '/shop' },
-      { id: 'ci-4', src: '/assets/ed11bf6e660fdaa2.q.jpg', url: '/shop' },
-      { id: 'ci-5', src: '/assets/0ca944ebbae726b8.q.jpg', url: '/shop' },
-      { id: 'ci-6', src: '/assets/c2dbe0a9de9b2d4c.q.jpg', url: '/shop' },
-    ],
-  },
-};
-
-function loadCms() {
-  if (typeof window === 'undefined') return DEFAULT_CMS;
-  try {
-    const raw = localStorage.getItem('rmx-homepage-config');
-    if (!raw) return DEFAULT_CMS;
-    const parsed = JSON.parse(raw);
-    // Deep merge with defaults to ensure new fields always exist
-    return {
-      hero: { ...DEFAULT_CMS.hero, ...parsed.hero, slides: parsed.hero?.slides || DEFAULT_CMS.hero.slides },
-      categories: { ...DEFAULT_CMS.categories, ...parsed.categories, items: parsed.categories?.items || DEFAULT_CMS.categories.items },
-      video: { ...DEFAULT_CMS.video, ...parsed.video },
-      benefits: { ...DEFAULT_CMS.benefits, ...parsed.benefits, items: parsed.benefits?.items || DEFAULT_CMS.benefits.items },
-      featured: { ...DEFAULT_CMS.featured, ...parsed.featured },
-      editorial: { ...DEFAULT_CMS.editorial, ...parsed.editorial, items: parsed.editorial?.items || DEFAULT_CMS.editorial.items },
-      community: { ...DEFAULT_CMS.community, ...parsed.community, images: parsed.community?.images || DEFAULT_CMS.community.images },
-    };
-  } catch {
-    return DEFAULT_CMS;
-  }
-}
-
-// ─── ICON COMPONENTS ─────────────────────────────────────────────────────────
-function IconTruck() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="3" width="15" height="13" rx="1" />
-      <path d="M16 8h5l3 4v5h-8V8z" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
-    </svg>
-  );
-}
-function IconReturn() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="1 4 1 10 7 10" />
-      <path d="M3.51 15a9 9 0 1 0 .49-4" />
-    </svg>
-  );
-}
-function IconSupport() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-function IconChevronLeft() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
-  );
-}
-function IconChevronRight() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
 
 const COLOR_HEX_MAP = {
   black: '#111111',
@@ -269,8 +36,37 @@ const COLOR_HEX_MAP = {
   purple: '#8b5cf6'
 };
 
-// ─── PRODUCT CARD (matches existing storefront card style with color tags) ────
-function ProductCard({ product, onOpen }) {
+// ─── SVG Icons ───────────────────────────────────────────────────────────────
+function IconTruck() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="1" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  );
+}
+
+function IconReturn() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+    </svg>
+  );
+}
+
+function IconSupport() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+// ─── PRODUCT CARD COMPONENT ──────────────────────────────────────────────────
+function ProductCard({ product, onOpen, compact = false }) {
   const best = product.labels?.bestSelling;
   const featured = product.labels?.featured;
   const badgeText = best ? '★ Best Seller' : featured ? '✦ Featured' : product.labels?.newArrival ? '✦ New Arrival' : '✦ Latest Drop';
@@ -280,7 +76,6 @@ function ProductCard({ product, onOpen }) {
   const featuredImg = (product.images || []).find(i => i.isFeatured) || (product.images || [])[0];
   const imgSrc = featuredImg?.url || product.img1 || '';
 
-  // Extract available color options
   const pColors = (Array.isArray(product.colors) && product.colors.length > 0)
     ? product.colors
     : (Array.isArray(product.options?.Colour || product.options?.Color || product.options?.colours || product.options?.colors)
@@ -290,7 +85,13 @@ function ProductCard({ product, onOpen }) {
         : []));
 
   return (
-    <div className="rmx-product-card" onClick={() => onOpen(product)} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onOpen(product)}>
+    <div
+      className={`rmx-product-card ${compact ? 'rmx-compact-card' : ''}`}
+      onClick={() => onOpen(product)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && onOpen(product)}
+    >
       <div className="rmx-product-img-wrap" style={{ backgroundImage: imgSrc ? `url('${imgSrc}')` : undefined }}>
         <span className={`rmx-product-badge ${best ? 'best-seller' : ''}`}>{badgeText}</span>
       </div>
@@ -326,12 +127,12 @@ function ProductCard({ product, onOpen }) {
   );
 }
 
-// ─── HERO SLIDER ──────────────────────────────────────────────────────────────
-function HeroSlider({ config, onNav }) {
-  const slides = (config.slides || []).filter(s => s.active).sort((a, b) => a.order - b.order);
+// ─── 1. HERO BANNER WIDGETS ──────────────────────────────────────────────────
+function HeroSection({ section, onNav }) {
+  const { widgetType = 'hero_overlay', config = {} } = section;
+  const slides = config.slides || [];
   const [current, setCurrent] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const timerRef = useRef(null);
 
   const goTo = useCallback((idx) => {
     if (transitioning) return;
@@ -342,37 +143,102 @@ function HeroSlider({ config, onNav }) {
     }, 350);
   }, [transitioning]);
 
-  const goNext = useCallback(() => goTo((current + 1) % slides.length), [current, slides.length, goTo]);
-  const goPrev = useCallback(() => goTo((current - 1 + slides.length) % slides.length), [current, slides.length, goTo]);
-
   useEffect(() => {
     if (!config.autoplay || slides.length <= 1) return;
-    timerRef.current = setInterval(goNext, config.slideDuration || 5000);
-    return () => clearInterval(timerRef.current);
-  }, [config.autoplay, config.slideDuration, goNext, slides.length]);
+    const interval = setInterval(() => {
+      goTo((current + 1) % slides.length);
+    }, config.slideDuration || 6000);
+    return () => clearInterval(interval);
+  }, [current, slides.length, config.autoplay, config.slideDuration, goTo]);
 
   if (!slides.length) return null;
   const slide = slides[current] || slides[0];
 
   const handleCta = (url) => {
     if (!url) return;
-    if (url.startsWith('/shop')) {
-      const gender = url.includes('?gender=') ? url.split('?gender=')[1] : null;
-      if (gender) {
-        onNav('collections', { colFilter: gender });
-      } else {
-        onNav('collections', { colFilter: 'all' });
-      }
-    } else if (url === '/contact') {
-      onNav('contact');
-    } else if (url.startsWith('http')) {
-      window.open(url, '_blank');
-    }
+    if (url.includes('/shop')) onNav('collections', { colFilter: 'all' });
+    else if (url === '/contact') onNav('contact');
+    else if (url.startsWith('http')) window.open(url, '_blank');
+    else onNav('collections', { colFilter: 'all' });
   };
 
+  // Widget Layout 1: Split Hero (Side-by-side text & image)
+  if (widgetType === 'hero_split') {
+    return (
+      <section className="rmx-hero rmx-hero-split-layout">
+        <div className="rmx-hero-split-grid">
+          <div className="rmx-hero-split-content">
+            {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
+            <h1 className="rmx-hero-heading">{slide.heading}</h1>
+            {slide.description && <p className="rmx-hero-desc">{slide.description}</p>}
+            <div className="rmx-hero-actions">
+              {slide.primaryCta && (
+                <button className="rmx-hero-btn-primary" onClick={() => handleCta(slide.primaryCtaUrl)}>
+                  {slide.primaryCta}
+                </button>
+              )}
+              {slide.secondaryCta && (
+                <button className="rmx-hero-btn-secondary" onClick={() => handleCta(slide.secondaryCtaUrl)}>
+                  {slide.secondaryCta}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="rmx-hero-split-img" style={{ backgroundImage: `url('${slide.image}')` }} />
+        </div>
+      </section>
+    );
+  }
+
+  // Widget Layout 2: Full-width Centered Hero
+  if (widgetType === 'hero_fullwidth') {
+    return (
+      <section className="rmx-hero rmx-hero-fullwidth-layout" style={{ backgroundImage: `url('${slide.image}')` }}>
+        <div className="rmx-hero-center-overlay" />
+        <div className="rmx-hero-center-content">
+          {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
+          <h1 className="rmx-hero-heading" style={{ textAlign: 'center' }}>{slide.heading}</h1>
+          {slide.description && <p className="rmx-hero-desc" style={{ textAlign: 'center', maxWidth: '580px' }}>{slide.description}</p>}
+          <div className="rmx-hero-actions" style={{ justifyContent: 'center', marginTop: '24px' }}>
+            {slide.primaryCta && (
+              <button className="rmx-hero-btn-primary" onClick={() => handleCta(slide.primaryCtaUrl)}>
+                {slide.primaryCta}
+              </button>
+            )}
+            {slide.secondaryCta && (
+              <button className="rmx-hero-btn-secondary" onClick={() => handleCta(slide.secondaryCtaUrl)}>
+                {slide.secondaryCta}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Widget Layout 3: Image-Only Banner
+  if (widgetType === 'hero_image_only') {
+    return (
+      <section
+        className="rmx-hero rmx-hero-image-only"
+        style={{ backgroundImage: `url('${slide.image}')`, cursor: 'pointer' }}
+        onClick={() => handleCta(slide.primaryCtaUrl || '/shop')}
+      />
+    );
+  }
+
+  // Widget Layout 4 (Default / Carousel / Overlay): Pixel-Matched Reference Split-Bottom Overlay
   return (
-    <section className="rmx-hero" aria-label="Hero banner">
-      <div className={`rmx-hero-bg ${transitioning ? 'fading' : ''}`} style={{ backgroundImage: `url('${slide.image}')` }} />
+    <section className="rmx-hero" aria-label="Hero slider">
+      <div className="rmx-hero-track">
+        {slides.map((s, i) => (
+          <div
+            key={s.id || i}
+            className={`rmx-hero-slide ${i === current ? 'active' : ''}`}
+            style={{ backgroundImage: `url('${s.image}')` }}
+          />
+        ))}
+      </div>
       <div className="rmx-hero-overlay" />
 
       <div className="rmx-hero-inner">
@@ -415,34 +281,142 @@ function HeroSlider({ config, onNav }) {
   );
 }
 
-// ─── BEST SELLERS ─────────────────────────────────────────────────────────────
-function BestSellers({ catalog, onOpenProduct, onNav }) {
-  const isBestSelling = (p) => {
-    if (p.labels?.bestSelling) return true;
+// ─── 2. PRODUCTS GRID / SLIDER / CAROUSEL WIDGETS ─────────────────────────────
+function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
+  const { widgetType = 'grid_3', config = {} } = section;
+  const isBestSellerSection = section.type === 'bestsellers';
+  const tagRule = config.tag || (isBestSellerSection ? 'bestSelling' : 'featured');
+  const limit = config.limit || (widgetType === 'grid_3' ? 3 : 8);
+
+  const isMatching = (p) => {
+    if (tagRule === 'bestSelling') {
+      if (p.labels?.bestSelling) return true;
+      const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
+      return /best[\s-]?selling|bestseller|top[\s-]?pick/i.test(tags);
+    }
+    if (tagRule === 'featured') {
+      if (p.labels?.featured) return true;
+      const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
+      return /featured|hand[\s-]?picked/i.test(tags);
+    }
     const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
-    return /best[\s-]?selling|bestseller|top[\s-]?pick/i.test(tags);
+    return new RegExp(tagRule, 'i').test(tags) || p.labels?.[tagRule];
   };
 
-  let products = catalog.filter(isBestSelling).slice(0, 3);
-  // Graceful fallback if no products tagged yet
+  let products = catalog.filter(isMatching).slice(0, limit);
   if (!products.length && catalog.length > 0) {
-    products = catalog.slice(0, 3);
+    products = catalog.slice(0, limit);
   }
   if (!products.length) return null;
 
+  const title = config.title || (isBestSellerSection ? 'Best Sellers' : 'Featured');
+  const eyebrow = config.eyebrow || (isBestSellerSection ? 'Top Picks' : 'Hand-picked');
+  const cta = config.cta || 'View All';
+  const ctaUrl = config.ctaUrl || '/shop';
+
+  // Large Featured layout (1 large card + rest)
+  if (widgetType === 'large_featured' && products.length > 1) {
+    const lead = products[0];
+    const rest = products.slice(1, 5);
+    return (
+      <section className="rmx-section">
+        <div className="rmx-section-inner">
+          <div className="rmx-section-head">
+            <div>
+              <span className="rmx-section-eyebrow">{eyebrow}</span>
+              <h2 className="rmx-section-title">{title}</h2>
+            </div>
+            <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all' })}>
+              {cta} →
+            </button>
+          </div>
+          <div className="rmx-large-featured-grid">
+            <div className="rmx-large-lead-card" onClick={() => onOpenProduct(lead)}>
+              <div className="rmx-large-lead-img" style={{ backgroundImage: `url('${(lead.images || [])[0]?.url || lead.img1}')` }} />
+              <div className="rmx-large-lead-body">
+                <span className="rmx-hero-eyebrow">Spotlight Item</span>
+                <h3>{lead.name}</h3>
+                <span className="rmx-price">{rs(lead.basePrice ? Math.round(lead.basePrice / 100) : lead.price)}</span>
+                <button className="rmx-btn-primary" style={{ marginTop: '12px' }}>View Details</button>
+              </div>
+            </div>
+            <div className="rmx-products-3col">
+              {rest.map((p, idx) => (
+                <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Slider / Horizontal Carousel
+  if (widgetType === 'slider' || widgetType === 'carousel') {
+    return (
+      <section className="rmx-section">
+        <div className="rmx-section-inner">
+          <div className="rmx-section-head">
+            <div>
+              <span className="rmx-section-eyebrow">{eyebrow}</span>
+              <h2 className="rmx-section-title">{title}</h2>
+            </div>
+            <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all' })}>
+              {cta} →
+            </button>
+          </div>
+          <div className="rmx-products-slider-row">
+            {products.map((p, idx) => (
+              <div key={p.id || idx} className="rmx-slider-item">
+                <ProductCard product={p} onOpen={() => onOpenProduct(p)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Compact layout
+  if (widgetType === 'compact') {
+    return (
+      <section className="rmx-section">
+        <div className="rmx-section-inner">
+          <div className="rmx-section-head">
+            <div>
+              <span className="rmx-section-eyebrow">{eyebrow}</span>
+              <h2 className="rmx-section-title">{title}</h2>
+            </div>
+            <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all' })}>
+              {cta} →
+            </button>
+          </div>
+          <div className="rmx-products-compact-grid">
+            {products.map((p, idx) => (
+              <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} compact />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Standard Grids (3-col or 4-col)
+  const gridClass = widgetType === 'grid_4' ? 'rmx-products-grid' : 'rmx-products-3col';
+
   return (
-    <section className="rmx-section rmx-bestsellers">
+    <section className="rmx-section">
       <div className="rmx-section-inner">
         <div className="rmx-section-head">
           <div>
-            <span className="rmx-section-eyebrow">Top Picks</span>
-            <h2 className="rmx-section-title">Best Sellers</h2>
+            <span className="rmx-section-eyebrow">{eyebrow}</span>
+            <h2 className="rmx-section-title">{title}</h2>
           </div>
-          <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all', sortBy: 'bestselling' })}>
-            View All →
+          <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all' })}>
+            {cta} →
           </button>
         </div>
-        <div className="rmx-products-3col">
+        <div className={gridClass}>
           {products.map((p, idx) => (
             <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} />
           ))}
@@ -452,30 +426,13 @@ function BestSellers({ catalog, onOpenProduct, onNav }) {
   );
 }
 
-// ─── SHOP BY CATEGORY ─────────────────────────────────────────────────────────
-function ShopByCategory({ config, onNav }) {
+// ─── 3. CATEGORY SPOTLIGHT WIDGETS ───────────────────────────────────────────
+function CategoriesSection({ section, onNav }) {
+  const { widgetType = 'bento_3', config = {} } = section;
   const items = config.items || [];
-  const men = items.find(i => i.id === 'cat-men') || items[0] || {
-    title: 'MEN',
-    heading: 'Built for Daily\nConfidence',
-    image: '/assets/44312e50fe56c782.q.jpg',
-    cta: 'Shop Men',
-    url: '/shop?gender=men'
-  };
-  const women = items.find(i => i.id === 'cat-women') || items[1] || {
-    title: 'WOMEN',
-    heading: 'Designed For\nModern Living',
-    image: '/assets/7f7ad2764f25606b.q.jpg',
-    cta: 'Shop Women',
-    url: '/shop?gender=women'
-  };
-  const kids = items.find(i => i.id === 'cat-kids') || items[2] || {
-    title: 'KIDS',
-    heading: 'Comfort For\nEvery Adventure',
-    image: '/assets/0ffbe14d4cba1d4a.q.jpg',
-    cta: 'Shop Kids',
-    url: '/shop?gender=kids'
-  };
+  const men = items[0] || { title: 'MEN', heading: 'Built for Daily\nConfidence', image: '/assets/44312e50fe56c782.q.jpg', cta: 'Shop Men', url: '/shop?gender=men' };
+  const women = items[1] || { title: 'WOMEN', heading: 'Designed For\nModern Living', image: '/assets/7f7ad2764f25606b.q.jpg', cta: 'Shop Women', url: '/shop?gender=women' };
+  const kids = items[2] || { title: 'KIDS', heading: 'Comfort For\nEvery Adventure', image: '/assets/0ffbe14d4cba1d4a.q.jpg', cta: 'Shop Kids', url: '/shop?gender=kids' };
 
   const handleCatClick = (url) => {
     if (!url) return;
@@ -485,13 +442,75 @@ function ShopByCategory({ config, onNav }) {
     else onNav('collections', { colFilter: 'all' });
   };
 
+  const title = config.title || 'Shop by Categories';
+  const eyebrow = config.eyebrow || 'Collections';
+
+  // Widget Layout 2: 3-Card Equal Grid
+  if (widgetType === 'grid_3') {
+    return (
+      <section className="rmx-section rmx-categories">
+        <div className="rmx-section-inner">
+          <div className="rmx-section-head">
+            <div>
+              <span className="rmx-section-eyebrow">{eyebrow}</span>
+              <h2 className="rmx-section-title">{title}</h2>
+            </div>
+          </div>
+          <div className="rmx-cat-equal-grid">
+            {[men, women, kids].map((cat, idx) => (
+              <div key={idx} className="rmx-cat-equal-card" onClick={() => handleCatClick(cat.url)}>
+                <div className="rmx-cat-equal-img" style={{ backgroundImage: `url('${cat.image}')` }} />
+                <div className="rmx-cat-overlay" />
+                <div className="rmx-cat-content">
+                  <span className="rmx-bento-tag">{cat.title}</span>
+                  <h3 className="rmx-bento-heading">{cat.heading}</h3>
+                  <button className="rmx-bento-btn">{cat.cta}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Widget Layout 3: Split 2-Card Layout
+  if (widgetType === 'split') {
+    return (
+      <section className="rmx-section rmx-categories">
+        <div className="rmx-section-inner">
+          <div className="rmx-section-head">
+            <div>
+              <span className="rmx-section-eyebrow">{eyebrow}</span>
+              <h2 className="rmx-section-title">{title}</h2>
+            </div>
+          </div>
+          <div className="rmx-cat-split-grid">
+            {[men, women].map((cat, idx) => (
+              <div key={idx} className="rmx-bento-card" style={{ minHeight: '380px' }} onClick={() => handleCatClick(cat.url)}>
+                <div className="rmx-bento-img" style={{ backgroundImage: `url('${cat.image}')` }} />
+                <div className="rmx-bento-overlay" />
+                <div className="rmx-bento-content">
+                  <span className="rmx-bento-tag">{cat.title}</span>
+                  <h3 className="rmx-bento-heading">{cat.heading}</h3>
+                  <button className="rmx-bento-btn">{cat.cta}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Widget Layout 4 (Default): Bento 3-Card Grid (Reference match)
   return (
     <section className="rmx-section rmx-categories">
       <div className="rmx-section-inner">
         <div className="rmx-section-head">
           <div>
-            <span className="rmx-section-eyebrow">Collections</span>
-            <h2 className="rmx-section-title">Shop by Categories</h2>
+            <span className="rmx-section-eyebrow">{eyebrow}</span>
+            <h2 className="rmx-section-title">{title}</h2>
           </div>
         </div>
 
@@ -561,17 +580,21 @@ function ShopByCategory({ config, onNav }) {
   );
 }
 
-// ─── VIDEO SECTION ────────────────────────────────────────────────────────────
-function VideoSection({ config, onNav }) {
+// ─── 4. VIDEO SECTION WIDGETS ────────────────────────────────────────────────
+function VideoSection({ section, onNav }) {
+  const { widgetType = 'video_bg', config = {} } = section;
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
-  if (!config.active) return null;
-
   const togglePlay = () => {
     if (!videoRef.current) return;
-    if (playing) { videoRef.current.pause(); setPlaying(false); }
-    else { videoRef.current.play(); setPlaying(true); }
+    if (playing) {
+      videoRef.current.pause();
+      setPlaying(false);
+    } else {
+      videoRef.current.play();
+      setPlaying(true);
+    }
   };
 
   const handleCta = (url) => {
@@ -581,6 +604,33 @@ function VideoSection({ config, onNav }) {
     else if (url.startsWith('http')) window.open(url, '_blank');
   };
 
+  if (widgetType === 'video_split') {
+    return (
+      <section className="rmx-section">
+        <div className="rmx-section-inner">
+          <div className="rmx-video-split-grid">
+            <div className="rmx-video-split-media">
+              {config.videoUrl ? (
+                <video src={config.videoUrl} poster={config.posterImage} controls className="rmx-video-el" />
+              ) : (
+                <div className="rmx-video-placeholder" style={{ backgroundImage: `url('${config.posterImage || '/assets/44312e50fe56c782.q.jpg'}')` }} />
+              )}
+            </div>
+            <div className="rmx-video-split-text">
+              {config.eyebrow && <span className="rmx-hero-eyebrow">{config.eyebrow}</span>}
+              <h2 className="rmx-section-title" style={{ fontSize: '32px', margin: '8px 0 16px' }}>{config.heading || 'Move with Ramroxa'}</h2>
+              <p className="rmx-hero-desc" style={{ color: '#555', marginBottom: '24px' }}>{config.description}</p>
+              <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
+                {config.cta || 'Explore Collection'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Full-width background video with overlay
   return (
     <section className="rmx-video-section">
       <div className="rmx-video-wrap">
@@ -621,11 +671,31 @@ function VideoSection({ config, onNav }) {
   );
 }
 
-// ─── SERVICE BENEFITS ────────────────────────────────────────────────────────
-function ServiceBenefits({ config }) {
+// ─── 5. SERVICE BENEFITS WIDGETS ─────────────────────────────────────────────
+function ServiceBenefits({ section }) {
+  const { widgetType = 'benefits_row', config = {} } = section;
   const items = config.items || [];
   const icons = { truck: <IconTruck />, return: <IconReturn />, support: <IconSupport /> };
 
+  if (widgetType === 'benefits_grid') {
+    return (
+      <section className="rmx-section" style={{ background: '#f8f8f8' }}>
+        <div className="rmx-section-inner">
+          <div className="rmx-benefits-grid">
+            {items.map((b) => (
+              <div key={b.id} className="rmx-benefit-card">
+                <div className="rmx-benefit-icon">{icons[b.icon] || <IconSupport />}</div>
+                <h4 className="rmx-benefit-title">{b.title}</h4>
+                <p className="rmx-benefit-desc">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Row with dividers (Default)
   return (
     <section className="rmx-benefits">
       <div className="rmx-benefits-inner">
@@ -643,222 +713,234 @@ function ServiceBenefits({ config }) {
   );
 }
 
-// ─── FEATURED PRODUCTS ───────────────────────────────────────────────────────
-function FeaturedProducts({ catalog, config, onOpenProduct, onNav }) {
-  const limit = config.limit || 8;
-  const isFeatured = (p) => {
-    if (p.labels?.featured) return true;
-    const tags = Array.isArray(p.tags) ? p.tags.join(' ') : String(p.tags || '');
-    return /featured|hand[\s-]?picked/i.test(tags);
-  };
-
-  let products = catalog.filter(isFeatured).slice(0, limit);
-  // Graceful fallback if no products tagged yet
-  if (!products.length && catalog.length > 0) {
-    products = catalog.slice(0, limit);
-  }
-  if (!products.length) return null;
-
-  return (
-    <section className="rmx-section rmx-featured">
-      <div className="rmx-section-inner">
-        <div className="rmx-section-head">
-          <div>
-            <span className="rmx-section-eyebrow">Hand-picked</span>
-            <h2 className="rmx-section-title">Featured</h2>
-          </div>
-          <button className="rmx-link-btn" onClick={() => onNav('collections', { colFilter: 'all' })}>
-            View All →
-          </button>
-        </div>
-        <div className="rmx-products-grid">
-          {products.map((p, idx) => (
-            <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── EDITORIAL BLOCKS ────────────────────────────────────────────────────────
-function EditorialBlocks({ config, onNav }) {
-  const items = (config.items || []).filter(b => b.active).sort((a, b) => a.order - b.order);
-  if (!items.length) return null;
+// ─── 6. EDITORIAL BLOCKS WIDGETS ─────────────────────────────────────────────
+function EditorialBlocks({ section, onNav }) {
+  const { widgetType = 'editorial_split', config = {} } = section;
+  const items = config.items || [];
 
   const handleCta = (url) => {
     if (!url) return;
     if (url.includes('gender=men')) onNav('collections', { colFilter: 'men' });
     else if (url.includes('gender=women')) onNav('collections', { colFilter: 'women' });
     else if (url.includes('gender=kids')) onNav('collections', { colFilter: 'kids' });
-    else if (url.includes('/shop')) onNav('collections', { colFilter: 'all' });
-    else if (url === '/contact') onNav('contact');
-    else if (url.startsWith('http')) window.open(url, '_blank');
+    else onNav('collections', { colFilter: 'all' });
   };
 
+  if (widgetType === 'editorial_cards') {
+    return (
+      <section className="rmx-section">
+        <div className="rmx-section-inner">
+          <div className="rmx-editorial-cards-grid">
+            {items.map((b) => (
+              <div key={b.id} className="rmx-editorial-card">
+                <div className="rmx-editorial-card-img" style={{ backgroundImage: `url('${b.image}')` }} />
+                <div className="rmx-editorial-card-body">
+                  <span className="rmx-hero-eyebrow" style={{ color: '#888' }}>{b.eyebrow}</span>
+                  <h3>{b.heading}</h3>
+                  <p>{b.description}</p>
+                  <button className="rmx-btn-primary" onClick={() => handleCta(b.primaryCtaUrl)}>
+                    {b.primaryCta}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Alternating Split (Default)
   return (
     <section className="rmx-editorial">
-      {items.map((block) => {
-        const isImageLeft = block.layout === 'image-left';
-        return (
-          <div key={block.id} className={`rmx-editorial-block ${isImageLeft ? 'image-left' : 'image-right'}`}>
-            <div className="rmx-editorial-img" style={{ backgroundImage: `url('${block.image}')` }} />
-            <div className="rmx-editorial-content">
-              {block.eyebrow && <span className="rmx-section-eyebrow">{block.eyebrow}</span>}
-              {block.heading && <h2 className="rmx-editorial-heading">{block.heading}</h2>}
-              {block.description && <p className="rmx-editorial-desc">{block.description}</p>}
-              <div className="rmx-hero-actions">
-                {block.primaryCta && (
-                  <button className="rmx-btn-primary" onClick={() => handleCta(block.primaryCtaUrl)}>
-                    {block.primaryCta}
-                  </button>
-                )}
-                {block.secondaryCta && (
-                  <button className="rmx-btn-outline" onClick={() => handleCta(block.secondaryCtaUrl)}>
-                    {block.secondaryCta}
-                  </button>
-                )}
-              </div>
+      {items.map((b) => (
+        <div key={b.id} className={`rmx-editorial-block ${b.layout === 'image-right' ? 'image-right' : ''}`}>
+          <div className="rmx-editorial-img" style={{ backgroundImage: `url('${b.image}')` }} />
+          <div className="rmx-editorial-content">
+            {b.eyebrow && <span className="rmx-editorial-eyebrow">{b.eyebrow}</span>}
+            <h2 className="rmx-editorial-heading">{b.heading}</h2>
+            {b.description && <p className="rmx-editorial-desc">{b.description}</p>}
+            <div className="rmx-editorial-actions">
+              {b.primaryCta && (
+                <button className="rmx-btn-primary" onClick={() => handleCta(b.primaryCtaUrl)}>
+                  {b.primaryCta}
+                </button>
+              )}
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
     </section>
   );
 }
 
-// ─── STAY CONNECTED ──────────────────────────────────────────────────────────
-function StayConnected({ config }) {
-  const images = config.images || [];
+// ─── 7. NEWSLETTER / COMMUNITY WIDGETS ───────────────────────────────────────
+function CommunityNewsletterSection({ section, onNav }) {
+  const { widgetType = 'community_gallery', config = {} } = section;
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleImageClick = (url) => {
-    if (url && url.startsWith('http')) window.open(url, '_blank');
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setSubmitted(true);
   };
 
+  // Newsletter Centered Widget
+  if (widgetType === 'newsletter_centered') {
+    return (
+      <section className="rmx-section rmx-newsletter-centered-section">
+        <div className="rmx-section-inner" style={{ maxWidth: '680px', textAlign: 'center' }}>
+          <span className="rmx-hero-eyebrow" style={{ color: '#000' }}>Stay in the loop</span>
+          <h2 className="rmx-section-title" style={{ fontSize: '32px', margin: '8px 0 12px' }}>{config.heading || 'Join the Ramroxa Club'}</h2>
+          <p className="rmx-hero-desc" style={{ color: '#666', margin: '0 auto 24px' }}>
+            {config.description || 'Subscribe for early access to drops, private sales and exclusive footwear previews.'}
+          </p>
+          {submitted ? (
+            <div className="rmx-newsletter-success">✓ Thank you for subscribing! Check your inbox soon.</div>
+          ) : (
+            <form onSubmit={handleSubmit} className="rmx-newsletter-form-inline">
+              <input
+                type="email"
+                placeholder="Enter your email address..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <button type="submit" className="rmx-btn-primary">{config.cta || 'Subscribe'}</button>
+            </form>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Newsletter Banner Widget (Dark Full-Width Strip)
+  if (widgetType === 'newsletter_banner') {
+    return (
+      <section className="rmx-newsletter-dark-banner">
+        <div className="rmx-section-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <h3 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 6px', color: '#fff' }}>{config.heading || 'Get 10% Off Your First Order'}</h3>
+            <p style={{ color: '#aaa', margin: 0, fontSize: '13px' }}>{config.description || 'Be the first to know about new arrivals and exclusive store drops.'}</p>
+          </div>
+          {submitted ? (
+            <span style={{ color: '#22c55e', fontWeight: 600 }}>✓ Subscribed!</span>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="email"
+                placeholder="Your email..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ padding: '10px 16px', borderRadius: '999px', border: '1px solid #444', background: '#222', color: '#fff', fontSize: '13px', outline: 'none' }}
+                required
+              />
+              <button type="submit" className="rmx-btn-primary" style={{ background: '#fff', color: '#000' }}>{config.cta || 'Join'}</button>
+            </form>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Community Gallery Widget (Default)
+  const images = config.images || [];
   return (
     <section className="rmx-community">
       <div className="rmx-community-header">
-        <div className="rmx-community-text">
-          <h2 className="rmx-community-heading">
-            {config.heading || 'Stay Connected'}
-            {config.subheading && (
-              <><br /><em>{config.subheading}</em></>
-            )}
-          </h2>
-          {config.description && <p className="rmx-community-desc">{config.description}</p>}
-          {config.cta && (
-            <a
-              href={config.ctaUrl || '#'}
-              target={config.ctaUrl?.startsWith('http') ? '_blank' : undefined}
-              rel="noreferrer"
-              className="rmx-btn-primary"
-              style={{ display: 'inline-block', textDecoration: 'none' }}
-            >
-              {config.cta}
-            </a>
-          )}
+        <div className="rmx-community-title-wrap">
+          <h2 className="rmx-community-heading">{config.heading || 'See our community'}</h2>
+          <span className="rmx-community-subheading">{config.subheading || 'in modern silhouettes'}</span>
         </div>
+        {config.description && <p className="rmx-community-desc">{config.description}</p>}
+        {config.cta && (
+          <a href={config.ctaUrl || 'https://instagram.com'} target="_blank" rel="noopener noreferrer" className="rmx-community-btn">
+            {config.cta}
+          </a>
+        )}
       </div>
-      {images.length > 0 && (
-        <div className="rmx-community-gallery">
-          {images.map((image) => (
-            <div
-              key={image.id}
-              className="rmx-community-img"
-              style={{ backgroundImage: `url('${image.src}')` }}
-              onClick={() => handleImageClick(image.url)}
-              role={image.url ? 'button' : undefined}
-              tabIndex={image.url ? 0 : undefined}
-              onKeyDown={e => e.key === 'Enter' && handleImageClick(image.url)}
-            />
-          ))}
-        </div>
-      )}
+
+      <div className="rmx-community-gallery">
+        {images.map((imgItem) => (
+          <div
+            key={imgItem.id}
+            className="rmx-community-img"
+            style={{ backgroundImage: `url('${imgItem.src}')` }}
+            onClick={() => onNav('collections', { colFilter: 'all' })}
+            role="button"
+            tabIndex={0}
+          />
+        ))}
+      </div>
     </section>
   );
 }
 
-// ─── SKELETON LOADER ──────────────────────────────────────────────────────────
-function HomepageSkeleton() {
-  return (
-    <div className="rmx-skeleton-wrap">
-      <div className="rmx-skeleton-hero" />
-      <div className="rmx-section-inner" style={{ marginTop: 56 }}>
-        <div className="rmx-skeleton-line" style={{ width: '160px', height: '14px', marginBottom: 12 }} />
-        <div className="rmx-skeleton-line" style={{ width: '240px', height: '32px', marginBottom: 32 }} />
-        <div className="rmx-products-3col">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rmx-skeleton-card">
-              <div className="rmx-skeleton-img" />
-              <div className="rmx-skeleton-line" style={{ width: '60%', height: 14, marginBottom: 8 }} />
-              <div className="rmx-skeleton-line" style={{ width: '80%', height: 18 }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── MAIN HOMEPAGE COMPONENT ──────────────────────────────────────────────────
+export default function RamroxaHomepage({ catalog = [], onOpenProduct = () => {}, onNav = () => {} }) {
+  const [cmsConfig, setCmsConfig] = useState(DEFAULT_HOMEPAGE_CONFIG);
 
-// ─── MAIN HOMEPAGE ────────────────────────────────────────────────────────────
-export default function RamroxaHomepage({ catalog = [], onOpenProduct, onNav }) {
-  const [cms, setCms] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Load CMS config
   useEffect(() => {
-    const config = loadCms();
-    setCms(config);
-    setLoading(false);
-  }, []);
+    // Initial load
+    setCmsConfig(loadHomepageConfig());
 
-  // Listen for CMS updates from admin panel
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'rmx-homepage-config') {
-        const config = loadCms();
-        setCms(config);
-      }
+    // Listen to live CMS updates from Admin
+    const handleUpdate = () => {
+      setCmsConfig(loadHomepageConfig());
     };
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+
+    window.addEventListener('rmx-homepage-updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('rmx-homepage-updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
-  const handleOpenProduct = useCallback((product) => {
-    // Find product index in catalog and navigate to it
-    const cat = catalog;
-    const idx = cat.findIndex(p => p.id === product.id || p._id === product._id);
-    if (idx >= 0) onOpenProduct(idx);
-  }, [catalog, onOpenProduct]);
-
-  if (loading) return <HomepageSkeleton />;
-  if (!cms) return null;
+  const sections = cmsConfig.sections || DEFAULT_HOMEPAGE_CONFIG.sections;
 
   return (
     <div className="rmx-homepage">
-      {/* 1. Hero */}
-      <HeroSlider config={cms.hero} onNav={onNav} />
+      {sections.map((section) => {
+        if (!section.enabled) return null;
 
-      {/* 2. Best Sellers */}
-      <BestSellers catalog={catalog} onOpenProduct={handleOpenProduct} onNav={onNav} />
+        switch (section.type) {
+          case 'hero':
+            return <HeroSection key={section.id} section={section} onNav={onNav} />;
+          
+          case 'bestsellers':
+          case 'featured':
+            return (
+              <ProductsSection
+                key={section.id}
+                section={section}
+                catalog={catalog}
+                onOpenProduct={onOpenProduct}
+                onNav={onNav}
+              />
+            );
 
-      {/* 3. Shop by Category */}
-      <ShopByCategory config={cms.categories} onNav={onNav} />
+          case 'categories':
+            return <CategoriesSection key={section.id} section={section} onNav={onNav} />;
 
-      {/* 4. Video Section */}
-      <VideoSection config={cms.video} onNav={onNav} />
+          case 'video':
+            return <VideoSection key={section.id} section={section} onNav={onNav} />;
 
-      {/* 5. Service Benefits */}
-      <ServiceBenefits config={cms.benefits} />
+          case 'benefits':
+            return <ServiceBenefits key={section.id} section={section} />;
 
-      {/* 6. Featured Products */}
-      <FeaturedProducts catalog={catalog} config={cms.featured} onOpenProduct={handleOpenProduct} onNav={onNav} />
+          case 'editorial':
+            return <EditorialBlocks key={section.id} section={section} onNav={onNav} />;
 
-      {/* 7. Editorial Blocks */}
-      <EditorialBlocks config={cms.editorial} onNav={onNav} />
+          case 'community':
+            return <CommunityNewsletterSection key={section.id} section={section} onNav={onNav} />;
 
-      {/* 8. Stay Connected / Community */}
-      <StayConnected config={cms.community} />
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }
