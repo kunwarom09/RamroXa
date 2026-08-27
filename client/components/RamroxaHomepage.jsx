@@ -17,7 +17,7 @@ const DEFAULT_HERO_IMAGE_2 = '/hero-slide-2.jpg';
 const DEFAULT_CMS = {
   hero: {
     autoplay: true,
-    slideDuration: 5000,
+    slideDuration: 6000,
     slides: [
       {
         id: 'slide-1',
@@ -25,13 +25,13 @@ const DEFAULT_CMS = {
         order: 1,
         image: DEFAULT_HERO_IMAGE_1,
         mobileImage: DEFAULT_HERO_IMAGE_1,
-        eyebrow: 'PREMIUM EVERYDAY',
-        heading: 'Style made for\nevery move',
-        description: 'Discover footwear and fashion designed for modern living. Crafted for comfort, built to last.',
-        primaryCta: 'Shop Now',
+        eyebrow: 'Footwear',
+        heading: 'Premium wear\nfor modern living',
+        description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
+        primaryCta: 'See all collections',
         primaryCtaUrl: '/shop',
-        secondaryCta: 'Explore Collection',
-        secondaryCtaUrl: '/shop',
+        secondaryCta: 'Contact us',
+        secondaryCtaUrl: '/contact',
       },
       {
         id: 'slide-2',
@@ -39,13 +39,13 @@ const DEFAULT_CMS = {
         order: 2,
         image: DEFAULT_HERO_IMAGE_2,
         mobileImage: DEFAULT_HERO_IMAGE_2,
-        eyebrow: 'NEW SEASON',
-        heading: 'Move forward\nwith confidence',
-        description: 'Step into the new season with footwear engineered for every terrain and every occasion.',
-        primaryCta: 'Shop Footwear',
+        eyebrow: 'Footwear',
+        heading: 'Premium wear\nfor modern living',
+        description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
+        primaryCta: 'See all collections',
         primaryCtaUrl: '/shop',
-        secondaryCta: 'View Lookbook',
-        secondaryCtaUrl: '/shop',
+        secondaryCta: 'Contact us',
+        secondaryCtaUrl: '/contact',
       },
     ],
   },
@@ -315,44 +315,41 @@ function HeroSlider({ config, onNav }) {
       <div className={`rmx-hero-bg ${transitioning ? 'fading' : ''}`} style={{ backgroundImage: `url('${slide.image}')` }} />
       <div className="rmx-hero-overlay" />
 
-      <div className="rmx-hero-content">
-        {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
-        <h1 className="rmx-hero-heading">{slide.heading}</h1>
-        {slide.description && <p className="rmx-hero-desc">{slide.description}</p>}
-        <div className="rmx-hero-actions">
-          {slide.primaryCta && (
-            <button className="rmx-btn-primary" onClick={() => handleCta(slide.primaryCtaUrl)}>
-              {slide.primaryCta}
-            </button>
-          )}
-          {slide.secondaryCta && (
-            <button className="rmx-btn-outline" onClick={() => handleCta(slide.secondaryCtaUrl)}>
-              {slide.secondaryCta}
-            </button>
-          )}
+      <div className="rmx-hero-inner">
+        <div className="rmx-hero-left">
+          {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
+          <h1 className="rmx-hero-heading">{slide.heading}</h1>
+        </div>
+
+        <div className="rmx-hero-right">
+          {slide.description && <p className="rmx-hero-desc">{slide.description}</p>}
+          <div className="rmx-hero-actions">
+            {slide.primaryCta && (
+              <button className="rmx-hero-btn-primary" onClick={() => handleCta(slide.primaryCtaUrl)}>
+                {slide.primaryCta}
+              </button>
+            )}
+            {slide.secondaryCta && (
+              <button className="rmx-hero-btn-secondary" onClick={() => handleCta(slide.secondaryCtaUrl)}>
+                {slide.secondaryCta}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {slides.length > 1 && (
-        <>
-          <button className="rmx-hero-arrow rmx-hero-arrow-prev" onClick={goPrev} aria-label="Previous slide">
-            <IconChevronLeft />
-          </button>
-          <button className="rmx-hero-arrow rmx-hero-arrow-next" onClick={goNext} aria-label="Next slide">
-            <IconChevronRight />
-          </button>
-          <div className="rmx-hero-dots" role="tablist">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                className={`rmx-hero-dot ${i === current ? 'active' : ''}`}
-                onClick={() => goTo(i)}
-                aria-label={`Go to slide ${i + 1}`}
-                role="tab"
-              />
-            ))}
-          </div>
-        </>
+        <div className="rmx-hero-dots" role="tablist">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              className={`rmx-hero-dot ${i === current ? 'active' : ''}`}
+              onClick={() => goTo(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              role="tab"
+            />
+          ))}
+        </div>
       )}
     </section>
   );
