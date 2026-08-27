@@ -25,7 +25,7 @@ function formatProductItem(p) {
     img2: secondImg?.url || p.img2 || featuredImg?.url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
     slug: p.slug || slugForProduct(p, 0),
     gender: p.gender || 'Unisex',
-    brand: p.brand || p.brandName || (p.tags && p.tags.length ? p.tags[0] : 'Zylo'),
+    brand: p.brand || p.brandName || (p.tags && p.tags.length ? p.tags[0] : 'Ramroxa'),
     category: p.category || p.categoryId || '',
     categoryId: p.categoryId || '',
     tags: p.tags || [],
@@ -390,7 +390,7 @@ export default class StoreApp extends React.Component {
         return;
       }
       if (label.length < 30) {
-        if (/^(Contact|Contact us|Contact Zylo)$/.test(label)) { stop(); this.goToView('contact'); return; }
+        if (/^(Contact|Contact us|Contact Ramroxa|Contact Zylo)$/.test(label)) { stop(); this.goToView('contact'); return; }
         if (/^Home$/.test(label)) { stop(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
         if (/^(Shop|Shop all items)$/.test(label)) { stop(); this.goToView('collections', { colFilter: 'all' }); return; }
         if (/^See all collections$/.test(label)) { stop(); this.goToView('collections', { colFilter: 'all' }); return; }
@@ -628,7 +628,7 @@ export default class StoreApp extends React.Component {
                   <span />
                 </div>
               </button>
-              <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>ZYLO</div>
+              <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>RAMROXA</div>
               <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
                 {link('HOME', view === 'shop', this.nav('shop'))}
                 {link('COLLECTIONS', view === 'collections', this.nav('collections', 'all'))}
@@ -834,7 +834,7 @@ export default class StoreApp extends React.Component {
         {/* Mobile Navigation Drawer */}
         <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, borderBottom: '1px solid #222', paddingBottom: 16 }}>
-            <span style={{ fontSize: 22, letterSpacing: 4, fontWeight: 'bold' }}>ZYLO</span>
+            <span style={{ fontSize: 22, letterSpacing: 4, fontWeight: 'bold' }}>RAMROXA</span>
             <button onClick={this.closeMobileMenu} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 8 }}>&times;</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -922,7 +922,7 @@ export default class StoreApp extends React.Component {
         <div className="store-footer-inner">
           <div className="store-footer-grid">
             <div>
-              <div style={{ fontSize: 28, letterSpacing: 4, marginBottom: 12 }}>ZYLO</div>
+              <div style={{ fontSize: 28, letterSpacing: 4, marginBottom: 12 }}>RAMROXA</div>
               <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
                 Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
               </p>
@@ -1056,7 +1056,7 @@ export default class StoreApp extends React.Component {
     const catList = this.getCatalog().map((p, idx) => ({
       ...p,
       idx,
-      brand: p.brand || 'Zylo',
+      brand: p.brand || 'Ramroxa',
       gender: p.gender || 'Unisex',
       price: p.price || 0,
       colors: p.colors || p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || []
@@ -1538,7 +1538,7 @@ export default class StoreApp extends React.Component {
                       </div>
                       <div className="zylo-product-card-body">
                         <div className="zylo-product-card-info">
-                          <span className="zylo-product-brand-tag">{p.brand || 'Zylo'}</span>
+                          <span className="zylo-product-brand-tag">{p.brand || 'Ramroxa'}</span>
                           <span className="zylo-product-name">{p.name}</span>
                           <div className="zylo-product-price-row">
                             <div className="zylo-product-prices">
@@ -2196,7 +2196,7 @@ export default class StoreApp extends React.Component {
             {/* Showroom Card */}
             <div style={{ background: '#000', color: '#fff', borderRadius: 16, padding: '28px 24px' }}>
               <div style={{ fontSize: 11, letterSpacing: 2, color: '#aaa', marginBottom: 8 }}>FLAGSHIP STUDIO</div>
-              <div style={{ fontSize: 20, fontWeight: 500, marginBottom: 12, letterSpacing: 1 }}>ZYLO SHOWROOM</div>
+              <div style={{ fontSize: 20, fontWeight: 500, marginBottom: 12, letterSpacing: 1 }}>RAMROXA SHOWROOM</div>
               <div style={{ fontSize: 13, color: '#bbb', lineHeight: 1.6, marginBottom: 16 }}>
                 Thamel Marg, Ward 29<br />
                 Kathmandu 44600, Nepal<br />
@@ -2222,7 +2222,7 @@ export default class StoreApp extends React.Component {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#666' }}>Inquiry Email:</span>
-                  <a href="mailto:hello@zylo.com.np" style={{ fontWeight: 600, color: '#000', textDecoration: 'none' }}>hello@zylo.com.np</a>
+                  <a href="mailto:hello@ramroxa.com.np" style={{ fontWeight: 600, color: '#000', textDecoration: 'none' }}>hello@ramroxa.com.np</a>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#666' }}>Tax / PAN:</span>
