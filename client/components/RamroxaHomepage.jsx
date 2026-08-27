@@ -882,20 +882,22 @@ export default function RamroxaHomepage({ catalog = [], onOpenProduct = () => {}
   const [cmsConfig, setCmsConfig] = useState(DEFAULT_HOMEPAGE_CONFIG);
 
   useEffect(() => {
-    // Initial load
-    setCmsConfig(loadHomepageConfig());
-
-    // Listen to live CMS updates from Admin
-    const handleUpdate = () => {
+    const refresh = () => {
       setCmsConfig(loadHomepageConfig());
     };
 
-    window.addEventListener('rmx-homepage-updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
+    // Initial load
+    refresh();
+
+    // Listen to live CMS updates from Admin
+    window.addEventListener('rmx-homepage-updated', refresh);
+    window.addEventListener('storage', refresh);
+    window.addEventListener('focus', refresh);
 
     return () => {
-      window.removeEventListener('rmx-homepage-updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('rmx-homepage-updated', refresh);
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('focus', refresh);
     };
   }, []);
 
