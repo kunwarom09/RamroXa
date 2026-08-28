@@ -1760,20 +1760,21 @@ tbody tr:hover { background: var(--muted); }
   justify-content: center;
   padding: 4px 8px 3px 8px;
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 6px;
   cursor: pointer;
   text-decoration: none;
   color: #ffffff;
   font-family: 'Geist', sans-serif;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  transition: opacity 0.15s ease;
   line-height: 1.15;
   outline: none;
 }
 
 .zylo-nav-account-btn:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  background: transparent;
+  opacity: 0.85;
 }
 
 .zylo-nav-account-hello {
@@ -1809,26 +1810,27 @@ tbody tr:hover { background: var(--muted); }
   transform: translateY(1px);
 }
 
-/* Header Cart Button */
+/* Header Cart & Wishlist Button (Borderless) */
 .zylo-nav-cart-btn {
   display: inline-flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 4px;
   padding: 4px 6px;
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
   color: #ffffff;
   font-family: 'Geist', sans-serif;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: opacity 0.15s ease;
   outline: none;
 }
 
 .zylo-nav-cart-btn:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  background: transparent;
+  opacity: 0.85;
 }
 
 .zylo-nav-cart-icon-wrap {
