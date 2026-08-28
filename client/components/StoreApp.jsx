@@ -688,6 +688,15 @@ export default class StoreApp extends React.Component {
         initialPhone = localStorage.getItem('zylo-c-phone') || '';
         initialAddress = localStorage.getItem('zylo-c-address') || '';
         initialCity = localStorage.getItem('zylo-c-city') || 'Kathmandu';
+        const storedUser = localStorage.getItem('zylo_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u.temporaryAddress || u.permanentAddress || u.address) {
+            initialAddress = u.temporaryAddress || u.permanentAddress || u.address;
+          }
+          if (u.name) initialName = u.name;
+          if (u.phone) initialPhone = u.phone;
+        }
       } catch (e) {}
     }
 
@@ -860,9 +869,9 @@ export default class StoreApp extends React.Component {
               profilePhone: user.phone || '',
               profilePermanentAddress: user.permanentAddress || '',
               profileTemporaryAddress: user.temporaryAddress || '',
-              cName: this.state.cName || user.name || '',
-              cPhone: this.state.cPhone || user.phone || '',
-              cAddress: this.state.cAddress || defAddr
+              cName: user.name || this.state.cName || '',
+              cPhone: user.phone || this.state.cPhone || '',
+              cAddress: defAddr || this.state.cAddress || ''
             });
           }
         }
@@ -878,9 +887,9 @@ export default class StoreApp extends React.Component {
               profilePhone: user.phone || '',
               profilePermanentAddress: user.permanentAddress || '',
               profileTemporaryAddress: user.temporaryAddress || '',
-              cName: this.state.cName || user.name || '',
-              cPhone: this.state.cPhone || user.phone || '',
-              cAddress: this.state.cAddress || defAddr
+              cName: user.name || this.state.cName || '',
+              cPhone: user.phone || this.state.cPhone || '',
+              cAddress: defAddr || this.state.cAddress || ''
             });
             if (typeof window !== 'undefined') {
               localStorage.setItem('zylo_user', JSON.stringify(user));
@@ -3208,7 +3217,8 @@ export default class StoreApp extends React.Component {
                     )}
                   </div>
                   {(() => {
-                    const activeAddress = cAddress !== '' ? cAddress : (profileTemporaryAddress || profilePermanentAddress || currentUser?.temporaryAddress || currentUser?.permanentAddress || currentUser?.address || '');
+                    const defaultSavedAddr = profileTemporaryAddress || profilePermanentAddress || currentUser?.temporaryAddress || currentUser?.permanentAddress || '';
+                    const activeAddress = (currentUser && defaultSavedAddr && cAddress === 'Singadurbar') ? defaultSavedAddr : (cAddress || defaultSavedAddr || '');
                     return (
                       <input
                         value={activeAddress}
@@ -3241,7 +3251,7 @@ export default class StoreApp extends React.Component {
                             gap: 5
                           }}
                         >
-                          <span style={{ fontWeight: 700 }}>📍 Delivery:</span>
+                          <span style={{ fontWeight: 700 }}>Delivery:</span>
                           <span>{profileTemporaryAddress}</span>
                         </button>
                       )}
@@ -3264,7 +3274,7 @@ export default class StoreApp extends React.Component {
                             gap: 5
                           }}
                         >
-                          <span style={{ fontWeight: 700 }}>📍 Permanent:</span>
+                          <span style={{ fontWeight: 700 }}>Permanent:</span>
                           <span>{profilePermanentAddress}</span>
                         </button>
                       )}
