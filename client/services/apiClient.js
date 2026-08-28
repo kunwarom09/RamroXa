@@ -16,7 +16,21 @@ export class ApiClientError extends Error {
 }
 
 export async function apiRequest(endpoint, options = {}) {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  let url = endpoint;
+  if (!url.startsWith('http')) {
+    const rawBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+    if (rawBase && !rawBase.endsWith('/api')) {
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      url = `${rawBase}${cleanEndpoint}`;
+    } else {
+      // Ensure exactly one leading slash and no duplicate /api
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      url = cleanEndpoint.replace(/^\/api\/api\//, '/api/');
+      if (!url.startsWith('/api/') && url !== '/api') {
+        url = `/api${url}`;
+      }
+    }
+  }
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
