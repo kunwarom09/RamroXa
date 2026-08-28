@@ -1277,6 +1277,30 @@ export default class StoreApp extends React.Component {
     setTimeout(() => this.setState({ toast: null }), 3000);
   };
 
+  handleAccountEnter = () => {
+    if (this._accountTimeout) clearTimeout(this._accountTimeout);
+    this.setState({ accountDropdownOpen: true });
+  };
+
+  handleAccountLeave = () => {
+    if (this._accountTimeout) clearTimeout(this._accountTimeout);
+    this._accountTimeout = setTimeout(() => {
+      this.setState({ accountDropdownOpen: false });
+    }, 250);
+  };
+
+  handleCollectionsEnter = () => {
+    if (this._colTimeout) clearTimeout(this._colTimeout);
+    this.setState({ collectionsDropdownOpen: true });
+  };
+
+  handleCollectionsLeave = () => {
+    if (this._colTimeout) clearTimeout(this._colTimeout);
+    this._colTimeout = setTimeout(() => {
+      this.setState({ collectionsDropdownOpen: false });
+    }, 250);
+  };
+
   header() {
     const { view, cart, wishlist = [], mobileMenuOpen, currentUser } = this.state;
     const totalItems = cart.reduce((t, l) => t + l.qty, 0);
@@ -1303,8 +1327,8 @@ export default class StoreApp extends React.Component {
                 {/* Collections & Categories Hover Dropdown */}
                 <div
                   className="zylo-nav-dropdown-wrapper"
-                  onMouseEnter={() => this.setState({ collectionsDropdownOpen: true })}
-                  onMouseLeave={() => this.setState({ collectionsDropdownOpen: false })}
+                  onMouseEnter={this.handleCollectionsEnter}
+                  onMouseLeave={this.handleCollectionsLeave}
                 >
                   <button
                     onClick={() => this.goToView('collections', { colFilter: 'all', filterCategory: 'all', collectionsDropdownOpen: false })}
@@ -1508,8 +1532,8 @@ export default class StoreApp extends React.Component {
               {/* Amazon-style Account & Lists Button with Flyout Dropdown */}
               <div
                 className="zylo-nav-account-wrapper"
-                onMouseEnter={() => this.setState({ accountDropdownOpen: true })}
-                onMouseLeave={() => this.setState({ accountDropdownOpen: false })}
+                onMouseEnter={this.handleAccountEnter}
+                onMouseLeave={this.handleAccountLeave}
               >
                 {currentUser ? (
                   <button

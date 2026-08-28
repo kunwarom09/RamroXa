@@ -1859,11 +1859,13 @@ tbody tr:hover { background: var(--muted); }
 .zylo-nav-account-wrapper {
   position: relative;
   display: inline-flex;
+  align-items: center;
+  padding: 6px 0;
 }
 
 .zylo-account-flyout {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   right: -10px;
   width: 440px;
   background: #ffffff;
@@ -1875,9 +1877,21 @@ tbody tr:hover { background: var(--muted); }
   font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   pointer-events: none;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+}
+
+/* Invisible hover bridge that prevents mouse from losing hover between navbar button and flyout */
+.zylo-account-flyout::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: -20px;
+  right: -20px;
+  height: 20px;
+  background: transparent;
+  pointer-events: auto;
 }
 
 /* Show on hover or when open class active */
