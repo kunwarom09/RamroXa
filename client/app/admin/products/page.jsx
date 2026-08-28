@@ -13,7 +13,7 @@ export default function AdminProductsListPage() {
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [categories, setCategories] = useState([]);
-  
+
   // List view states
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -220,7 +220,7 @@ export default function AdminProductsListPage() {
     for (const id of selectedIds) {
       try {
         await api.put(`/api/admin/products/${id}`, { status: newStatus });
-      } catch (e) {}
+      } catch (e) { }
     }
     setSelectedIds([]);
     refreshData();
@@ -256,7 +256,7 @@ export default function AdminProductsListPage() {
       )}
 
       <div className="page-head">
-        <h1>Master products</h1>
+        <h2>Master products</h2>
         <p suppressHydrationWarning>
           {mounted ? `${filtered.length} of ${products.length} master products · ${variants.length} variants total` : 'Loading master products...'}
         </p>

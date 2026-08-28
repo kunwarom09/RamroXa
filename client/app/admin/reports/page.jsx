@@ -122,7 +122,7 @@ export default function AdminReportsPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Sales reports</h1>
+        <h2>Sales reports</h2>
         <p>Daily, weekly, monthly, quarterly and annual summaries.</p>
       </div>
 

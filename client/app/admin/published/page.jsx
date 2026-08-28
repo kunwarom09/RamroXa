@@ -200,7 +200,7 @@ export default function AdminPublishedPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Published inventory</h1>
+        <h2>Published inventory</h2>
         <p>Every published sellable variant. Edit price and stock inline.</p>
       </div>
 

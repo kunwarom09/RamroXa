@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Settings</h1>
+        <h2>Settings</h2>
         <p>Company profile, tax, payment gateways, role permissions, and database operations.</p>
       </div>
 

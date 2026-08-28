@@ -39,15 +39,16 @@ export default function MediaLibraryPage() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploading(true);
+    const targetCategory = filterCategory !== 'all' ? filterCategory : 'Uploads';
     try {
       for (const file of files) {
-        await uploadMediaFile(file, 'Uploads');
+        await uploadMediaFile(file, targetCategory);
       }
       setItems(getMediaLibrary());
       showToast(`✓ Uploaded ${files.length} asset(s) successfully!`);
     } catch (err) {
       console.error('Upload failed:', err);
-      alert('Failed to upload file');
+      alert('Failed to upload file: ' + (err.message || 'Unknown error'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -110,7 +111,7 @@ export default function MediaLibraryPage() {
 
       <div className="page-head">
         <div>
-          <h1>Media Library</h1>
+          <h2>Media Library</h2>
           <p>Manage, upload, and organize images and assets for your storefront and CMS builder.</p>
         </div>
       </div>

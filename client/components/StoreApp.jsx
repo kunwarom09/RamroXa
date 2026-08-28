@@ -5,6 +5,7 @@ import RamroxaHomepage from './RamroxaHomepage';
 import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
 import { fetchProducts } from '../services/productService';
 import { api } from '../services/apiClient';
+import { loadHomepageConfig } from '../services/homepageCms';
 
 const DEFAULT_CATALOG = [
   {
@@ -540,11 +541,18 @@ function formatProductItem(p, i) {
     categoryId: p.categoryId || '',
     tags: p.tags || [],
     options: p.options || {},
-    colors: Array.isArray(p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
-      ? (p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
-      : ((p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
-        ? [p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors]
-        : []),
+    colors: (Array.isArray(p.colors) && p.colors.length > 0)
+      ? p.colors
+      : (Array.isArray(p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors)
+        ? (p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors)
+        : ((p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors)
+          ? [p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors]
+          : (Array.isArray(p.variants) && p.variants.length > 0
+            ? Array.from(new Set(p.variants.flatMap(v => [
+                ...(Array.isArray(v.subVariants) ? v.subVariants.map(sv => (sv.name || '').split('/').pop().trim()) : []),
+                (v.name || '').split('/').pop().trim()
+              ]).filter(Boolean)))
+            : []))),
     createdAt: p.createdAt || new Date().toISOString()
   };
 }
@@ -576,30 +584,44 @@ const HERO_PRESETS = [
 const COLOR_HEX_MAP = {
   black: '#111111',
   white: '#ffffff',
+  red: '#dc2626',
+  blue: '#2563eb',
+  navy: '#1e3a8a',
+  green: '#16a34a',
+  olive: '#65a30d',
+  yellow: '#facc15',
+  orange: '#ea580c',
+  brown: '#78350f',
+  beige: '#d4b996',
+  cream: '#fffdd0',
+  grey: '#9ca3af',
+  gray: '#9ca3af',
+  charcoal: '#374151',
+  pink: '#ec4899',
+  purple: '#9333ea',
+  maroon: '#800000',
+  burgundy: '#800020',
+  tan: '#d2b48c',
   khaki: '#c3b091',
   oatmeal: '#e3dac9',
   natural: '#f2eecb',
-  blue: '#3b5998',
   indigo: '#2e4482',
   denim: '#466d98',
-  brown: '#6e4a2e',
-  grey: '#888888',
-  'heather grey': '#9e9e9e',
-  charcoal: '#374151',
-  olive: '#556b2f',
   sage: '#9caf88',
-  navy: '#1e293b',
-  cream: '#fdfbf7',
-  beige: '#e6dfd5',
-  red: '#dc2626',
-  burgundy: '#800020',
-  orange: '#ea580c',
-  yellow: '#eab308'
+  'heather grey': '#9e9e9e'
 };
 
 const FREE_OVER = 5000;
 const rs = n => 'Rs ' + (n || 0).toLocaleString('en-US');
 const asset = h => `/assets/${h}.q.jpg`;
+const formatBannerUrl = (url) => {
+  if (!url) return '/hero-slide-1.jpg';
+  const s = String(url).trim();
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/') || s.startsWith('data:')) {
+    return s;
+  }
+  return `/assets/${s}.q.jpg`;
+};
 const img = (h) => {
   if (!h) return "url('/assets/98eab38550301ca9.q.jpg') 50% 20% / cover no-repeat";
   if (String(h).startsWith('http') || String(h).startsWith('/') || String(h).startsWith('data:')) {
@@ -746,7 +768,9 @@ export default class StoreApp extends React.Component {
       currentUser: null,
       showProfileModal: false,
       heroPreset: 'Arctic',
-      showGoToTop: false
+      showGoToTop: false,
+      cmsConfig: typeof window !== 'undefined' ? loadHomepageConfig() : null,
+      collectionsSlideIdx: 0
     };
   }
 
@@ -849,11 +873,41 @@ export default class StoreApp extends React.Component {
 
           this.setState({ catalog: apiCatalog, sel: selIdx, view });
         }
+        if (typeof window !== 'undefined') {
+          this.setState({ cmsConfig: loadHomepageConfig() });
+        }
       } catch (err) {
         console.warn('API fetchProducts notice:', err.message);
       }
     };
     loadDynamicCatalog();
+
+    // Listen for live CMS changes from Admin Builder
+    this._cmsUpdateHandler = (e) => {
+      this.setState({ cmsConfig: e?.detail || loadHomepageConfig() });
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('rmx-homepage-updated', this._cmsUpdateHandler);
+    }
+
+    this._cmsStorageHandler = (e) => {
+      if (e.key === 'rmx-homepage-config') {
+        this.setState({ cmsConfig: loadHomepageConfig() });
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', this._cmsStorageHandler);
+    }
+
+    // Collections Hero Carousel Auto-timer
+    this._collectionsHeroInterval = setInterval(() => {
+      const { cmsConfig, collectionsSlideIdx } = this.state;
+      const heroSec = cmsConfig?.sections?.find(s => s.type === 'hero' && s.enabled !== false);
+      const slides = heroSec?.config?.slides || [];
+      if (slides.length > 1 && heroSec?.config?.autoplay !== false) {
+        this.setState({ collectionsSlideIdx: (collectionsSlideIdx + 1) % slides.length });
+      }
+    }, 6000);
 
     const checkAuthSession = async () => {
       try {
@@ -1015,6 +1069,11 @@ export default class StoreApp extends React.Component {
     if (this._onScroll) {
       window.removeEventListener('scroll', this._onScroll);
     }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('rmx-homepage-updated', this._cmsUpdateHandler);
+      window.removeEventListener('storage', this._cmsStorageHandler);
+    }
+    clearInterval(this._collectionsHeroInterval);
     document.removeEventListener('click', this._click, true);
     clearInterval(this._logoT);
     clearTimeout(this._toastT);
@@ -2384,34 +2443,153 @@ export default class StoreApp extends React.Component {
 
     return (
       <div style={{ background: '#fff', width: '100%', margin: '0 auto', minHeight: 'calc(100vh - 60px)', boxSizing: 'border-box', padding: 0 }}>
-        {/* Collections Hero */}
-        <div className="zylo-collections-hero-fullwidth">
-          <section className="zylo-collections-hero" style={{ background: `url('${asset('dbacea851225e2bf')}') 50% 30% / cover no-repeat #111` }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
-            <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 640 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, background: '#fff', color: '#000', borderRadius: 999, padding: '4px 12px' }}>Shop</span>
-                <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '4px 12px' }}>The new season</span>
-              </div>
-              <h1 className="zylo-hero-title">Elevate your daily wardrobe with ease</h1>
-              <p className="zylo-hero-sub">Explore our handpicked modern silhouettes crafted from sustainable fabrics.</p>
-              <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <button
-                  onClick={() => { const el = document.getElementById('zylo-shop-main'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' }); }}
-                  style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
-                >
-                  Explore styles
-                </button>
-                <button
-                  onClick={() => this.goToView('contact')}
-                  style={{ ...font, fontSize: 13, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
-                >
-                  About us
-                </button>
-              </div>
+        {/* Single Collections Hero Banner */}
+        {(() => {
+          const { cmsConfig, collectionsSlideIdx = 0 } = this.state;
+          const heroSec = (cmsConfig?.sections || []).find(s => s.type === 'hero' && s.enabled !== false)
+            || (cmsConfig?.sections || []).find(s => s.type === 'hero')
+            || {
+              id: 'sec_hero_default',
+              type: 'hero',
+              config: {
+                slides: [
+                  {
+                    id: 'slide-1',
+                    image: '/hero-slide-1.jpg',
+                    eyebrow: 'Shop',
+                    heading: 'Elevate your daily\nwardrobe with ease',
+                    description: 'Explore our handpicked modern silhouettes crafted from sustainable fabrics.',
+                    primaryCta: 'Explore styles',
+                    primaryCtaUrl: '/shop',
+                    secondaryCta: 'About us',
+                    secondaryCtaUrl: '/contact'
+                  }
+                ]
+              }
+            };
+
+          const rawSlides = (heroSec?.config?.slides && heroSec.config.slides.length > 0)
+            ? heroSec.config.slides
+            : [
+                {
+                  id: 'slide-1',
+                  image: '/hero-slide-1.jpg',
+                  eyebrow: 'Shop',
+                  heading: 'Elevate your daily\nwardrobe with ease',
+                  description: 'Explore our handpicked modern silhouettes crafted from sustainable fabrics.',
+                  primaryCta: 'Explore styles',
+                  primaryCtaUrl: '/shop',
+                  secondaryCta: 'About us',
+                  secondaryCtaUrl: '/contact'
+                }
+              ];
+
+          const activeSlides = rawSlides.filter(s => s.active !== false);
+          const slidesToUse = activeSlides.length > 0 ? activeSlides : rawSlides;
+          const currentSlideIdx = collectionsSlideIdx % slidesToUse.length;
+          const currentSlide = slidesToUse[currentSlideIdx] || slidesToUse[0];
+
+          const bannerImg = formatBannerUrl(currentSlide?.image || currentSlide?.url);
+          const bannerEyebrow = currentSlide?.eyebrow || 'Shop';
+          const bannerHeading = currentSlide?.heading || 'Elevate your daily\nwardrobe with ease';
+          const bannerDesc = currentSlide?.description || 'Explore our handpicked modern silhouettes crafted from sustainable fabrics.';
+          const bannerPrimaryCta = currentSlide?.primaryCta || 'Explore styles';
+          const bannerPrimaryCtaUrl = currentSlide?.primaryCtaUrl || '';
+          const bannerSecondaryCta = currentSlide?.secondaryCta || 'About us';
+          const bannerSecondaryCtaUrl = currentSlide?.secondaryCtaUrl || '/contact';
+
+          return (
+            <div className="zylo-collections-hero-fullwidth">
+              <section
+                className="zylo-collections-hero"
+                style={{
+                  backgroundImage: `url('${bannerImg}')`,
+                  backgroundPosition: 'center 30%',
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundColor: '#111',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+                <div style={{ position: 'relative', textAlign: 'center', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, maxWidth: 580, margin: '0 auto', padding: '0 16px', zIndex: 2 }}>
+                  {bannerEyebrow && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 12, background: '#fff', color: '#000', borderRadius: 999, padding: '4px 12px' }}>{bannerEyebrow}</span>
+                      <span style={{ fontSize: 12, background: 'rgba(255,255,255,0.2)', borderRadius: 999, padding: '4px 12px' }}>The new season</span>
+                    </div>
+                  )}
+                  <h1 className="zylo-hero-title">{bannerHeading}</h1>
+                  {bannerDesc && <p className="zylo-hero-sub">{bannerDesc}</p>}
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {bannerPrimaryCta && (
+                      <button
+                        onClick={() => {
+                          if (bannerPrimaryCtaUrl && bannerPrimaryCtaUrl !== '/shop') {
+                            this.goToView(bannerPrimaryCtaUrl.replace(/^\//, ''));
+                          } else {
+                            const el = document.getElementById('zylo-shop-main');
+                            if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+                          }
+                        }}
+                        style={{ ...font, fontSize: 13, background: '#fff', color: '#000', border: 'none', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
+                      >
+                        {bannerPrimaryCta}
+                      </button>
+                    )}
+                    {bannerSecondaryCta && (
+                      <button
+                        onClick={() => {
+                          if (bannerSecondaryCtaUrl.startsWith('http')) {
+                            window.open(bannerSecondaryCtaUrl, '_blank');
+                          } else {
+                            this.goToView(bannerSecondaryCtaUrl.replace(/^\//, '') || 'contact');
+                          }
+                        }}
+                        style={{ ...font, fontSize: 13, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 999, padding: '10px 20px', cursor: 'pointer' }}
+                      >
+                        {bannerSecondaryCta}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hero Carousel Navigation if multiple slides */}
+                {slidesToUse.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="rmx-hero-arrow prev"
+                      onClick={() => this.setState({ collectionsSlideIdx: (collectionsSlideIdx - 1 + slidesToUse.length) % slidesToUse.length })}
+                      aria-label="Previous Slide"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="rmx-hero-arrow next"
+                      onClick={() => this.setState({ collectionsSlideIdx: (collectionsSlideIdx + 1) % slidesToUse.length })}
+                      aria-label="Next Slide"
+                    >
+                      ›
+                    </button>
+                    <div className="rmx-hero-dots">
+                      {slidesToUse.map((_, dotIdx) => (
+                        <button
+                          key={dotIdx}
+                          type="button"
+                          className={`rmx-hero-dot ${dotIdx === currentSlideIdx ? 'active' : ''}`}
+                          onClick={() => this.setState({ collectionsSlideIdx: dotIdx })}
+                          aria-label={`Go to slide ${dotIdx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
             </div>
-          </section>
-        </div>
+          );
+        })()}
 
         {/* Collections Content Area */}
         <div className="zylo-collections-content">
@@ -2750,9 +2928,9 @@ export default class StoreApp extends React.Component {
               <div style={{ fontSize: 11, letterSpacing: 3, color: '#888', textTransform: 'uppercase' }}>
                 {p.tag || 'BEST SELLER'}
               </div>
-              <h1 style={{ margin: 0, fontSize: 34, fontWeight: 400, letterSpacing: 0.5, lineHeight: 1.2 }}>
+              <h2 style={{ margin: 0, fontSize: 34, fontWeight: 300, letterSpacing: 0.5, lineHeight: 1.2 }}>
                 {p.name}
-              </h1>
+              </h2>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 4 }}>
                 <span style={{ fontSize: 24, fontWeight: 600 }}>{rs(p.price)}</span>
                 {p.compare > p.price && (
@@ -2871,7 +3049,7 @@ export default class StoreApp extends React.Component {
             <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 12 }}>
               SAVED ITEMS &amp; FAVORITES
             </span>
-            <h1 style={{ fontSize: 40, margin: '0 0 8px', fontWeight: 400, letterSpacing: 1 }}>YOUR WISHLIST</h1>
+            <h2 style={{ fontSize: 40, margin: '0 0 8px', fontWeight: 300, letterSpacing: 1 }}>YOUR WISHLIST</h2>
             <p style={{ color: '#666', fontSize: 15, margin: 0 }}>
               {wishlist.length === 0
                 ? 'Keep track of pieces you love across our collections.'
@@ -3032,7 +3210,7 @@ export default class StoreApp extends React.Component {
       <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h1 style={{ fontSize: 36, fontWeight: 400, margin: '0 0 6px', letterSpacing: 0.5 }}>SHOPPING CART</h1>
+            <h2 style={{ fontSize: 36, fontWeight: 300, margin: '0 0 6px', letterSpacing: 0.5 }}>SHOPPING CART</h2>
             <span style={{ color: '#666', fontSize: 14 }}>{totalCount} {totalCount === 1 ? 'item' : 'items'} in your bag</span>
           </div>
           <button
@@ -3184,7 +3362,7 @@ export default class StoreApp extends React.Component {
 
     return (
       <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
-        <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 32 }}>CHECKOUT</h1>
+        <h2 style={{ fontSize: 36, fontWeight: 300, marginBottom: 32 }}>CHECKOUT</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
           {/* Left: Customer & Shipping Details */}
           <div>
@@ -3403,7 +3581,7 @@ export default class StoreApp extends React.Component {
     return (
       <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
         <span style={{ fontSize: 48 }}>✓</span>
-        <h1 style={{ fontSize: 36, fontWeight: 400, margin: '16px 0 8px' }}>ORDER CONFIRMED</h1>
+        <h2 style={{ fontSize: 36, fontWeight: 300, margin: '16px 0 8px' }}>ORDER CONFIRMED</h2>
         <p style={{ color: '#888', fontSize: 14, marginBottom: 20 }}>Order #{orderId || 'ZY-104928'} has been received.</p>
         <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 12, marginBottom: 28, fontSize: 15 }}>
           <div>Total: <strong>{rs(orderTotal || 3800)}</strong></div>
@@ -3475,7 +3653,7 @@ export default class StoreApp extends React.Component {
           <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 12 }}>
             CUSTOMER SUPPORT & INQUIRIES
           </span>
-          <h1 style={{ fontSize: 40, margin: '0 0 10px', fontWeight: 400, letterSpacing: 1 }}>CONTACT RAMROXA</h1>
+          <h2 style={{ fontSize: 40, margin: '0 0 10px', fontWeight: 300, letterSpacing: 1 }}>CONTACT RAMROXA</h2>
           <p style={{ color: '#666', fontSize: 15, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
             Have questions about an existing order, sizing guidance, custom orders, or wholesale? Our Kathmandu team is here to assist you.
           </p>
@@ -3873,9 +4051,9 @@ export default class StoreApp extends React.Component {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: 0.5, color: '#111' }}>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 300, letterSpacing: 0.5, color: '#111' }}>
                   {currentUser.name}
-                </h1>
+                </h2>
                 <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f0f0', color: '#444', padding: '3px 8px', borderRadius: 999, letterSpacing: 1 }}>
                   {currentUser.role === 'admin' ? 'ADMIN' : 'VERIFIED MEMBER'}
                 </span>

@@ -178,7 +178,7 @@ export default function AdminCustomersPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Customers & Registered Users</h1>
+        <h2>Customers &amp; Registered Users</h2>
         <p>User directory, registered addresses, and customer lifetime purchasing records.</p>
       </div>
 

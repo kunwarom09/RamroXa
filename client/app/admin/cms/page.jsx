@@ -1,10 +1,14 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { today } from '../../../services/formatters';
 import Icon from '../../../components/admin/Icons';
 import {
   SECTION_WIDGET_TYPES,
   DEFAULT_HOMEPAGE_CONFIG,
+  MAX_HERO_SECTIONS,
+  MAX_HERO_SLIDES,
+  createDefaultHeroSection,
+  createDefaultHeroSlide,
   loadHomepageConfig,
   saveHomepageConfig,
   resetHomepageConfig
@@ -31,14 +35,69 @@ export default function AdminCmsPage() {
   const [editingPage, setEditingPage] = useState(null);
   const [formData, setFormData] = useState({ title: '', slug: '', status: 'published', meta: '', content: '' });
 
+  const initialLoadedRef = useRef(false);
+
   useEffect(() => {
     const config = loadHomepageConfig();
     setSections(config.sections || DEFAULT_HOMEPAGE_CONFIG.sections);
   }, []);
 
+  // Automatically save and broadcast changes in real-time
+  useEffect(() => {
+    if (!initialLoadedRef.current) {
+      if (sections.length > 0) {
+        initialLoadedRef.current = true;
+      }
+      return;
+    }
+    if (sections && sections.length > 0) {
+      saveHomepageConfig({ sections });
+    }
+  }, [sections]);
+
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
+  };
+
+  const heroSectionsCount = sections.filter(s => s.type === 'hero').length;
+
+  // Add a new Hero Banner section (Up to 5)
+  const handleAddHeroSection = () => {
+    const currentHeroCount = sections.filter(s => s.type === 'hero').length;
+    if (currentHeroCount >= MAX_HERO_SECTIONS) {
+      alert(`Maximum of ${MAX_HERO_SECTIONS} Hero Banner sections reached.`);
+      return;
+    }
+
+    const newHeroSec = createDefaultHeroSection(currentHeroCount + 1);
+    // Insert after the last hero section or at top
+    const lastHeroIndex = sections.reduce((acc, s, idx) => s.type === 'hero' ? idx : acc, -1);
+    const nextSections = [...sections];
+    if (lastHeroIndex !== -1) {
+      nextSections.splice(lastHeroIndex + 1, 0, newHeroSec);
+    } else {
+      nextSections.unshift(newHeroSec);
+    }
+
+    setSections(nextSections);
+    setExpandedSectionId(newHeroSec.id);
+    showToast(`✓ Added "${newHeroSec.name}" (${currentHeroCount + 1}/${MAX_HERO_SECTIONS})`);
+  };
+
+  // Section Deletion
+  const handleDeleteSection = (sectionId, sectionName) => {
+    const isHero = sections.find(s => s.id === sectionId)?.type === 'hero';
+    const heroCount = sections.filter(s => s.type === 'hero').length;
+    if (isHero && heroCount <= 1) {
+      if (!confirm(`Are you sure you want to remove the last Hero banner section?`)) return;
+    } else {
+      if (!confirm(`Delete "${sectionName || 'this section'}" from the homepage?`)) return;
+    }
+
+    setSections(prev => prev.filter(s => s.id !== sectionId));
+    if (expandedSectionId === sectionId) setExpandedSectionId(null);
+    showToast(`✓ Section removed.`);
   };
 
   // Section Reordering
@@ -57,6 +116,11 @@ export default function AdminCmsPage() {
     setSections(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
   };
 
+  // Section Title Rename
+  const handleSectionNameChange = (id, newName) => {
+    setSections(prev => prev.map(s => s.id === id ? { ...s, name: newName } : s));
+  };
+
   // Widget Type Change
   const handleWidgetTypeChange = (id, newWidgetType) => {
     setSections(prev => prev.map(s => s.id === id ? { ...s, widgetType: newWidgetType } : s));
@@ -73,7 +137,7 @@ export default function AdminCmsPage() {
         if (parts.length === 2) {
           newConfig[parts[0]] = { ...(newConfig[parts[0]] || {}), [parts[1]]: value };
         } else if (parts.length === 3) {
-          // e.g. items.0.title
+          // e.g. items.0.title or slides.0.heading
           const [arrayKey, indexStr, itemKey] = parts;
           const idx = parseInt(indexStr, 10);
           const newArray = [...(newConfig[arrayKey] || [])];
@@ -87,6 +151,68 @@ export default function AdminCmsPage() {
       }
 
       return { ...sec, config: newConfig };
+    }));
+  };
+
+  // Add Slide to Hero Section (Up to 5)
+  const handleAddSlide = (sectionId) => {
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentSlides = sec.config?.slides || [];
+      if (currentSlides.length >= MAX_HERO_SLIDES) {
+        alert(`Maximum ${MAX_HERO_SLIDES} slides allowed per Hero Banner.`);
+        return sec;
+      }
+      const newSlide = createDefaultHeroSlide(currentSlides.length + 1);
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          slides: [...currentSlides, newSlide]
+        }
+      };
+    }));
+    showToast(`✓ Added slide to Hero section.`);
+  };
+
+  // Delete Slide from Hero Section
+  const handleDeleteSlide = (sectionId, slideIdx) => {
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentSlides = sec.config?.slides || [];
+      if (currentSlides.length <= 1) {
+        alert('A Hero Banner must contain at least one slide.');
+        return sec;
+      }
+      const nextSlides = currentSlides.filter((_, i) => i !== slideIdx);
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          slides: nextSlides
+        }
+      };
+    }));
+    showToast(`✓ Slide removed.`);
+  };
+
+  // Move Slide inside Hero Section
+  const handleMoveSlide = (sectionId, slideIdx, direction) => {
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentSlides = [...(sec.config?.slides || [])];
+      const targetIdx = slideIdx + direction;
+      if (targetIdx < 0 || targetIdx >= currentSlides.length) return sec;
+      const temp = currentSlides[slideIdx];
+      currentSlides[slideIdx] = currentSlides[targetIdx];
+      currentSlides[targetIdx] = temp;
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          slides: currentSlides
+        }
+      };
     }));
   };
 
@@ -182,7 +308,6 @@ export default function AdminCmsPage() {
     }));
     showToast('✓ Photo added to Community Gallery');
   };
-
   // Save Homepage Configuration
   const handleSaveHomepage = () => {
     saveHomepageConfig({ sections });
@@ -266,20 +391,39 @@ export default function AdminCmsPage() {
       )}
 
       <div className="page-head">
-        <h1>CMS Page &amp; Storefront Section Builder</h1>
-        <p>Manage dynamic homepage sections, choose layout widget types, and edit content pages.</p>
+        <h2 style={{ fontWeight: 300, fontSize: '22px', margin: '0 0 4px', letterSpacing: '-0.02em' }}>CMS Page &amp; Storefront Section Builder</h2>
+        <p>Manage dynamic homepage sections, create multiple Hero banners (up to {MAX_HERO_SECTIONS}), customize widgets, and edit content pages.</p>
       </div>
 
       {/* ─── HOMEPAGE SECTION BUILDER ────────────────────────────────────────── */}
       <div className="card card-pad" style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '16px', margin: 0, fontWeight: 700 }}>Homepage Section Builder</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '16px', margin: 0, fontWeight: 300, letterSpacing: '-0.01em' }}>Homepage Section Builder</h2>
+              <span className="badge badge-accent" style={{ fontSize: '11px' }}>
+                Hero Banners: {heroSectionsCount}/{MAX_HERO_SECTIONS}
+              </span>
+            </div>
             <p style={{ fontSize: '12.5px', color: 'var(--muted-foreground)', margin: '4px 0 0' }}>
-              Reorder sections, select widget layout styles, and customize content blocks.
+              Reorder sections, create up to {MAX_HERO_SECTIONS} Hero banner sections, select widget layout styles, and customize content blocks.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              disabled={heroSectionsCount >= MAX_HERO_SECTIONS}
+              onClick={handleAddHeroSection}
+              style={{
+                background: heroSectionsCount >= MAX_HERO_SECTIONS ? 'var(--muted)' : undefined,
+                color: heroSectionsCount >= MAX_HERO_SECTIONS ? 'var(--muted-foreground)' : undefined,
+                cursor: heroSectionsCount >= MAX_HERO_SECTIONS ? 'not-allowed' : 'pointer'
+              }}
+              title={heroSectionsCount >= MAX_HERO_SECTIONS ? `Maximum of ${MAX_HERO_SECTIONS} Hero Banner sections created` : 'Add another Hero Banner section to the homepage'}
+            >
+              + Add Hero Banner Section ({heroSectionsCount}/{MAX_HERO_SECTIONS})
+            </button>
             <button type="button" className="btn btn-sm" onClick={() => window.open('/', '_blank')}>
               ↗ Preview Storefront
             </button>
@@ -297,16 +441,19 @@ export default function AdminCmsPage() {
           {sections.map((sec, idx) => {
             const isExpanded = expandedSectionId === sec.id;
             const availableWidgets = SECTION_WIDGET_TYPES[sec.type] || [];
+            const isHero = sec.type === 'hero';
+            const slidesCount = sec.config?.slides?.length || 0;
 
             return (
               <div
                 key={sec.id}
                 style={{
-                  border: '1px solid var(--border)',
+                  border: isHero ? '1px solid rgba(var(--primary-rgb, 59, 130, 246), 0.35)' : '1px solid var(--border)',
                   borderRadius: '8px',
                   background: sec.enabled ? 'var(--surface)' : 'var(--muted)',
                   opacity: sec.enabled ? 1 : 0.75,
                   overflow: 'hidden',
+                  boxShadow: isHero ? '0 1px 4px rgba(0,0,0,0.03)' : 'none',
                   transition: 'background 0.15s, border-color 0.15s'
                 }}
               >
@@ -320,7 +467,7 @@ export default function AdminCmsPage() {
                   flexWrap: 'wrap'
                 }}>
                   {/* Left: Reorder & Status Toggle & Name */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 auto', minWidth: '240px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <button
                         type="button"
@@ -344,14 +491,32 @@ export default function AdminCmsPage() {
                       </button>
                     </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0, fontSize: '13px', fontWeight: 600 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
                       <input
                         type="checkbox"
                         checked={sec.enabled}
                         onChange={() => toggleSectionEnabled(sec.id)}
                       />
-                      <span>{sec.name}</span>
                     </label>
+
+                    <input
+                      type="text"
+                      value={sec.name}
+                      onChange={(e) => handleSectionNameChange(sec.id, e.target.value)}
+                      style={{
+                        border: '1px solid transparent',
+                        background: 'transparent',
+                        fontWeight: 600,
+                        fontSize: '13.5px',
+                        color: 'var(--primary)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        maxWidth: '220px'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--border)'}
+                      onBlur={(e) => e.target.style.borderColor = 'transparent'}
+                      title="Click to rename section"
+                    />
 
                     <span style={{
                       fontSize: '11px',
@@ -359,18 +524,18 @@ export default function AdminCmsPage() {
                       letterSpacing: '0.05em',
                       padding: '2px 8px',
                       borderRadius: '999px',
-                      background: 'var(--muted)',
-                      color: 'var(--muted-foreground)',
-                      fontWeight: 600
+                      background: isHero ? 'rgba(59, 130, 246, 0.12)' : 'var(--muted)',
+                      color: isHero ? '#2563eb' : 'var(--muted-foreground)',
+                      fontWeight: 700
                     }}>
-                      {sec.type}
+                      {sec.type} {isHero && `• ${slidesCount} slide${slidesCount === 1 ? '' : 's'}`}
                     </span>
                   </div>
 
-                  {/* Right: Widget Type Selector & Expand Button */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* Right: Widget Type Selector & Action Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <label style={{ fontSize: '12px', color: 'var(--muted-foreground)', margin: 0 }}>Widget Type:</label>
+                      <label style={{ fontSize: '12px', color: 'var(--muted-foreground)', margin: 0 }}>Widget:</label>
                       <select
                         value={sec.widgetType}
                         onChange={(e) => handleWidgetTypeChange(sec.id, e.target.value)}
@@ -399,6 +564,16 @@ export default function AdminCmsPage() {
                     >
                       {isExpanded ? '▲ Close' : '▼ Configure'}
                     </button>
+
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      style={{ width: '28px', height: '28px', color: '#ef4444' }}
+                      title="Delete section"
+                      onClick={() => handleDeleteSection(sec.id, sec.name)}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
                   </div>
                 </div>
 
@@ -411,7 +586,29 @@ export default function AdminCmsPage() {
                   }}>
                     {/* ─── Hero Config ─── */}
                     {sec.type === 'hero' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700 }}>
+                            Hero Settings &amp; Slides ({slidesCount}/{MAX_HERO_SLIDES})
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={() => handleAddSlide(sec.id)}
+                            disabled={slidesCount >= MAX_HERO_SLIDES}
+                            style={{
+                              fontSize: '12px',
+                              height: '28px',
+                              background: slidesCount >= MAX_HERO_SLIDES ? 'var(--muted)' : undefined,
+                              color: slidesCount >= MAX_HERO_SLIDES ? 'var(--muted-foreground)' : undefined,
+                              cursor: slidesCount >= MAX_HERO_SLIDES ? 'not-allowed' : 'pointer'
+                            }}
+                            title={slidesCount >= MAX_HERO_SLIDES ? `Max ${MAX_HERO_SLIDES} slides reached` : 'Add another slide to this hero banner'}
+                          >
+                            + Add Slide ({slidesCount}/{MAX_HERO_SLIDES})
+                          </button>
+                        </div>
+
                         <div className="form-grid-2">
                           <div className="field">
                             <label>Autoplay</label>
@@ -419,8 +616,8 @@ export default function AdminCmsPage() {
                               value={sec.config?.autoplay ? 'true' : 'false'}
                               onChange={(e) => handleConfigChange(sec.id, 'autoplay', e.target.value === 'true')}
                             >
-                              <option value="true">Enabled</option>
-                              <option value="false">Disabled</option>
+                              <option value="true">Enabled (Auto-transition slides)</option>
+                              <option value="false">Disabled (Manual only)</option>
                             </select>
                           </div>
                           <div className="field">
@@ -429,29 +626,79 @@ export default function AdminCmsPage() {
                               type="number"
                               value={sec.config?.slideDuration || 6000}
                               onChange={(e) => handleConfigChange(sec.id, 'slideDuration', Number(e.target.value))}
+                              placeholder="6000"
                             />
                           </div>
                         </div>
 
+                        {/* Slide Cards */}
                         {(sec.config?.slides || []).map((slide, sIdx) => (
                           <div key={slide.id || sIdx} style={{ padding: '14px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 700, display: 'block', marginBottom: '10px' }}>
-                              Slide #{sIdx + 1}
-                            </span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12.5px', fontWeight: 700 }}>
+                                  Slide #{sIdx + 1}
+                                </span>
+                                {slide.image && (
+                                  <div style={{
+                                    width: '32px',
+                                    height: '20px',
+                                    borderRadius: '3px',
+                                    backgroundImage: `url('${slide.image}')`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    border: '1px solid var(--border)'
+                                  }} title="Slide image preview" />
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  style={{ width: '24px', height: '24px', padding: 0 }}
+                                  disabled={sIdx === 0}
+                                  onClick={() => handleMoveSlide(sec.id, sIdx, -1)}
+                                  title="Move slide up"
+                                >
+                                  <Icon name="arrowUp" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  style={{ width: '24px', height: '24px', padding: 0 }}
+                                  disabled={sIdx === (sec.config?.slides || []).length - 1}
+                                  onClick={() => handleMoveSlide(sec.id, sIdx, 1)}
+                                  title="Move slide down"
+                                >
+                                  <Icon name="arrowDown" size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  style={{ width: '24px', height: '24px', color: '#ef4444', marginLeft: '6px' }}
+                                  title="Delete slide"
+                                  onClick={() => handleDeleteSlide(sec.id, sIdx)}
+                                >
+                                  <Icon name="trash" size={13} />
+                                </button>
+                              </div>
+                            </div>
+
                             <div className="form-grid-2">
                               <div className="field">
                                 <label>Eyebrow Tag</label>
                                 <input
                                   value={slide.eyebrow || ''}
                                   onChange={(e) => handleConfigChange(sec.id, `slides.${sIdx}.eyebrow`, e.target.value)}
-                                  placeholder="e.g. Footwear"
+                                  placeholder="e.g. Footwear or Summer Drop"
                                 />
                               </div>
                               <ImagePickerField
                                 label="Slide Image"
                                 value={slide.image || ''}
                                 onChange={(val) => handleConfigChange(sec.id, `slides.${sIdx}.image`, val)}
-                                placeholder="Choose slide image..."
+                                placeholder="Choose slide image from library..."
                               />
                             </div>
                             <div className="field" style={{ marginTop: '8px' }}>
@@ -468,7 +715,7 @@ export default function AdminCmsPage() {
                               <input
                                 value={slide.description || ''}
                                 onChange={(e) => handleConfigChange(sec.id, `slides.${sIdx}.description`, e.target.value)}
-                                placeholder="Discover our new range..."
+                                placeholder="Discover our new range of soft clothes..."
                               />
                             </div>
                             <div className="form-grid-2" style={{ marginTop: '8px' }}>
@@ -507,6 +754,7 @@ export default function AdminCmsPage() {
                         ))}
                       </div>
                     )}
+
 
                     {/* ─── Featured / Best Sellers Config ─── */}
                     {(sec.type === 'featured' || sec.type === 'bestsellers') && (

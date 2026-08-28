@@ -170,7 +170,7 @@ export default function AdminPurchasesPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Purchases</h1>
+        <h2>Purchases</h2>
         <p>Supplier bills and operational expense tracking.</p>
       </div>
 

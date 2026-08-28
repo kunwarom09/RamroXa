@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "node --watch-path=src/routes --watch-path=src/controllers --watch-path=src/services --watch-path=src/models --watch-path=src/middleware src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -11,29 +11,31 @@ const rs = (n) => 'Rs ' + (n || 0).toLocaleString('en-US');
 const COLOR_HEX_MAP = {
   black: '#111111',
   white: '#ffffff',
+  red: '#dc2626',
+  blue: '#2563eb',
+  navy: '#1e3a8a',
+  green: '#16a34a',
+  olive: '#65a30d',
+  yellow: '#facc15',
+  orange: '#ea580c',
+  brown: '#78350f',
+  beige: '#d4b996',
+  cream: '#fffdd0',
+  grey: '#9ca3af',
+  gray: '#9ca3af',
+  charcoal: '#374151',
+  pink: '#ec4899',
+  purple: '#9333ea',
+  maroon: '#800000',
+  burgundy: '#800020',
+  tan: '#d2b48c',
   khaki: '#c3b091',
   oatmeal: '#e3dac9',
   natural: '#f2eecb',
-  blue: '#3b5998',
   indigo: '#2e4482',
   denim: '#466d98',
-  brown: '#6e4a2e',
-  grey: '#888888',
-  gray: '#888888',
-  'heather grey': '#9e9e9e',
-  charcoal: '#374151',
-  olive: '#556b2f',
   sage: '#9caf88',
-  navy: '#1e293b',
-  cream: '#fdfbf7',
-  beige: '#e6dfd5',
-  red: '#dc2626',
-  burgundy: '#800020',
-  orange: '#ea580c',
-  yellow: '#eab308',
-  green: '#16a34a',
-  pink: '#ec4899',
-  purple: '#8b5cf6'
+  'heather grey': '#9e9e9e'
 };
 
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
@@ -144,6 +146,20 @@ function ProductCard({ product, onOpen, compact = false, onToggleWishlist, isWis
 }
 
 // ─── 1. HERO BANNER WIDGETS ──────────────────────────────────────────────────
+const formatBannerImg = (url, idx = 0) => {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return (idx % 2 === 0 ? '/hero-slide-1.jpg' : '/hero-slide-2.jpg');
+  }
+  const s = url.trim();
+  if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/') || s.startsWith('data:') || s.startsWith('blob:')) {
+    return s;
+  }
+  if (/^[a-f0-9]{16}$/i.test(s)) {
+    return `/assets/${s}.q.jpg`;
+  }
+  return `/${s}`;
+};
+
 function HeroSection({ section, onNav }) {
   const { widgetType = 'hero_overlay', config = {} } = section;
   
@@ -173,9 +189,11 @@ function HeroSection({ section, onNav }) {
   ];
 
   const rawSlides = config.slides || [];
-  const slides = (rawSlides.length > 0 ? rawSlides : defaultSlides).map((s, i) => ({
+  const activeSlides = rawSlides.filter(s => s.active !== false);
+  const baseSlides = activeSlides.length > 0 ? activeSlides : (rawSlides.length > 0 ? rawSlides : defaultSlides);
+  const slides = baseSlides.map((s, i) => ({
     ...s,
-    image: s.image || s.url || (i % 2 === 0 ? '/hero-slide-1.jpg' : '/hero-slide-2.jpg')
+    image: formatBannerImg(s.image || s.url, i)
   }));
 
   const [current, setCurrent] = useState(0);
@@ -191,7 +209,7 @@ function HeroSection({ section, onNav }) {
   }, [transitioning, slides.length]);
 
   useEffect(() => {
-    if (!config.autoplay || slides.length <= 1) return;
+    if (config.autoplay === false || slides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, config.slideDuration || 6000);
@@ -212,7 +230,7 @@ function HeroSection({ section, onNav }) {
   // Widget Layout 1: Split Hero (Side-by-side text & image)
   if (widgetType === 'hero_split') {
     return (
-      <section className="rmx-hero rmx-hero-split-layout">
+      <section className="rmx-hero rmx-hero-split-layout" style={{ position: 'relative' }}>
         <div className="rmx-hero-split-grid">
           <div className="rmx-hero-split-content">
             {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
@@ -233,6 +251,17 @@ function HeroSection({ section, onNav }) {
           </div>
           <div className="rmx-hero-split-img" style={{ backgroundImage: `url('${slide.image}')` }} />
         </div>
+        {slides.length > 1 && (
+          <>
+            <button type="button" className="rmx-hero-arrow prev" onClick={() => goTo(current - 1)} aria-label="Previous slide">‹</button>
+            <button type="button" className="rmx-hero-arrow next" onClick={() => goTo(current + 1)} aria-label="Next slide">›</button>
+            <div className="rmx-hero-dots" role="tablist">
+              {slides.map((_, i) => (
+                <button key={i} className={`rmx-hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`} role="tab" />
+              ))}
+            </div>
+          </>
+        )}
       </section>
     );
   }
@@ -240,7 +269,7 @@ function HeroSection({ section, onNav }) {
   // Widget Layout 2: Full-width Centered Hero
   if (widgetType === 'hero_fullwidth') {
     return (
-      <section className="rmx-hero rmx-hero-fullwidth-layout" style={{ backgroundImage: `url('${slide.image}')` }}>
+      <section className="rmx-hero rmx-hero-fullwidth-layout" style={{ backgroundImage: `url('${slide.image}')`, position: 'relative' }}>
         <div className="rmx-hero-center-overlay" />
         <div className="rmx-hero-center-content">
           {slide.eyebrow && <span className="rmx-hero-eyebrow">{slide.eyebrow}</span>}
@@ -259,6 +288,17 @@ function HeroSection({ section, onNav }) {
             )}
           </div>
         </div>
+        {slides.length > 1 && (
+          <>
+            <button type="button" className="rmx-hero-arrow prev" onClick={() => goTo(current - 1)} aria-label="Previous slide">‹</button>
+            <button type="button" className="rmx-hero-arrow next" onClick={() => goTo(current + 1)} aria-label="Next slide">›</button>
+            <div className="rmx-hero-dots" role="tablist">
+              {slides.map((_, i) => (
+                <button key={i} className={`rmx-hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`} role="tab" />
+              ))}
+            </div>
+          </>
+        )}
       </section>
     );
   }
@@ -268,9 +308,21 @@ function HeroSection({ section, onNav }) {
     return (
       <section
         className="rmx-hero rmx-hero-image-only"
-        style={{ backgroundImage: `url('${slide.image}')`, cursor: 'pointer' }}
+        style={{ backgroundImage: `url('${slide.image}')`, cursor: 'pointer', position: 'relative' }}
         onClick={() => handleCta(slide.primaryCtaUrl || '/shop')}
-      />
+      >
+        {slides.length > 1 && (
+          <>
+            <button type="button" className="rmx-hero-arrow prev" onClick={(e) => { e.stopPropagation(); goTo(current - 1); }} aria-label="Previous slide">‹</button>
+            <button type="button" className="rmx-hero-arrow next" onClick={(e) => { e.stopPropagation(); goTo(current + 1); }} aria-label="Next slide">›</button>
+            <div className="rmx-hero-dots" role="tablist" onClick={(e) => e.stopPropagation()}>
+              {slides.map((_, i) => (
+                <button key={i} className={`rmx-hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Go to slide ${i + 1}`} role="tab" />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
     );
   }
 
@@ -1000,11 +1052,17 @@ export default function RamroxaHomepage({
   onToggleWishlist = () => {},
   isWishlisted = () => false
 }) {
-  const [cmsConfig, setCmsConfig] = useState(DEFAULT_HOMEPAGE_CONFIG);
+  const [cmsConfig, setCmsConfig] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return loadHomepageConfig();
+    }
+    return DEFAULT_HOMEPAGE_CONFIG;
+  });
 
   useEffect(() => {
-    const refresh = () => {
-      setCmsConfig(loadHomepageConfig());
+    const refresh = (e) => {
+      const latest = (e && e.detail && e.detail.sections) ? e.detail : loadHomepageConfig();
+      setCmsConfig(latest);
     };
 
     // Initial load

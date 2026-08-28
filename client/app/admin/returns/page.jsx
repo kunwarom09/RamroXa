@@ -218,7 +218,7 @@ export default function AdminReturnsPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Sales returns</h1>
+        <h2>Sales returns</h2>
         <p>Return authorization, inspection, restocking, and credit note registry.</p>
       </div>
 

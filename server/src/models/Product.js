@@ -17,6 +17,7 @@ const productSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true, trim: true, lowercase: true, index: true },
     sku: { type: String, required: true, unique: true, trim: true, uppercase: true, index: true },
     categoryId: { type: String, required: true, index: true },
+    productType: { type: String, default: 'Top Wear', trim: true },
     brand: { type: String, default: 'Zylo', trim: true },
     gender: { type: String, enum: ['Men', 'Women', 'Unisex', 'Kids'], default: 'Unisex' },
     season: { type: String, default: 'SS26' },

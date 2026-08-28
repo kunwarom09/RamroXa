@@ -269,6 +269,43 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
   ]
 };
 
+export const MAX_HERO_SECTIONS = 5;
+export const MAX_HERO_SLIDES = 5;
+
+export function createDefaultHeroSlide(slideIndex = 1) {
+  return {
+    id: `slide-${Date.now()}-${slideIndex}`,
+    active: true,
+    order: slideIndex,
+    image: slideIndex % 2 === 0 ? DEFAULT_HERO_IMAGE_2 : DEFAULT_HERO_IMAGE_1,
+    eyebrow: slideIndex === 1 ? 'New Drop' : 'Exclusive Collection',
+    heading: slideIndex === 1 ? 'Premium wear\nfor modern living' : 'Timeless styles\nengineered for comfort',
+    description: 'Discover our new range of soft clothes made for your daily look and your best days with the finest fabrics.',
+    primaryCta: 'See all collections',
+    primaryCtaUrl: '/shop',
+    secondaryCta: 'Contact us',
+    secondaryCtaUrl: '/contact'
+  };
+}
+
+export function createDefaultHeroSection(customIndex = 2) {
+  const id = `sec_hero_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  return {
+    id,
+    name: `Hero banner #${customIndex}`,
+    type: 'hero',
+    enabled: true,
+    widgetType: 'hero_overlay',
+    config: {
+      autoplay: true,
+      slideDuration: 6000,
+      slides: [
+        createDefaultHeroSlide(1)
+      ]
+    }
+  };
+}
+
 const STORAGE_KEY = 'rmx-homepage-config';
 
 export function loadHomepageConfig() {
@@ -278,27 +315,7 @@ export function loadHomepageConfig() {
     if (!raw) return DEFAULT_HOMEPAGE_CONFIG;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-      // Merge with defaults to ensure all config keys exist
-      const mergedSections = parsed.sections.map(sec => {
-        const defaultSec = DEFAULT_HOMEPAGE_CONFIG.sections.find(ds => ds.id === sec.id || ds.type === sec.type);
-        return {
-          ...defaultSec,
-          ...sec,
-          config: {
-            ...(defaultSec?.config || {}),
-            ...(sec.config || {})
-          }
-        };
-      });
-
-      // Add any missing default sections
-      DEFAULT_HOMEPAGE_CONFIG.sections.forEach(ds => {
-        if (!mergedSections.some(s => s.id === ds.id || s.type === ds.type)) {
-          mergedSections.push(ds);
-        }
-      });
-
-      return { sections: mergedSections };
+      return { sections: parsed.sections };
     }
     return DEFAULT_HOMEPAGE_CONFIG;
   } catch (e) {
@@ -330,3 +347,4 @@ export function resetHomepageConfig() {
     return DEFAULT_HOMEPAGE_CONFIG;
   }
 }
+

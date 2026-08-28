@@ -153,9 +153,9 @@ export default function AdminDashboardPage() {
       {/* 1. Header & Controls */}
       <div className="dash-head">
         <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--primary)' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 300, letterSpacing: '-0.02em', color: 'var(--primary)' }}>
             Operational Dashboard
-          </h1>
+          </h2>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--muted-foreground)' }}>
             Real-time business performance &amp; automated operational alerts.
           </p>

@@ -5,7 +5,10 @@ export async function fetchProducts(params = {}) {
     const query = new URLSearchParams(params).toString();
     const url = `/api/products${query ? `?${query}` : ''}`;
     const res = await api.get(url);
-    return res.data || [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.products)) return res.products;
+    return [];
   } catch (err) {
     console.error('Failed to fetch products from API:', err.message);
     return [];
@@ -15,7 +18,7 @@ export async function fetchProducts(params = {}) {
 export async function fetchProductBySlug(slug) {
   try {
     const res = await api.get(`/api/products/${slug}`);
-    return res.data || null;
+    return res?.data || res?.product || res || null;
   } catch (err) {
     console.error('Failed to fetch product by slug from API:', err.message);
     return null;
@@ -25,7 +28,10 @@ export async function fetchProductBySlug(slug) {
 export async function fetchCategories() {
   try {
     const res = await api.get('/api/categories');
-    return res.data || [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res?.categories)) return res.categories;
+    return [];
   } catch (err) {
     console.error('Failed to fetch categories from API:', err.message);
     return [];

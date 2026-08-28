@@ -192,7 +192,7 @@ export default function AdminFinancePage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Finance</h1>
+        <h2>Finance</h2>
         <p>Double-entry accounting journal, general ledger, daybook, trial balance, and P&L statement.</p>
       </div>
 

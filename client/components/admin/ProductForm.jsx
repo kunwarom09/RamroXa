@@ -8,6 +8,30 @@ import Icon from './Icons';
 import ImageEditorModal from './ImageEditorModal';
 
 const shortCode = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
+const UK_SHOE_SIZES = ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13'];
+
+const COMMON_COLOURS = [
+  { name: 'Black', hex: '#111111' },
+  { name: 'White', hex: '#FFFFFF', border: true },
+  { name: 'Red', hex: '#DC2626' },
+  { name: 'Blue', hex: '#2563EB' },
+  { name: 'Navy', hex: '#1E3A8A' },
+  { name: 'Green', hex: '#16A34A' },
+  { name: 'Olive', hex: '#65A30D' },
+  { name: 'Yellow', hex: '#FACC15' },
+  { name: 'Orange', hex: '#EA580C' },
+  { name: 'Brown', hex: '#78350F' },
+  { name: 'Beige', hex: '#D4B996' },
+  { name: 'Cream', hex: '#FFFDD0', border: true },
+  { name: 'Grey', hex: '#9CA3AF' },
+  { name: 'Charcoal', hex: '#374151' },
+  { name: 'Pink', hex: '#EC4899' },
+  { name: 'Purple', hex: '#9333EA' },
+  { name: 'Maroon', hex: '#800000' },
+  { name: 'Burgundy', hex: '#800020' },
+  { name: 'Tan', hex: '#D2B48C' },
+  { name: 'Khaki', hex: '#C3B091' }
+];
 
 export default function ProductForm({ productId = null }) {
   const router = useRouter();
@@ -26,6 +50,7 @@ export default function ProductForm({ productId = null }) {
     name: '',
     slug: '',
     sku: '',
+    productType: 'Top Wear',
     brand: 'Zylo',
     categoryId: '',
     status: 'draft',
@@ -47,6 +72,7 @@ export default function ProductForm({ productId = null }) {
     {
       id: 'vg_1',
       name: 'Size',
+      sizeType: 'UK Shoe Size',
       values: [
         {
           id: 'val_1',
@@ -119,10 +145,16 @@ export default function ProductForm({ productId = null }) {
           if (target) {
             setEditingProd(target);
             const labels = target.labels || {};
+            const detectedProductType = target.productType || (
+              (target.categoryId === 'c_shoes' || target.categoryId === 'c_footwear' || (target.name || '').toLowerCase().includes('shoe') || (target.name || '').toLowerCase().includes('sneaker'))
+                ? 'Footwear'
+                : ((target.categoryId === 'c_bottoms' || target.categoryId === 'c_pants') ? 'Bottom Wear' : 'Top Wear')
+            );
             setFormData({
               name: target.name || '',
               slug: target.slug || '',
               sku: target.sku || '',
+              productType: detectedProductType,
               brand: target.brand || 'Zylo',
               categoryId: target.categoryId || (cats[0]?.id || ''),
               status: target.status || 'draft',
@@ -152,10 +184,12 @@ export default function ProductForm({ productId = null }) {
               });
 
               if (topVars.length) {
+                const hasUkSizes = topVars.some(v => (v.name || '').trim().toUpperCase().startsWith('UK '));
                 setVariantGroups([
                   {
                     id: 'vg_' + target.id,
                     name: 'Size',
+                    sizeType: hasUkSizes ? 'UK Shoe Size' : 'Custom Size',
                     values: topVars.map(v => ({
                       id: v.id,
                       name: v.name || '',
@@ -338,6 +372,55 @@ export default function ProductForm({ productId = null }) {
     });
   };
 
+  const handleToggleUkSize = (vgIdx, sizeName) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const currentValues = vg.values || [];
+      const existsIndex = currentValues.findIndex(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
+
+      if (existsIndex >= 0) {
+        if (currentValues.length === 1) {
+          vg.values = [{
+            id: 'val_' + Date.now().toString(36),
+            name: '',
+            amount: '',
+            image: '',
+            stock: 0,
+            sku: '',
+            status: 'Draft',
+            subsets: []
+          }];
+        } else {
+          vg.values = currentValues.filter((_, i) => i !== existsIndex);
+        }
+      } else {
+        const masterSku = formData.sku || 'SKU';
+        const masterPrice = formData.price !== '' ? Number(formData.price) : '';
+        const count = currentValues.length + 1;
+        const newVal = {
+          id: 'val_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          name: sizeName,
+          amount: masterPrice !== '' ? masterPrice : '',
+          image: '',
+          stock: 0,
+          sku: `${masterSku}-V${vgIdx + 1}-${count}`,
+          status: 'Draft',
+          subsets: []
+        };
+
+        if (currentValues.length === 1 && !currentValues[0].name.trim() && (!currentValues[0].subsets || currentValues[0].subsets.length === 0)) {
+          vg.values = [newVal];
+        } else {
+          vg.values = [...currentValues, newVal];
+        }
+      }
+
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
   const handleAddValue = (vgIdx) => {
     setVariantGroups(prev => {
       const next = [...prev];
@@ -437,6 +520,42 @@ export default function ProductForm({ productId = null }) {
     });
   };
 
+  const handleToggleColourSubset = (vgIdx, valIdx, colObj) => {
+    setVariantGroups(prev => {
+      const next = [...prev];
+      const vg = { ...next[vgIdx] };
+      const values = [...(vg.values || [])];
+      const val = { ...values[valIdx] };
+      const currentSubsets = val.subsets || [];
+      const existsIndex = currentSubsets.findIndex(s => (s.name || '').trim().toLowerCase() === colObj.name.toLowerCase());
+
+      if (existsIndex >= 0) {
+        val.subsets = currentSubsets.filter((_, i) => i !== existsIndex);
+      } else {
+        const masterSku = formData.sku || 'SKU';
+        const masterPrice = formData.price !== '' ? Number(formData.price) : 0;
+        const topAmount = val.amount !== '' && val.amount != null ? Number(val.amount) : masterPrice;
+        const count = currentSubsets.length + 1;
+        const newSub = {
+          id: 'sub_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          name: colObj.name,
+          colorHex: colObj.hex,
+          amount: topAmount !== '' ? topAmount : '',
+          image: '',
+          stock: 0,
+          sku: `${masterSku}-S${vgIdx + 1}-${valIdx + 1}-${count}`,
+          status: 'Draft'
+        };
+        val.subsets = [...currentSubsets, newSub];
+      }
+
+      values[valIdx] = val;
+      vg.values = values;
+      next[vgIdx] = vg;
+      return next;
+    });
+  };
+
   // Total sellable combinations calculation
   const totalCombinations = variantGroups.reduce((acc, vg) => {
     return acc + (vg.values || []).reduce((vAcc, val) => {
@@ -458,17 +577,42 @@ export default function ProductForm({ productId = null }) {
     const masterPrice = formData.price !== '' ? Number(formData.price) : 0;
     const basePricePaisa = Math.round(masterPrice * 100);
 
+    const optionsMap = {};
+    const allColoursSet = new Set();
+
+    variantGroups.forEach(vg => {
+      const vgName = (vg.name || 'Variant').trim();
+      const valNames = (vg.values || []).map(v => (v.name || '').trim()).filter(Boolean);
+      if (valNames.length > 0) {
+        optionsMap[vgName] = valNames;
+      }
+      (vg.values || []).forEach(v => {
+        (v.subsets || []).forEach(s => {
+          if (s.name && s.name.trim()) {
+            allColoursSet.add(s.name.trim());
+          }
+        });
+      });
+    });
+
+    if (allColoursSet.size > 0) {
+      optionsMap['Colour'] = Array.from(allColoursSet);
+    }
+
     const rec = {
       id: prodId,
       name: formData.name.trim(),
       slug: prodSlug,
       sku: formData.sku.trim(),
+      productType: formData.productType || 'Top Wear',
       brand: formData.brand.trim() || 'Zylo',
       categoryId: formData.categoryId || 'c_tops',
       status: shouldPublish ? 'published' : formData.status || 'published',
       gender: formData.gender.trim() || 'Unisex',
       season: formData.season.trim() || 'SS26',
       tags: formData.tags ? formData.tags.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      options: optionsMap,
+      colors: Array.from(allColoursSet),
       price: masterPrice,
       basePrice: basePricePaisa,
       mrp: formData.mrp !== '' ? Math.round(Number(formData.mrp) * 100) : 0,
@@ -569,7 +713,7 @@ export default function ProductForm({ productId = null }) {
     return (
       <div className="page">
         <div className="page-head">
-          <h1>Storefront Preview</h1>
+          <h2>Storefront Preview</h2>
           <p>Live storefront view of {formData.name || 'Product'}</p>
         </div>
 
@@ -674,7 +818,7 @@ export default function ProductForm({ productId = null }) {
               ← Back to master products
             </button>
           </div>
-          <h1>{editTitle}</h1>
+          <h2>{editTitle}</h2>
           <p>{editSub}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -762,6 +906,17 @@ export default function ProductForm({ productId = null }) {
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Product Type</label>
+              <select
+                value={formData.productType || 'Top Wear'}
+                onChange={(e) => setFormData({ ...formData, productType: e.target.value })}
+              >
+                <option value="Footwear">Footwear</option>
+                <option value="Top Wear">Top Wear</option>
+                <option value="Bottom Wear">Bottom Wear</option>
               </select>
             </div>
             <div className="field">
@@ -1081,6 +1236,84 @@ export default function ProductForm({ productId = null }) {
                 </div>
               </div>
 
+              {/* Footwear Size Type Option */}
+              {formData.productType === 'Footwear' && (vg.name || '').trim().toLowerCase() === 'size' && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  margin: '10px 0 12px',
+                  background: 'var(--surface)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)'
+                }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Size Type:</span>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', cursor: 'pointer', margin: 0 }}>
+                    <input
+                      type="radio"
+                      name={`sizeType_${vg.id || vgIdx}`}
+                      value="UK Shoe Size"
+                      checked={(vg.sizeType || 'UK Shoe Size') === 'UK Shoe Size'}
+                      onChange={() => handleUpdateVariantGroup(vgIdx, { sizeType: 'UK Shoe Size' })}
+                    />
+                    UK Shoe Size
+                  </label>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', cursor: 'pointer', margin: 0 }}>
+                    <input
+                      type="radio"
+                      name={`sizeType_${vg.id || vgIdx}`}
+                      value="Custom Size"
+                      checked={vg.sizeType === 'Custom Size'}
+                      onChange={() => handleUpdateVariantGroup(vgIdx, { sizeType: 'Custom Size' })}
+                    />
+                    Custom Size
+                  </label>
+                </div>
+              )}
+
+              {/* UK Shoe Size Quick Selection */}
+              {formData.productType === 'Footwear' && (vg.name || '').trim().toLowerCase() === 'size' && (vg.sizeType || 'UK Shoe Size') === 'UK Shoe Size' && (
+                <div style={{
+                  marginBottom: '12px',
+                  background: 'var(--canvas)',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)' }}>
+                      Select UK Shoe Sizes:
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>
+                      Click to toggle sizes
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {UK_SHOE_SIZES.map((sizeName) => {
+                      const isSelected = (vg.values || []).some(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
+                      return (
+                        <button
+                          key={sizeName}
+                          type="button"
+                          className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
+                          onClick={() => handleToggleUkSize(vgIdx, sizeName)}
+                          style={{
+                            minWidth: '58px',
+                            fontSize: '12px',
+                            fontWeight: isSelected ? 600 : 400,
+                            padding: '4px 10px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          {isSelected ? `✓ ${sizeName}` : sizeName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="variant-values-list">
                 {(vg.values || []).map((val, valIdx) => {
                   const masterPrice = formData.price !== '' ? Number(formData.price) : 0;
@@ -1122,6 +1355,61 @@ export default function ProductForm({ productId = null }) {
                         </button>
                       </div>
 
+                      {/* 20 Common Colours Sub-Variant Selector */}
+                      <div style={{
+                        margin: '8px 0 10px',
+                        background: 'var(--canvas)',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--muted-foreground)' }}>
+                            Colour Sub-Variants (Select from 20 Common Colours):
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>
+                            Click colour to toggle
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                          {COMMON_COLOURS.map((col) => {
+                            const isSelected = (val.subsets || []).some(s => (s.name || '').trim().toLowerCase() === col.name.toLowerCase());
+                            return (
+                              <button
+                                key={col.name}
+                                type="button"
+                                className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
+                                onClick={() => handleToggleColourSubset(vgIdx, valIdx, col)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '3px 8px',
+                                  fontSize: '11.5px',
+                                  fontWeight: isSelected ? 600 : 400,
+                                  borderRadius: '4px'
+                                }}
+                                title={col.name}
+                              >
+                                <span
+                                  style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    borderRadius: '50%',
+                                    backgroundColor: col.hex,
+                                    border: col.border || col.hex.toLowerCase() === '#ffffff' ? '1px solid #888' : '1px solid rgba(0,0,0,0.25)',
+                                    flexShrink: 0,
+                                    display: 'inline-block'
+                                  }}
+                                />
+                                <span>{col.name}</span>
+                                {isSelected && <span style={{ fontSize: '10px', opacity: 0.85 }}>✓</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       <div className="value-row-2">
                         <VariantImageUploader
                           value={val.image || ''}
@@ -1154,35 +1442,62 @@ export default function ProductForm({ productId = null }) {
 
                       {(val.subsets || []).length > 0 && (
                         <div className="subsets-container">
-                          {val.subsets.map((sub, subIdx) => (
-                            <div key={sub.id || subIdx} className="subset-card">
-                              <div className="value-row-1" style={{ marginBottom: '8px' }}>
-                                <input
-                                  className="sub-name"
-                                  placeholder="Subset (e.g. Blue)"
-                                  value={sub.name || ''}
-                                  onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { name: e.target.value })}
-                                />
-                                <div className="val-price-group" style={{ height: '34px', width: '160px' }}>
-                                  <span className="val-currency-prefix" style={{ fontSize: '12px' }}>Rs.</span>
-                                  <input
-                                    className="sub-amount"
-                                    type="number"
-                                    placeholder={`${effectiveValPrice} (inherit)`}
-                                    value={sub.amount !== undefined ? sub.amount : ''}
-                                    onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { amount: e.target.value })}
-                                  />
+                          {val.subsets.map((sub, subIdx) => {
+                            const matchedCol = COMMON_COLOURS.find(c => c.name.toLowerCase() === (sub.name || '').trim().toLowerCase());
+                            const swatchHex = sub.colorHex || (matchedCol ? matchedCol.hex : null);
+
+                            return (
+                              <div key={sub.id || subIdx} className="subset-card">
+                                <div className="value-row-1" style={{ marginBottom: '8px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                    {swatchHex && (
+                                      <span
+                                        style={{
+                                          width: '16px',
+                                          height: '16px',
+                                          borderRadius: '50%',
+                                          backgroundColor: swatchHex,
+                                          border: swatchHex.toLowerCase() === '#ffffff' || swatchHex.toLowerCase() === '#fffdd0' ? '1px solid #888' : '1px solid rgba(255,255,255,0.2)',
+                                          flexShrink: 0,
+                                          display: 'inline-block'
+                                        }}
+                                        title={`Colour Swatch: ${sub.name}`}
+                                      />
+                                    )}
+                                    <input
+                                      className="sub-name"
+                                      placeholder="Subset (e.g. Blue)"
+                                      value={sub.name || ''}
+                                      onChange={(e) => {
+                                        const newName = e.target.value;
+                                        const found = COMMON_COLOURS.find(c => c.name.toLowerCase() === newName.trim().toLowerCase());
+                                        handleUpdateSubset(vgIdx, valIdx, subIdx, {
+                                          name: newName,
+                                          colorHex: found ? found.hex : sub.colorHex
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="val-price-group" style={{ height: '34px', width: '160px' }}>
+                                    <span className="val-currency-prefix" style={{ fontSize: '12px' }}>Rs.</span>
+                                    <input
+                                      className="sub-amount"
+                                      type="number"
+                                      placeholder={`${effectiveValPrice} (inherit)`}
+                                      value={sub.amount !== undefined ? sub.amount : ''}
+                                      onChange={(e) => handleUpdateSubset(vgIdx, valIdx, subIdx, { amount: e.target.value })}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="val-remove-btn"
+                                    onClick={() => handleDeleteSubset(vgIdx, valIdx, subIdx)}
+                                    title="Remove Subset"
+                                    style={{ width: '28px', height: '28px' }}
+                                  >
+                                    &times;
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  className="val-remove-btn"
-                                  onClick={() => handleDeleteSubset(vgIdx, valIdx, subIdx)}
-                                  title="Remove Subset"
-                                  style={{ width: '28px', height: '28px' }}
-                                >
-                                  &times;
-                                </button>
-                              </div>
 
                               <div className="value-row-2">
                                 <VariantImageUploader
@@ -1214,7 +1529,8 @@ export default function ProductForm({ productId = null }) {
                                 </select>
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
                         </div>
                       )}
                     </div>

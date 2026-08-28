@@ -123,7 +123,7 @@ export function getMediaLibrary() {
       return DEFAULT_MEDIA_ASSETS;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
     return DEFAULT_MEDIA_ASSETS;
@@ -138,37 +138,48 @@ export function saveMediaLibrary(items) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     window.dispatchEvent(new CustomEvent('rmx-media-library-updated', { detail: items }));
+    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: JSON.stringify(items) }));
   } catch (e) {
-    console.error('Failed to save media library:', e);
+    console.error('Failed to save media library, attempting cleanup:', e);
+    // If quota exceeded, retain default assets plus the 10 most recent uploads
+    try {
+      const trimmed = items.slice(0, 15);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      window.dispatchEvent(new CustomEvent('rmx-media-library-updated', { detail: trimmed }));
+    } catch (innerErr) {
+      console.error('Critical storage quota error:', innerErr);
+    }
   }
 }
 
 export async function uploadMediaFile(file, category = 'Uploads') {
   let url = '';
+  let sizeStr = `${Math.round(file.size / 1024)} KB`;
   try {
-    // Process image to optimized WebP
-    const webpBlob = await convertToWebP(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.88 });
-    url = await new Promise((resolve) => {
+    // Process image to optimized WebP (<200KB)
+    const result = await convertToWebP(file, 200);
+    url = result.url || result;
+    if (result.sizeKB) {
+      sizeStr = `${result.sizeKB} KB`;
+    }
+  } catch (err) {
+    console.warn('WebP converter notice, using standard reader:', err);
+    url = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(webpBlob);
-    });
-  } catch {
-    url = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   }
 
   const newItem = {
     id: 'med_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name: file.name.replace(/\.[^/.]+$/, ''),
+    name: (file.name || 'Uploaded Asset').replace(/\.[^/.]+$/, ''),
     url,
     category,
-    size: `${Math.round(file.size / 1024)} KB`,
+    size: sizeStr,
     date: new Date().toISOString().split('T')[0],
-    type: file.type || 'image/webp'
+    type: 'image/webp'
   };
 
   const current = getMediaLibrary();

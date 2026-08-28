@@ -30,7 +30,7 @@ function LoginForm() {
   return (
     <div className="login-card">
       <p className="brand">Ramroxa</p>
-      <h1>Sign in to admin</h1>
+      <h2>Sign in to admin</h2>
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="email">Email</label>

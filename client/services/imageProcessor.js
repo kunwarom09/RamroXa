@@ -8,7 +8,9 @@
 export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => resolve(img);
     img.onerror = (e) => reject(e);
     img.src = src;
@@ -21,68 +23,65 @@ export function loadImage(src) {
 export async function convertToWebP(fileOrDataUrl, maxSizeKB = 200) {
   let src = fileOrDataUrl;
   if (typeof fileOrDataUrl !== 'string' && fileOrDataUrl instanceof Blob) {
-    src = await new Promise((resolve) => {
+    src = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
       reader.readAsDataURL(fileOrDataUrl);
     });
   }
 
-  const img = await loadImage(src);
-  let width = img.naturalWidth || img.width;
-  let height = img.naturalHeight || img.height;
+  try {
+    const img = await loadImage(src);
+    let width = img.naturalWidth || img.width || 800;
+    let height = img.naturalHeight || img.height || 600;
 
-  // Max dimension constraints to keep memory & processing fast
-  const MAX_DIM = 1600;
-  if (width > MAX_DIM || height > MAX_DIM) {
-    if (width > height) {
-      height = Math.round((height * MAX_DIM) / width);
-      width = MAX_DIM;
-    } else {
-      width = Math.round((width * MAX_DIM) / height);
-      height = MAX_DIM;
+    // Max dimension constraints to keep memory & processing fast
+    const MAX_DIM = 1600;
+    if (width > MAX_DIM || height > MAX_DIM) {
+      if (width > height) {
+        height = Math.round((height * MAX_DIM) / width);
+        width = MAX_DIM;
+      } else {
+        width = Math.round((width * MAX_DIM) / height);
+        height = MAX_DIM;
+      }
     }
-  }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, width, height);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
 
-  // Iterative quality loop to guarantee < 200KB
-  let quality = 0.92;
-  let webpData = canvas.toDataURL('image/webp', quality);
-  let sizeKB = Math.round((webpData.length * 3) / 4 / 1024);
+    // Iterative quality loop to guarantee < 200KB
+    let quality = 0.88;
+    let webpData = canvas.toDataURL('image/webp', quality);
+    if (!webpData || !webpData.startsWith('data:image/webp')) {
+      webpData = canvas.toDataURL('image/jpeg', quality);
+    }
+    let sizeKB = Math.round((webpData.length * 3) / 4 / 1024);
 
-  while (sizeKB > maxSizeKB && quality > 0.3) {
-    quality -= 0.1;
-    webpData = canvas.toDataURL('image/webp', quality);
-    sizeKB = Math.round((webpData.length * 3) / 4 / 1024);
-  }
-
-  // If still above max size, downscale resolution
-  if (sizeKB > maxSizeKB) {
-    let scale = 0.8;
-    while (sizeKB > maxSizeKB && scale > 0.3) {
-      const scaledCanvas = document.createElement('canvas');
-      scaledCanvas.width = Math.round(width * scale);
-      scaledCanvas.height = Math.round(height * scale);
-      const sCtx = scaledCanvas.getContext('2d');
-      sCtx.drawImage(img, 0, 0, scaledCanvas.width, scaledCanvas.height);
-      webpData = scaledCanvas.toDataURL('image/webp', 0.8);
+    while (sizeKB > maxSizeKB && quality > 0.3) {
+      quality -= 0.1;
+      webpData = canvas.toDataURL('image/webp', quality);
       sizeKB = Math.round((webpData.length * 3) / 4 / 1024);
-      scale -= 0.15;
     }
-  }
 
-  return {
-    url: webpData,
-    width,
-    height,
-    sizeKB: Math.round((webpData.length * 3) / 4 / 1024),
-    format: 'webp'
-  };
+    return {
+      url: webpData,
+      width,
+      height,
+      sizeKB,
+      format: 'webp'
+    };
+  } catch (err) {
+    return {
+      url: typeof src === 'string' ? src : '',
+      sizeKB: typeof src === 'string' ? Math.round((src.length * 3) / 4 / 1024) : 0,
+      format: 'original'
+    };
+  }
 }
 
 /**

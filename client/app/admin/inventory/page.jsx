@@ -297,7 +297,7 @@ export default function AdminInventoryPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Inventory</h1>
+        <h2>Inventory</h2>
         <p suppressHydrationWarning>
           {filtered.length} records across {warehouses.length} warehouses
         </p>

@@ -114,7 +114,7 @@ export default function AdminIrdPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>IRD / VAT report</h1>
+        <h2>IRD / VAT report</h2>
         <p>Monthly VAT return summary for Inland Revenue Department filing.</p>
       </div>
 

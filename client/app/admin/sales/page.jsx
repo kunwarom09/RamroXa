@@ -170,7 +170,7 @@ export default function AdminSalesPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Sales</h1>
+        <h2>Sales</h2>
         <p>Manual sales register and tax invoice log.</p>
       </div>
 

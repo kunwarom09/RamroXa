@@ -224,7 +224,7 @@ export default function AdminCategoriesPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Categories</h1>
+        <h2>Categories</h2>
         <p>Unlimited-depth tree. Drag order with the arrows; the storefront nav follows this structure.</p>
       </div>
 

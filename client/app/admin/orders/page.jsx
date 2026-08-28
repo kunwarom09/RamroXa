@@ -92,7 +92,7 @@ export default function AdminOrdersPage() {
   return (
     <div>
       <div className="page-head">
-        <h1>Orders</h1>
+        <h2>Orders</h2>
         <p>Storefront online order fulfillment and tracking registry.</p>
       </div>
 
