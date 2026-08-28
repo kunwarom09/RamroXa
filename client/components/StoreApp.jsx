@@ -772,8 +772,8 @@ export default class StoreApp extends React.Component {
 
     if (v === 'checkout' && this.state.currentUser) {
       const u = this.state.currentUser;
-      const addr = this.state.profileTemporaryAddress || this.state.profilePermanentAddress || u.temporaryAddress || u.permanentAddress || u.address || '';
-      if (!this.state.cAddress && addr) {
+      const addr = this.state.profileTemporaryAddress || u.temporaryAddress || this.state.profilePermanentAddress || u.permanentAddress || u.address || '';
+      if (addr) {
         extraState.cAddress = addr;
       }
       if (!this.state.cName && u.name) {
@@ -3204,15 +3204,20 @@ export default class StoreApp extends React.Component {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', fontWeight: 600 }}>ADDRESS *</label>
                     {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
-                      <span style={{ fontSize: 11, color: '#666' }}>Select saved address:</span>
+                      <span style={{ fontSize: 11, color: '#666' }}>Saved address:</span>
                     )}
                   </div>
-                  <input
-                    value={cAddress}
-                    onChange={e => this.setState({ cAddress: e.target.value })}
-                    placeholder="e.g. Ward 4, Baluwatar, Kathmandu (Opposite Landmark)"
-                    style={{ ...input, width: '100%', height: 44 }}
-                  />
+                  {(() => {
+                    const activeAddress = cAddress !== '' ? cAddress : (profileTemporaryAddress || profilePermanentAddress || currentUser?.temporaryAddress || currentUser?.permanentAddress || currentUser?.address || '');
+                    return (
+                      <input
+                        value={activeAddress}
+                        onChange={e => this.setState({ cAddress: e.target.value })}
+                        placeholder="e.g. Ward 4, Baluwatar, Kathmandu (Opposite Landmark)"
+                        style={{ ...input, width: '100%', height: 44 }}
+                      />
+                    );
+                  })()}
 
                   {/* If user is logged in and has saved addresses, display quick selection pills */}
                   {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
