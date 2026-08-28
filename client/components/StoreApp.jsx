@@ -770,6 +770,20 @@ export default class StoreApp extends React.Component {
       targetUrl = `/product/${slugForProduct(p, selIndex)}`;
     }
 
+    if (v === 'checkout' && this.state.currentUser) {
+      const u = this.state.currentUser;
+      const addr = this.state.profileTemporaryAddress || this.state.profilePermanentAddress || u.temporaryAddress || u.permanentAddress || u.address || '';
+      if (!this.state.cAddress && addr) {
+        extraState.cAddress = addr;
+      }
+      if (!this.state.cName && u.name) {
+        extraState.cName = u.name;
+      }
+      if (!this.state.cPhone && u.phone) {
+        extraState.cPhone = u.phone;
+      }
+    }
+
     if (updateUrl && targetUrl && typeof window !== 'undefined' && window.history && window.location.pathname !== targetUrl) {
       window.history.pushState({ view: v, ...extraState }, '', targetUrl);
     }
@@ -839,12 +853,16 @@ export default class StoreApp extends React.Component {
           const stored = localStorage.getItem('zylo_user');
           if (stored) {
             user = JSON.parse(stored);
+            const defAddr = user.temporaryAddress || user.permanentAddress || user.address || '';
             this.setState({
               currentUser: user,
               profileName: user.name || '',
               profilePhone: user.phone || '',
               profilePermanentAddress: user.permanentAddress || '',
-              profileTemporaryAddress: user.temporaryAddress || ''
+              profileTemporaryAddress: user.temporaryAddress || '',
+              cName: this.state.cName || user.name || '',
+              cPhone: this.state.cPhone || user.phone || '',
+              cAddress: this.state.cAddress || defAddr
             });
           }
         }
@@ -853,12 +871,16 @@ export default class StoreApp extends React.Component {
           const meData = await meRes.json();
           if (meData?.data?.user) {
             user = meData.data.user;
+            const defAddr = user.temporaryAddress || user.permanentAddress || user.address || '';
             this.setState({
               currentUser: user,
               profileName: user.name || '',
               profilePhone: user.phone || '',
               profilePermanentAddress: user.permanentAddress || '',
-              profileTemporaryAddress: user.temporaryAddress || ''
+              profileTemporaryAddress: user.temporaryAddress || '',
+              cName: this.state.cName || user.name || '',
+              cPhone: this.state.cPhone || user.phone || '',
+              cAddress: this.state.cAddress || defAddr
             });
             if (typeof window !== 'undefined') {
               localStorage.setItem('zylo_user', JSON.stringify(user));
@@ -1153,8 +1175,7 @@ export default class StoreApp extends React.Component {
 
     const customerName = (this.state.cName || '').trim();
     const customerPhone = (this.state.cPhone || '').trim();
-    const customerAddress = (this.state.cAddress || 'Kathmandu').trim();
-    const customerCity = (this.state.cCity || 'Kathmandu').trim();
+    const customerAddress = (this.state.cAddress || '').trim();
 
     if (!customerName) {
       this.showToast('Please enter your Full Name.');
@@ -1164,6 +1185,10 @@ export default class StoreApp extends React.Component {
       this.showToast('Please enter your Phone Number.');
       return;
     }
+    if (!customerAddress) {
+      this.showToast('Please enter your Delivery Address.');
+      return;
+    }
 
     // Persist customer inputs
     if (typeof window !== 'undefined') {
@@ -1171,7 +1196,6 @@ export default class StoreApp extends React.Component {
         localStorage.setItem('zylo-c-name', customerName);
         localStorage.setItem('zylo-c-phone', customerPhone);
         localStorage.setItem('zylo-c-address', customerAddress);
-        localStorage.setItem('zylo-c-city', customerCity);
       } catch (e) {}
     }
 
@@ -1196,7 +1220,7 @@ export default class StoreApp extends React.Component {
           fullName: customerName,
           phone: customerPhone,
           line1: customerAddress,
-          city: customerCity
+          city: customerAddress.split(',').pop()?.trim() || 'Kathmandu'
         },
         paymentMethod: (this.state.pay || 'cod').toLowerCase(),
         guestPhone: customerPhone
@@ -3135,7 +3159,7 @@ export default class StoreApp extends React.Component {
   }
 
   renderCheckout() {
-    const { cart, pay, cName, cPhone, cAddress, cCity } = this.state;
+    const { cart, pay, cName, cPhone, cAddress, currentUser, profilePermanentAddress, profileTemporaryAddress } = this.state;
     const { subtotal, delivery, total } = this.totals();
     const cat = this.getCatalog();
 
@@ -3176,25 +3200,71 @@ export default class StoreApp extends React.Component {
                     style={{ ...input, width: '100%' }}
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>CITY / DISTRICT</label>
-                    <input
-                      value={cCity}
-                      onChange={e => this.setState({ cCity: e.target.value })}
-                      placeholder="Kathmandu"
-                      style={{ ...input, width: '100%' }}
-                    />
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', fontWeight: 600 }}>ADDRESS *</label>
+                    {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
+                      <span style={{ fontSize: 11, color: '#666' }}>Select saved address:</span>
+                    )}
                   </div>
-                  <div>
-                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>STREET / LANDMARK</label>
-                    <input
-                      value={cAddress}
-                      onChange={e => this.setState({ cAddress: e.target.value })}
-                      placeholder="e.g. Durbar Marg, House 12"
-                      style={{ ...input, width: '100%' }}
-                    />
-                  </div>
+                  <input
+                    value={cAddress}
+                    onChange={e => this.setState({ cAddress: e.target.value })}
+                    placeholder="e.g. Ward 4, Baluwatar, Kathmandu (Opposite Landmark)"
+                    style={{ ...input, width: '100%', height: 44 }}
+                  />
+
+                  {/* If user is logged in and has saved addresses, display quick selection pills */}
+                  {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {profileTemporaryAddress && (
+                        <button
+                          type="button"
+                          onClick={() => this.setState({ cAddress: profileTemporaryAddress })}
+                          style={{
+                            background: cAddress === profileTemporaryAddress ? '#000' : '#f5f5f5',
+                            color: cAddress === profileTemporaryAddress ? '#fff' : '#111',
+                            border: '1px solid ' + (cAddress === profileTemporaryAddress ? '#000' : '#e0e0e0'),
+                            borderRadius: 6,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <span style={{ fontWeight: 700 }}>📍 Delivery:</span>
+                          <span>{profileTemporaryAddress}</span>
+                        </button>
+                      )}
+                      {profilePermanentAddress && (
+                        <button
+                          type="button"
+                          onClick={() => this.setState({ cAddress: profilePermanentAddress })}
+                          style={{
+                            background: cAddress === profilePermanentAddress ? '#000' : '#f5f5f5',
+                            color: cAddress === profilePermanentAddress ? '#fff' : '#111',
+                            border: '1px solid ' + (cAddress === profilePermanentAddress ? '#000' : '#e0e0e0'),
+                            borderRadius: 6,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <span style={{ fontWeight: 700 }}>📍 Permanent:</span>
+                          <span>{profilePermanentAddress}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
