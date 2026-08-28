@@ -973,16 +973,19 @@ function CommunityNewsletterSection({ section, onNav }) {
       </div>
 
       <div className="rmx-community-gallery">
-        {images.map((imgItem) => (
-          <div
-            key={imgItem.id}
-            className="rmx-community-img"
-            style={{ backgroundImage: `url('${imgItem.src}')` }}
-            onClick={() => onNav('collections', { colFilter: 'all' })}
-            role="button"
-            tabIndex={0}
-          />
-        ))}
+        {images.map((imgItem, idx) => {
+          const src = typeof imgItem === 'string' ? imgItem : (imgItem?.src || imgItem?.url || '');
+          return (
+            <div
+              key={imgItem?.id || idx}
+              className="rmx-community-img"
+              style={{ backgroundImage: `url('${src}')` }}
+              onClick={() => onNav('collections', { colFilter: 'all' })}
+              role="button"
+              tabIndex={0}
+            />
+          );
+        })}
       </div>
     </section>
   );

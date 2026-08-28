@@ -9,7 +9,8 @@ import {
   saveHomepageConfig,
   resetHomepageConfig
 } from '../../../services/homepageCms';
-import { ImagePickerField } from '../../../components/admin/MediaPickerModal';
+import { ImagePickerField, MediaPickerModal } from '../../../components/admin/MediaPickerModal';
+import { uploadMediaFile } from '../../../services/mediaLibrary';
 
 export default function AdminCmsPage() {
   // Static content pages
@@ -87,6 +88,99 @@ export default function AdminCmsPage() {
 
       return { ...sec, config: newConfig };
     }));
+  };
+
+  // Community multiple image upload & management state
+  const [uploadingCommunity, setUploadingCommunity] = useState(false);
+  const [communityPickerSecId, setCommunityPickerSecId] = useState(null);
+
+  const handleCommunityMultipleUpload = async (sectionId, e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingCommunity(true);
+    try {
+      const uploadedItems = [];
+      for (const file of files) {
+        const newItem = await uploadMediaFile(file, 'Community');
+        uploadedItems.push({
+          id: 'ci-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          src: newItem.url,
+          url: '/shop'
+        });
+      }
+
+      setSections(prev => prev.map(sec => {
+        if (sec.id !== sectionId) return sec;
+        const currentImages = Array.isArray(sec.config?.images) ? sec.config.images : [];
+        return {
+          ...sec,
+          config: {
+            ...sec.config,
+            images: [...currentImages, ...uploadedItems]
+          }
+        };
+      }));
+      showToast(`✓ Uploaded ${uploadedItems.length} community photos successfully!`);
+    } catch (err) {
+      console.error('Community photos upload error:', err);
+      showToast('⚠️ Some photos failed to upload. Please try again.');
+    } finally {
+      setUploadingCommunity(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveCommunityImage = (sectionId, indexToRemove) => {
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentImages = Array.isArray(sec.config?.images) ? [...sec.config.images] : [];
+      currentImages.splice(indexToRemove, 1);
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          images: currentImages
+        }
+      };
+    }));
+  };
+
+  const handleMoveCommunityImage = (sectionId, fromIdx, toIdx) => {
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentImages = Array.isArray(sec.config?.images) ? [...sec.config.images] : [];
+      if (toIdx < 0 || toIdx >= currentImages.length) return sec;
+      const [moved] = currentImages.splice(fromIdx, 1);
+      currentImages.splice(toIdx, 0, moved);
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          images: currentImages
+        }
+      };
+    }));
+  };
+
+  const handleAddCommunityFromLibrary = (sectionId, selectedUrl) => {
+    if (!selectedUrl) return;
+    setSections(prev => prev.map(sec => {
+      if (sec.id !== sectionId) return sec;
+      const currentImages = Array.isArray(sec.config?.images) ? sec.config.images : [];
+      const newImg = {
+        id: 'ci-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        src: selectedUrl,
+        url: '/shop'
+      };
+      return {
+        ...sec,
+        config: {
+          ...sec.config,
+          images: [...currentImages, newImg]
+        }
+      };
+    }));
+    showToast('✓ Photo added to Community Gallery');
   };
 
   // Save Homepage Configuration
@@ -619,34 +713,173 @@ export default function AdminCmsPage() {
 
                     {/* ─── Community / Newsletter Config ─── */}
                     {sec.type === 'community' && (
-                      <div className="form-grid-2">
-                        <div className="field">
-                          <label>Heading</label>
-                          <input
-                            value={sec.config?.heading || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'heading', e.target.value)}
-                          />
+                      <div>
+                        <div className="form-grid-2">
+                          <div className="field">
+                            <label>Heading</label>
+                            <input
+                              value={sec.config?.heading || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'heading', e.target.value)}
+                            />
+                          </div>
+                          <div className="field">
+                            <label>Subheading (Italic text)</label>
+                            <input
+                              value={sec.config?.subheading || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'subheading', e.target.value)}
+                            />
+                          </div>
+                          <div className="field">
+                            <label>Description</label>
+                            <input
+                              value={sec.config?.description || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'description', e.target.value)}
+                            />
+                          </div>
+                          <div className="field">
+                            <label>CTA Button Label</label>
+                            <input
+                              value={sec.config?.cta || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'cta', e.target.value)}
+                            />
+                          </div>
                         </div>
-                        <div className="field">
-                          <label>Subheading (Italic text)</label>
-                          <input
-                            value={sec.config?.subheading || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'subheading', e.target.value)}
-                          />
-                        </div>
-                        <div className="field">
-                          <label>Description</label>
-                          <input
-                            value={sec.config?.description || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'description', e.target.value)}
-                          />
-                        </div>
-                        <div className="field">
-                          <label>CTA Button Label</label>
-                          <input
-                            value={sec.config?.cta || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'cta', e.target.value)}
-                          />
+
+                        {/* Community Gallery Photos Manager */}
+                        <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--foreground)' }}>
+                                Community Gallery Photos ({(sec.config?.images || []).length})
+                              </h4>
+                              <span style={{ fontSize: '11.5px', color: 'var(--muted-foreground)' }}>
+                                Upload multiple photos directly from your computer or choose from the Media Library.
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {/* Direct Multiple File Upload */}
+                              <label
+                                className="btn btn-sm btn-primary"
+                                style={{ cursor: uploadingCommunity ? 'not-allowed' : 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                              >
+                                <Icon name="upload" size={14} />
+                                <span>{uploadingCommunity ? 'Uploading Photos...' : '⬆ Upload Multiple Images'}</span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingCommunity}
+                                  onChange={(e) => handleCommunityMultipleUpload(sec.id, e)}
+                                />
+                              </label>
+                              {/* Pick from Media Library */}
+                              <button
+                                type="button"
+                                className="btn btn-sm"
+                                onClick={() => setCommunityPickerSecId(sec.id)}
+                              >
+                                🖼 Pick from Library
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Image Preview Grid */}
+                          {(!sec.config?.images || sec.config.images.length === 0) ? (
+                            <div style={{
+                              border: '2px dashed var(--border)',
+                              borderRadius: '8px',
+                              padding: '36px 20px',
+                              textAlign: 'center',
+                              background: 'rgba(255,255,255,0.02)'
+                            }}>
+                              <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'var(--muted-foreground)' }}>
+                                No community photos added yet. Upload multiple lookbook / customer photos below.
+                              </p>
+                              <label className="btn btn-sm btn-primary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <Icon name="upload" size={14} />
+                                <span>Choose Images to Upload</span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  onChange={(e) => handleCommunityMultipleUpload(sec.id, e)}
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                              gap: '12px',
+                              marginTop: '10px'
+                            }}>
+                              {sec.config.images.map((imgItem, imgIdx) => {
+                                const src = typeof imgItem === 'string' ? imgItem : (imgItem?.src || imgItem?.url || '');
+                                return (
+                                  <div
+                                    key={imgItem.id || imgIdx}
+                                    style={{
+                                      border: '1px solid var(--border)',
+                                      borderRadius: '8px',
+                                      overflow: 'hidden',
+                                      background: 'var(--surface)',
+                                      position: 'relative',
+                                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                    }}
+                                  >
+                                    <div style={{
+                                      width: '100%',
+                                      height: '140px',
+                                      background: `url('${src}') center / cover no-repeat`,
+                                      backgroundColor: '#1a1a1a'
+                                    }} />
+                                    <div style={{
+                                      padding: '6px 8px',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      background: 'rgba(0,0,0,0.65)',
+                                      borderTop: '1px solid rgba(255,255,255,0.08)'
+                                    }}>
+                                      <span style={{ fontSize: '11px', color: '#bbb', fontWeight: 600 }}>#{imgIdx + 1}</span>
+                                      <div style={{ display: 'flex', gap: '4px' }}>
+                                        {imgIdx > 0 && (
+                                          <button
+                                            type="button"
+                                            title="Move Left"
+                                            onClick={() => handleMoveCommunityImage(sec.id, imgIdx, imgIdx - 1)}
+                                            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '11px', padding: '2px 4px' }}
+                                          >
+                                            ◀
+                                          </button>
+                                        )}
+                                        {imgIdx < sec.config.images.length - 1 && (
+                                          <button
+                                            type="button"
+                                            title="Move Right"
+                                            onClick={() => handleMoveCommunityImage(sec.id, imgIdx, imgIdx + 1)}
+                                            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '11px', padding: '2px 4px' }}
+                                          >
+                                            ▶
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          title="Remove Photo"
+                                          onClick={() => handleRemoveCommunityImage(sec.id, imgIdx)}
+                                          style={{ background: '#dc2626', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '4px', fontSize: '12px', padding: '2px 6px', lineHeight: 1 }}
+                                        >
+                                          &times;
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -777,6 +1010,18 @@ export default function AdminCmsPage() {
           </div>
         </div>
       )}
+
+      {/* Community Gallery Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={Boolean(communityPickerSecId)}
+        onClose={() => setCommunityPickerSecId(null)}
+        onSelect={(selectedUrl) => {
+          if (communityPickerSecId) {
+            handleAddCommunityFromLibrary(communityPickerSecId, selectedUrl);
+          }
+        }}
+        title="Select Community Gallery Photo"
+      />
     </div>
   );
 }
