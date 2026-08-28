@@ -10,3 +10,13 @@ idepic058_db_user
 
 7e79UJeTGw7rHUC2# RamroXa
 # RamroXa
+
+
+
+-Address personal info ma rakhda checkout garda pani dekhinu paryo
+-also that slug thing for page nai add garna milni
+-image insertion in community
+-review for each products from the valid customer
+
+
+

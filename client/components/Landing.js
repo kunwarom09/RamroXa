@@ -1187,11 +1187,11 @@ function Container(_p = {}) {
     fill: "currentColor",
     style: {
       fontFamily: "'Share Tech', sans-serif",
-      fontSize: "20px",
+      fontSize: "16px",
       fontWeight: "700",
-      letterSpacing: "4px"
+      letterSpacing: "2px"
     }
-  }, "ZYLO"))))), /*#__PURE__*/React.createElement("div", {
+  }, "RAMROXA"))))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       display: "flex",
@@ -2618,11 +2618,11 @@ function Container(_p = {}) {
     fill: "currentColor",
     style: {
       fontFamily: "'Share Tech', -apple-system, BlinkMacSystemFont, sans-serif",
-      fontSize: "235px",
+      fontSize: "145px",
       fontWeight: "700",
-      letterSpacing: "20px"
+      letterSpacing: "3px"
     }
-  }, "ZYLO"))))))), /*#__PURE__*/React.createElement("div", {
+  }, "RAMROXA"))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       left: 0,
@@ -3159,15 +3159,15 @@ function Container(_p = {}) {
     }
   }, /*#__PURE__*/React.createElement("text", {
     x: "0",
-    y: "14",
+    y: "13",
     fill: "currentColor",
     style: {
       fontFamily: "'Share Tech', sans-serif",
-      fontSize: "16px",
+      fontSize: "12px",
       fontWeight: "700",
-      letterSpacing: "3px"
+      letterSpacing: "1.5px"
     }
-  }, "ZYLO"))))))), /*#__PURE__*/React.createElement("div", {
+  }, "RAMROXA"))))))), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       display: "flex",

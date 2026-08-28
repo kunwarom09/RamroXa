@@ -59,7 +59,7 @@ export default function LoginPage() {
       {/* Brand Header */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <Link href="/shop" style={{ textDecoration: 'none', color: '#000' }}>
-          <span style={{ fontSize: 28, letterSpacing: 6, fontWeight: 700 }}>ZYLO</span>
+          <span style={{ fontSize: 28, letterSpacing: 6, fontWeight: 700 }}>RAMROXA</span>
         </Link>
         <p style={{ margin: '8px 0 0', color: '#666', fontSize: 14 }}>Sign in to your account</p>
       </div>

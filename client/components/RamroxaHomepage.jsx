@@ -66,7 +66,7 @@ function IconSupport() {
 }
 
 // ─── PRODUCT CARD COMPONENT ──────────────────────────────────────────────────
-function ProductCard({ product, onOpen, compact = false }) {
+function ProductCard({ product, onOpen, compact = false, onToggleWishlist, isWishlisted = false }) {
   const best = product.labels?.bestSelling;
   const featured = product.labels?.featured;
   const badgeText = best ? '★ Best Seller' : featured ? '✦ Featured' : product.labels?.newArrival ? '✦ New Arrival' : '✦ Latest Drop';
@@ -94,6 +94,22 @@ function ProductCard({ product, onOpen, compact = false }) {
     >
       <div className="rmx-product-img-wrap" style={{ backgroundImage: imgSrc ? `url('${imgSrc}')` : undefined }}>
         <span className={`rmx-product-badge ${best ? 'best-seller' : ''}`}>{badgeText}</span>
+        {onToggleWishlist && (
+          <button
+            type="button"
+            className={`rmx-wishlist-heart-btn ${isWishlisted ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleWishlist(product);
+            }}
+            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </button>
+        )}
       </div>
       <div className="rmx-product-card-body">
         <div className="rmx-product-meta-row">
@@ -336,7 +352,7 @@ function HeroSection({ section, onNav }) {
 }
 
 // ─── 2. PRODUCTS GRID / SLIDER / CAROUSEL WIDGETS ─────────────────────────────
-function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
+function ProductsSection({ section, catalog, onOpenProduct, onNav, onToggleWishlist, isWishlisted = () => false }) {
   const { widgetType = 'grid_3', config = {} } = section;
   const isBestSellerSection = section.type === 'bestsellers';
   const tagRule = config.tag || (isBestSellerSection ? 'bestSelling' : 'featured');
@@ -385,8 +401,25 @@ function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
             </button>
           </div>
           <div className="rmx-large-featured-grid">
-            <div className="rmx-large-lead-card" onClick={() => onOpenProduct(lead)}>
-              <div className="rmx-large-lead-img" style={{ backgroundImage: `url('${(lead.images || [])[0]?.url || lead.img1}')` }} />
+            <div className="rmx-large-lead-card" onClick={() => onOpenProduct(lead)} style={{ position: 'relative' }}>
+              <div className="rmx-large-lead-img" style={{ backgroundImage: `url('${(lead.images || [])[0]?.url || lead.img1}')`, position: 'relative' }}>
+                {onToggleWishlist && (
+                  <button
+                    type="button"
+                    className={`rmx-wishlist-heart-btn ${isWishlisted(lead) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleWishlist(lead);
+                    }}
+                    aria-label={isWishlisted(lead) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    title={isWishlisted(lead) ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               <div className="rmx-large-lead-body">
                 <span className="rmx-hero-eyebrow">Spotlight Item</span>
                 <h3>{lead.name}</h3>
@@ -396,7 +429,13 @@ function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
             </div>
             <div className="rmx-products-3col">
               {rest.map((p, idx) => (
-                <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} />
+                <ProductCard
+                  key={p.id || idx}
+                  product={p}
+                  onOpen={() => onOpenProduct(p)}
+                  onToggleWishlist={onToggleWishlist}
+                  isWishlisted={isWishlisted(p)}
+                />
               ))}
             </div>
           </div>
@@ -422,7 +461,12 @@ function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
           <div className="rmx-products-slider-row">
             {products.map((p, idx) => (
               <div key={p.id || idx} className="rmx-slider-item">
-                <ProductCard product={p} onOpen={() => onOpenProduct(p)} />
+                <ProductCard
+                  product={p}
+                  onOpen={() => onOpenProduct(p)}
+                  onToggleWishlist={onToggleWishlist}
+                  isWishlisted={isWishlisted(p)}
+                />
               </div>
             ))}
           </div>
@@ -447,7 +491,14 @@ function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
           </div>
           <div className="rmx-products-compact-grid">
             {products.map((p, idx) => (
-              <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} compact />
+              <ProductCard
+                key={p.id || idx}
+                product={p}
+                onOpen={() => onOpenProduct(p)}
+                compact
+                onToggleWishlist={onToggleWishlist}
+                isWishlisted={isWishlisted(p)}
+              />
             ))}
           </div>
         </div>
@@ -472,7 +523,13 @@ function ProductsSection({ section, catalog, onOpenProduct, onNav }) {
         </div>
         <div className={gridClass}>
           {products.map((p, idx) => (
-            <ProductCard key={p.id || idx} product={p} onOpen={() => onOpenProduct(p)} />
+            <ProductCard
+              key={p.id || idx}
+              product={p}
+              onOpen={() => onOpenProduct(p)}
+              onToggleWishlist={onToggleWishlist}
+              isWishlisted={isWishlisted(p)}
+            />
           ))}
         </div>
       </div>
@@ -810,7 +867,7 @@ function EditorialBlocks({ section, onNav }) {
       {items.map((b) => (
         <div key={b.id} className={`rmx-editorial-block ${b.layout === 'image-right' ? 'image-right' : ''}`}>
           <div className="rmx-editorial-img" style={{ backgroundImage: `url('${b.image}')` }} />
-          <div className="rmx-editorial-content">
+          <div className="rmx-editorial-content" style={b.bgColor ? { background: b.bgColor } : undefined}>
             {b.eyebrow && <span className="rmx-editorial-eyebrow">{b.eyebrow}</span>}
             <h2 className="rmx-editorial-heading">{b.heading}</h2>
             {b.description && <p className="rmx-editorial-desc">{b.description}</p>}
@@ -932,7 +989,14 @@ function CommunityNewsletterSection({ section, onNav }) {
 }
 
 // ─── MAIN HOMEPAGE COMPONENT ──────────────────────────────────────────────────
-export default function RamroxaHomepage({ catalog = [], onOpenProduct = () => {}, onNav = () => {} }) {
+export default function RamroxaHomepage({
+  catalog = [],
+  onOpenProduct = () => {},
+  onNav = () => {},
+  wishlist = [],
+  onToggleWishlist = () => {},
+  isWishlisted = () => false
+}) {
   const [cmsConfig, setCmsConfig] = useState(DEFAULT_HOMEPAGE_CONFIG);
 
   useEffect(() => {
@@ -975,6 +1039,8 @@ export default function RamroxaHomepage({ catalog = [], onOpenProduct = () => {}
                 catalog={catalog}
                 onOpenProduct={onOpenProduct}
                 onNav={onNav}
+                onToggleWishlist={onToggleWishlist}
+                isWishlisted={isWishlisted}
               />
             );
 
@@ -1000,3 +1066,4 @@ export default function RamroxaHomepage({ catalog = [], onOpenProduct = () => {}
     </div>
   );
 }
+

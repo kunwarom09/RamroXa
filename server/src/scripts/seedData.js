@@ -493,5 +493,166 @@ export const defaultProducts = [
       { url: "/assets/c71fd29c3338e4a5.q.jpg", alt: "Cropped Boxy Blazer", isFeatured: true },
       { url: "/assets/dac45b43062fbe55.q.jpg", alt: "Cropped Boxy Blazer detail", isFeatured: false }
     ]
+  },
+  {
+    id: "p_ascent_windbreaker",
+    name: "Ascent Tactical Windbreaker",
+    slug: "ascent-tactical-windbreaker",
+    sku: "ZYL-OUT-WND-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["windbreaker", "outerwear", "tactical", "jacket"],
+    basePrice: 480000,
+    price: 480000,
+    mrp: 620000,
+    cost: 210000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "Technical lightweight ripstop windbreaker featuring storm-sealed taped zippers, adjustable bungee toggles, and breathable underarm ventilation. Engineered for alpine squalls and daily urban commutes.",
+    options: { Colour: ["Matte Black", "Cobalt Blue", "Cement Grey"], Size: ["S", "M", "L", "XL"] },
+    images: [
+      { url: "/assets/57e8f8ec76e792b1.q.jpg", alt: "Ascent Tactical Windbreaker in Matte Black", isFeatured: true },
+      { url: "/assets/e2a028dd8bd0e7b5.q.jpg", alt: "Ascent Tactical Windbreaker Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_kuro_crewneck",
+    name: "Kuro Heavyweight Crewneck",
+    slug: "kuro-heavyweight-crewneck",
+    sku: "ZYL-TOP-CRW-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["crewneck", "sweatshirt", "fleece", "heavyweight"],
+    basePrice: 285000,
+    price: 285000,
+    mrp: 360000,
+    cost: 120000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "500 GSM loopback organic French terry crewneck with dropped armholes, ribbed cross-grain side panels, and subtle tonal embroidery across the back hem.",
+    options: { Colour: ["Washed Charcoal", "Vintage Cream", "Pitch Black"], Size: ["S", "M", "L", "XL"] },
+    images: [
+      { url: "/assets/eeac2757b9ee2e46.q.jpg", alt: "Kuro Heavyweight Crewneck", isFeatured: true },
+      { url: "/assets/67866d53aaeebcac.q.jpg", alt: "Kuro Heavyweight Crewneck Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_solitude_trousers",
+    name: "Solitude Wide-Leg Pleated Trousers",
+    slug: "solitude-wide-leg-pleated-trousers",
+    sku: "ZYL-BOT-SLT-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["trousers", "pleated", "tailored", "bottoms"],
+    basePrice: 340000,
+    price: 340000,
+    mrp: 440000,
+    cost: 145000,
+    status: "published",
+    labels: { featured: true, trending: false, newArrival: true, bestSelling: true },
+    description: "Architectural front double pleats with a drape-forward wide-leg silhouette. Tailored from a high-twist wool-poly blend that resists creasing throughout the day.",
+    options: { Colour: ["Obsidian Black", "Slate Grey", "Midnight Navy"], Size: ["30", "32", "34", "36"] },
+    images: [
+      { url: "/assets/9a83a5f92f7a34f6.q.jpg", alt: "Solitude Wide-Leg Pleated Trousers", isFeatured: true },
+      { url: "/assets/19eee9f8e07093fd.q.jpg", alt: "Solitude Wide-Leg Pleated Trousers Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_nomad_crossbody",
+    name: "Nomad Ballistic Crossbody Sling",
+    slug: "nomad-ballistic-crossbody-sling",
+    sku: "ZYL-BAG-SLN-01",
+    categoryId: "c_bags",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["bag", "crossbody", "sling", "tactical"],
+    basePrice: 195000,
+    price: 195000,
+    mrp: 260000,
+    cost: 80000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: false },
+    description: "1050D Cordura ballistic nylon sling featuring quick-release Fidlock magnetic buckles, weather-shielded YKK Aquaguard zips, and modular Molle webbing loops.",
+    options: { Colour: ["Tactical Black", "Desert Sand", "Stealth Olive"], Size: ["One size"] },
+    images: [
+      { url: "/assets/e282ebdc1a55d0be.q.jpg", alt: "Nomad Ballistic Crossbody Sling in Tactical Black", isFeatured: true },
+      { url: "/assets/08accf483615b0df.q.jpg", alt: "Nomad Ballistic Crossbody Sling Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_obsidian_denim",
+    name: "Obsidian Distressed Selvedge Denim",
+    slug: "obsidian-distressed-selvedge-denim",
+    sku: "ZYL-BOT-OBS-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["denim", "jeans", "selvedge", "pants"],
+    basePrice: 365000,
+    price: 365000,
+    mrp: 480000,
+    cost: 155000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "14.5oz Japanese selvedge denim in a relaxed barrel cut with subtle hand-sanded whiskering, reinforced pocket rivets, and custom matte silver hardware.",
+    options: { Colour: ["Vintage Black", "Raw Indigo"], Size: ["30", "32", "34", "36"] },
+    images: [
+      { url: "/assets/2461720fa204607a.q.jpg", alt: "Obsidian Distressed Selvedge Denim", isFeatured: true },
+      { url: "/assets/39a84305ed8fadbc.q.jpg", alt: "Obsidian Distressed Selvedge Denim Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_merino_beanie",
+    name: "Merino Wool Ribbed Beanie",
+    slug: "merino-wool-ribbed-beanie",
+    sku: "ZYL-ACC-MRN-01",
+    categoryId: "c_acc",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["beanie", "hat", "merino", "wool"],
+    basePrice: 120000,
+    price: 120000,
+    mrp: 160000,
+    cost: 50000,
+    status: "published",
+    labels: { featured: false, trending: true, newArrival: true, bestSelling: true },
+    description: "100% extra-fine Merino wool chunky 7-gauge ribbed knit beanie. Soft next-to-skin touch with natural thermoregulation and odor resistance.",
+    options: { Colour: ["Jet Black", "Heather Grey", "Oatmeal"], Size: ["One size"] },
+    images: [
+      { url: "/assets/7f3fd1f72139111d.q.jpg", alt: "Merino Wool Ribbed Beanie in Jet Black", isFeatured: true },
+      { url: "/assets/4a9712f500002e24.q.jpg", alt: "Merino Wool Ribbed Beanie Detail", isFeatured: false }
+    ]
+  },
+  {
+    id: "p_eclipse_tee",
+    name: "Eclipse Heavyweight Boxy Tee",
+    slug: "eclipse-heavyweight-boxy-tee",
+    sku: "ZYL-TOP-ECL-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["tee", "tshirt", "boxy", "heavyweight"],
+    basePrice: 210000,
+    price: 210000,
+    mrp: 270000,
+    cost: 85000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "280 GSM heavyweight combed cotton boxy tee with structured high-density ribbed crew collar and reinforced double-needle stitched cuffs.",
+    options: { Colour: ["Pitch Black", "Pure White", "Muted Olive"], Size: ["S", "M", "L", "XL"] },
+    images: [
+      { url: "/assets/ea97fe30fd8d1dfc.q.jpg", alt: "Eclipse Heavyweight Boxy Tee in Pitch Black", isFeatured: true },
+      { url: "/assets/09789ab9b9e151f6.q.jpg", alt: "Eclipse Heavyweight Boxy Tee in Pure White", isFeatured: false }
+    ]
   }
 ];

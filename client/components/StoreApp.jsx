@@ -6,25 +6,534 @@ import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
 import { fetchProducts } from '../services/productService';
 import { api } from '../services/apiClient';
 
-const DEFAULT_CATALOG = [];
+const DEFAULT_CATALOG = [
+  {
+    id: "m1",
+    name: "Monolith Tee",
+    slug: "monolith-tee",
+    sku: "ZYL-APP-00001",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["tee", "core"],
+    price: 1800,
+    compare: 2200,
+    labels: { featured: false, trending: false, newArrival: true, bestSelling: true },
+    description: "240 GSM heavy jersey tee with drop-shoulder fit and high ribbed collar.",
+    options: { Colour: ["Black", "White"], Size: ["S", "M", "L"] },
+    img1: "/assets/ea97fe30fd8d1dfc.q.jpg",
+    img2: "/assets/09789ab9b9e151f6.q.jpg"
+  },
+  {
+    id: "m2",
+    name: "Grid Hoodie",
+    slug: "grid-hoodie",
+    sku: "ZYL-APP-00002",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["hoodie", "fleece"],
+    price: 3800,
+    compare: 4500,
+    labels: { featured: true, trending: true, newArrival: false, bestSelling: false },
+    description: "420 GSM loopback French terry hoodie with double-layer hood.",
+    options: { Colour: ["Black"], Size: ["S", "M", "L"] },
+    img1: "/assets/eeac2757b9ee2e46.q.jpg",
+    img2: "/assets/67866d53aaeebcac.q.jpg"
+  },
+  {
+    id: "m3",
+    name: "Aperture Cap",
+    slug: "aperture-cap",
+    sku: "ZYL-ACC-00001",
+    categoryId: "c_acc",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["cap", "hat"],
+    price: 1500,
+    compare: 1800,
+    labels: { featured: true, trending: false, newArrival: true, bestSelling: false },
+    description: "Low-profile six-panel cap in water-repellent nylon taslan.",
+    options: { Colour: ["Black"], Size: ["One size"] },
+    img1: "/assets/7f3fd1f72139111d.q.jpg",
+    img2: "/assets/4a9712f500002e24.q.jpg"
+  },
+  {
+    id: "m4",
+    name: "Ledger Tote",
+    slug: "ledger-tote",
+    sku: "ZYL-BAG-00001",
+    categoryId: "c_bags",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["bag", "canvas"],
+    price: 2200,
+    compare: 2600,
+    labels: { featured: false, trending: true, newArrival: false, bestSelling: false },
+    description: "16oz heavy cotton canvas tote with interior zipped pocket.",
+    options: { Colour: ["Natural", "Black"], Size: ["One size"] },
+    img1: "/assets/e282ebdc1a55d0be.q.jpg",
+    img2: "/assets/08accf483615b0df.q.jpg"
+  },
+  {
+    id: "m5",
+    name: "Contour Jacket",
+    slug: "contour-jacket",
+    sku: "ZYL-OUT-00001",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["jacket"],
+    price: 7200,
+    compare: 8600,
+    labels: { featured: true, trending: false, newArrival: false, bestSelling: false },
+    description: "Cropped shell with taped seams.",
+    options: { Colour: ["Black"], Size: ["S", "M", "L"] },
+    img1: "/assets/57e8f8ec76e792b1.q.jpg",
+    img2: "/assets/e2a028dd8bd0e7b5.q.jpg"
+  },
+  {
+    id: "m6",
+    name: "Frame Trousers",
+    slug: "frame-trousers",
+    sku: "ZYL-APP-00003",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["trousers"],
+    price: 3000,
+    compare: 3600,
+    labels: { featured: false, trending: false, newArrival: false, bestSelling: false },
+    description: "Straight leg with articulated knee.",
+    options: { Colour: ["Black"], Size: ["30", "32", "34"] },
+    img1: "/assets/9a83a5f92f7a34f6.q.jpg",
+    img2: "/assets/19eee9f8e07093fd.q.jpg"
+  },
+  {
+    id: "p_ascent_windbreaker",
+    name: "Ascent Tactical Windbreaker",
+    slug: "ascent-tactical-windbreaker",
+    sku: "ZYL-OUT-WND-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["windbreaker", "outerwear", "tactical", "jacket"],
+    price: 4800,
+    compare: 6200,
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "Technical lightweight ripstop windbreaker featuring storm-sealed taped zippers, adjustable bungee toggles, and breathable underarm ventilation. Engineered for alpine squalls and daily urban commutes.",
+    options: { Colour: ["Matte Black", "Cobalt Blue", "Cement Grey"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/57e8f8ec76e792b1.q.jpg",
+    img2: "/assets/e2a028dd8bd0e7b5.q.jpg"
+  },
+  {
+    id: "p_kuro_crewneck",
+    name: "Kuro Heavyweight Crewneck",
+    slug: "kuro-heavyweight-crewneck",
+    sku: "ZYL-TOP-CRW-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["crewneck", "sweatshirt", "fleece", "heavyweight"],
+    price: 2850,
+    compare: 3600,
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "500 GSM loopback organic French terry crewneck with dropped armholes, ribbed cross-grain side panels, and subtle tonal embroidery across the back hem.",
+    options: { Colour: ["Washed Charcoal", "Vintage Cream", "Pitch Black"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/eeac2757b9ee2e46.q.jpg",
+    img2: "/assets/67866d53aaeebcac.q.jpg"
+  },
+  {
+    id: "p_solitude_trousers",
+    name: "Solitude Wide-Leg Pleated Trousers",
+    slug: "solitude-wide-leg-pleated-trousers",
+    sku: "ZYL-BOT-SLT-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["trousers", "pleated", "tailored", "bottoms"],
+    price: 3400,
+    compare: 4400,
+    labels: { featured: true, trending: false, newArrival: true, bestSelling: true },
+    description: "Architectural front double pleats with a drape-forward wide-leg silhouette. Tailored from a high-twist wool-poly blend that resists creasing throughout the day.",
+    options: { Colour: ["Obsidian Black", "Slate Grey", "Midnight Navy"], Size: ["30", "32", "34", "36"] },
+    img1: "/assets/9a83a5f92f7a34f6.q.jpg",
+    img2: "/assets/19eee9f8e07093fd.q.jpg"
+  },
+  {
+    id: "p_nomad_crossbody",
+    name: "Nomad Ballistic Crossbody Sling",
+    slug: "nomad-ballistic-crossbody-sling",
+    sku: "ZYL-BAG-SLN-01",
+    categoryId: "c_bags",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["bag", "crossbody", "sling", "tactical"],
+    price: 1950,
+    compare: 2600,
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: false },
+    description: "1050D Cordura ballistic nylon sling featuring quick-release Fidlock magnetic buckles, weather-shielded YKK Aquaguard zips, and modular Molle webbing loops.",
+    options: { Colour: ["Tactical Black", "Desert Sand", "Stealth Olive"], Size: ["One size"] },
+    img1: "/assets/e282ebdc1a55d0be.q.jpg",
+    img2: "/assets/08accf483615b0df.q.jpg"
+  },
+  {
+    id: "p_obsidian_denim",
+    name: "Obsidian Distressed Selvedge Denim",
+    slug: "obsidian-distressed-selvedge-denim",
+    sku: "ZYL-BOT-OBS-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["denim", "jeans", "selvedge", "pants"],
+    price: 3650,
+    compare: 4800,
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "14.5oz Japanese selvedge denim in a relaxed barrel cut with subtle hand-sanded whiskering, reinforced pocket rivets, and custom matte silver hardware.",
+    options: { Colour: ["Vintage Black", "Raw Indigo"], Size: ["30", "32", "34", "36"] },
+    img1: "/assets/2461720fa204607a.q.jpg",
+    img2: "/assets/39a84305ed8fadbc.q.jpg"
+  },
+  {
+    id: "p_merino_beanie",
+    name: "Merino Wool Ribbed Beanie",
+    slug: "merino-wool-ribbed-beanie",
+    sku: "ZYL-ACC-MRN-01",
+    categoryId: "c_acc",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["beanie", "hat", "merino", "wool"],
+    price: 1200,
+    compare: 1600,
+    labels: { featured: false, trending: true, newArrival: true, bestSelling: true },
+    description: "100% extra-fine Merino wool chunky 7-gauge ribbed knit beanie. Soft next-to-skin touch with natural thermoregulation and odor resistance.",
+    options: { Colour: ["Jet Black", "Heather Grey", "Oatmeal"], Size: ["One size"] },
+    img1: "/assets/7f3fd1f72139111d.q.jpg",
+    img2: "/assets/4a9712f500002e24.q.jpg"
+  },
+  {
+    id: "p_eclipse_tee",
+    name: "Eclipse Heavyweight Boxy Tee",
+    slug: "eclipse-heavyweight-boxy-tee",
+    sku: "ZYL-TOP-ECL-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["tee", "tshirt", "boxy", "heavyweight"],
+    price: 2100,
+    compare: 2700,
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "280 GSM heavyweight combed cotton boxy tee with structured high-density ribbed crew collar and reinforced double-needle stitched cuffs.",
+    options: { Colour: ["Pitch Black", "Pure White", "Muted Olive"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/ea97fe30fd8d1dfc.q.jpg",
+    img2: "/assets/09789ab9b9e151f6.q.jpg"
+  },
+  {
+    id: "p_knit_shirt",
+    name: "Textured Knitted Shirt",
+    slug: "textured-knitted-shirt",
+    sku: "ZYL-TOP-KNIT-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["knit", "shirt", "summer"],
+    price: 1750,
+    compare: 2350,
+    labels: { newArrival: true, featured: true, bestSelling: false },
+    description: "An open-weave knit shirt with a relaxed boxy cut. Breathable texture that layers cleanly over a plain tee for everyday wear.",
+    options: { Colour: ["Oatmeal", "Black"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/98eab38550301ca9.q.jpg",
+    img2: "/assets/248028cbf9d4d390.q.jpg"
+  },
+  {
+    id: "p_trench_coat",
+    name: "Structured Trench Coat",
+    slug: "structured-trench-coat",
+    sku: "ZYL-OUT-TRN-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["trench", "coat", "outerwear"],
+    price: 6300,
+    compare: 8400,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "A sharply tailored trench in a water-resistant twill. Structured shoulders and a clean drape built for the city.",
+    options: { Colour: ["Khaki", "Black"], Size: ["M", "L", "XL"] },
+    img1: "/assets/ee2608e46a586391.q.jpg",
+    img2: "/assets/0e72c7de7ec1a38e.q.jpg"
+  },
+  {
+    id: "p_denim_overalls",
+    name: "Mini Denim Overalls",
+    slug: "mini-denim-overalls",
+    sku: "ZYL-BOT-OVR-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Kids",
+    season: "SS26",
+    tags: ["overalls", "denim", "kids"],
+    price: 1350,
+    compare: 1800,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "Kid-sized denim overalls in a mid-blue wash. Reinforced stitching and adjustable straps for growing frames.",
+    options: { Colour: ["Indigo"], Size: ["4Y", "6Y", "8Y", "10Y"] },
+    img1: "/assets/e282ebdc1a55d0be.q.jpg",
+    img2: "/assets/08accf483615b0df.q.jpg"
+  },
+  {
+    id: "p_riviera_shirt",
+    name: "Riviera Collar Shirt",
+    slug: "riviera-collar-shirt",
+    sku: "ZYL-TOP-RIV-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["camp", "shirt", "gauze"],
+    price: 1350,
+    compare: 1800,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "A camp-collar shirt in crinkled cotton gauze. Light, airy and made for warm afternoons.",
+    options: { Colour: ["White", "Sage"], Size: ["XS", "S", "M", "L"] },
+    img1: "/assets/a22003dc69fc0fc1.q.jpg",
+    img2: "/assets/b3a1fbdacd69bcda.q.jpg"
+  },
+  {
+    id: "p_jersey_tee",
+    name: "Stretch Jersey Tee",
+    slug: "stretch-jersey-tee",
+    sku: "ZYL-TOP-TEE-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["tee", "jersey", "essential"],
+    price: 1950,
+    compare: 2850,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "A heavyweight jersey tee with a touch of stretch. Holds its shape wash after wash.",
+    options: { Colour: ["Black", "Heather Grey"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/ea97fe30fd8d1dfc.q.jpg",
+    img2: "/assets/09789ab9b9e151f6.q.jpg"
+  },
+  {
+    id: "p_utility_cargo",
+    name: "Urban Utility Cargo",
+    slug: "urban-utility-cargo",
+    sku: "ZYL-BOT-CRG-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["cargo", "utility", "canvas"],
+    price: 2700,
+    compare: 3600,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "Roomy cargo trousers with angled utility pockets and a drawcord hem. Hard-wearing cotton canvas.",
+    options: { Colour: ["Olive", "Black"], Size: ["30", "32", "34", "36"] },
+    img1: "/assets/2461720fa204607a.q.jpg",
+    img2: "/assets/39a84305ed8fadbc.q.jpg"
+  },
+  {
+    id: "p_boxy_tee",
+    name: "Classic Boxy Tee",
+    slug: "classic-boxy-tee",
+    sku: "ZYL-TOP-BOX-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["tee", "boxy", "cotton"],
+    price: 1050,
+    compare: 1350,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "The everyday tee — boxy fit, dropped shoulder, midweight combed cotton in a clean solid.",
+    options: { Colour: ["White", "Charcoal"], Size: ["XS", "S", "M", "L"] },
+    img1: "/assets/0d3fac373da0bd1f.q.jpg",
+    img2: "/assets/bbb4f22211e2dc51.q.jpg"
+  },
+  {
+    id: "p_smart_trousers",
+    name: "Pleated Smart Trousers",
+    slug: "pleated-smart-trousers",
+    sku: "ZYL-BOT-PLT-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["trousers", "pleated", "formal"],
+    price: 2300,
+    compare: 3000,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "Double-pleated trousers with a tapered leg. Polished enough for work, easy enough for weekends.",
+    options: { Colour: ["Charcoal", "Navy"], Size: ["30", "32", "34", "36"] },
+    img1: "/assets/9a83a5f92f7a34f6.q.jpg",
+    img2: "/assets/19eee9f8e07093fd.q.jpg"
+  },
+  {
+    id: "p_terry_shorts",
+    name: "French Terry Shorts",
+    slug: "french-terry-shorts",
+    sku: "ZYL-BOT-SHT-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["shorts", "terry", "loungewear"],
+    price: 1200,
+    compare: 1650,
+    labels: { newArrival: true, featured: false, bestSelling: false },
+    description: "Loopback french terry shorts with a relaxed rise and side pockets. Off-duty essential.",
+    options: { Colour: ["Cream", "Black"], Size: ["S", "M", "L"] },
+    img1: "/assets/b81e3eb6af13055d.q.jpg",
+    img2: "/assets/d4ddd6f6c7954c6b.q.jpg"
+  },
+  {
+    id: "p_oversized_hoodie",
+    name: "Heavyweight Oversized Hoodie",
+    slug: "heavyweight-oversized-hoodie",
+    sku: "ZYL-TOP-HOD-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["hoodie", "fleece", "oversized"],
+    price: 2550,
+    compare: 3300,
+    labels: { bestSelling: true, featured: true, newArrival: false },
+    description: "Our signature 480gsm fleece hoodie. Oversized through the body with a double-lined hood and ribbed cuffs.",
+    options: { Colour: ["Vintage Black", "Ash Grey"], Size: ["S", "M", "L", "XL"] },
+    img1: "/assets/eeac2757b9ee2e46.q.jpg",
+    img2: "/assets/67866d53aaeebcac.q.jpg"
+  },
+  {
+    id: "p_knit_sweater",
+    name: "Patterned Knit Sweater",
+    slug: "patterned-knit-sweater",
+    sku: "ZYL-TOP-SWT-01",
+    categoryId: "c_tops",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["sweater", "jacquard", "knit"],
+    price: 1350,
+    compare: 2700,
+    labels: { bestSelling: true, featured: false, newArrival: false },
+    description: "A jacquard-knit sweater in a tonal stripe. Soft-spun yarn with a regular fit.",
+    options: { Colour: ["Monochrome Stripe"], Size: ["XS", "S", "M", "L"] },
+    img1: "/assets/3b9adec96400865c.q.jpg",
+    img2: "/assets/ea5bdbd64c598cff.q.jpg"
+  },
+  {
+    id: "p_quilted_bomber",
+    name: "Quilted Bomber Jacket",
+    slug: "quilted-bomber-jacket",
+    sku: "ZYL-OUT-BOM-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Men",
+    season: "SS26",
+    tags: ["bomber", "jacket", "quilted"],
+    price: 4350,
+    compare: 5400,
+    labels: { bestSelling: true, featured: true, newArrival: false },
+    description: "A diamond-quilted bomber with matte hardware and ribbed trims. Warm without the bulk.",
+    options: { Colour: ["Matte Black", "Olive"], Size: ["M", "L", "XL"] },
+    img1: "/assets/57e8f8ec76e792b1.q.jpg",
+    img2: "/assets/e2a028dd8bd0e7b5.q.jpg"
+  },
+  {
+    id: "p_puffer_vest",
+    name: "Hooded Puffer Vest",
+    slug: "hooded-puffer-vest",
+    sku: "ZYL-OUT-VST-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Kids",
+    season: "SS26",
+    tags: ["vest", "puffer", "kids"],
+    price: 1350,
+    compare: 2250,
+    labels: { bestSelling: true, featured: false, newArrival: false },
+    description: "A lightweight puffer vest with a stowable hood. Layer it over knits when the mercury drops.",
+    options: { Colour: ["Black", "Yellow"], Size: ["4Y", "6Y", "8Y", "10Y"] },
+    img1: "/assets/7f3fd1f72139111d.q.jpg",
+    img2: "/assets/4a9712f500002e24.q.jpg"
+  },
+  {
+    id: "p_leather_leggings",
+    name: "Vegan Leather Leggings",
+    slug: "vegan-leather-leggings",
+    sku: "ZYL-BOT-LEG-01",
+    categoryId: "c_bottoms",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["leggings", "leather", "stretch"],
+    price: 2250,
+    compare: 2950,
+    labels: { bestSelling: true, featured: false, newArrival: false },
+    description: "High-rise leggings in a matte vegan leather with four-way stretch and a clean ankle zip.",
+    options: { Colour: ["Black"], Size: ["XS", "S", "M", "L"] },
+    img1: "/assets/54f4ed23bf992cef.q.jpg",
+    img2: "/assets/365d4729feaf7290.q.jpg"
+  },
+  {
+    id: "p_boxy_blazer",
+    name: "Cropped Boxy Blazer",
+    slug: "cropped-boxy-blazer",
+    sku: "ZYL-OUT-BLZ-01",
+    categoryId: "c_out",
+    brand: "Ramroxa",
+    gender: "Women",
+    season: "SS26",
+    tags: ["blazer", "tailored", "suit"],
+    price: 3900,
+    compare: 5250,
+    labels: { bestSelling: true, featured: true, newArrival: false },
+    description: "A cropped blazer with a boxy shoulder and single-button close. Sharp over anything.",
+    options: { Colour: ["Black", "Pinstripe"], Size: ["XS", "S", "M", "L"] },
+    img1: "/assets/c71fd29c3338e4a5.q.jpg",
+    img2: "/assets/dac45b43062fbe55.q.jpg"
+  }
+];
 
 const slugForProduct = (p, i) => (p?.slug || (p?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || String(i));
 
-function formatProductItem(p) {
+function formatProductItem(p, i) {
   const featuredImg = (p.images || []).find((img) => img.isFeatured) || (p.images || [])[0];
   const secondImg = (p.images || [])[1] || featuredImg;
   const priceNpr = p.basePrice !== undefined ? Math.round(p.basePrice / 100) : (p.price || 0);
-  const mrpNpr = p.mrp !== undefined ? Math.round(p.mrp / 100) : 0;
+  const mrpNpr = p.mrp !== undefined ? Math.round(p.mrp / 100) : (p.compare || priceNpr);
+  const idx = p.idx !== undefined ? p.idx : (typeof i === 'number' ? i : 0);
   return {
+    idx,
+    id: p.id || p._id || `p_${idx}`,
     name: p.name,
     tag: p.labels?.newArrival ? 'NEW ARRIVAL' : (p.labels?.bestSelling ? 'BEST SELLER' : (p.labels?.featured ? 'FEATURED' : 'LATEST DROP')),
     labels: p.labels || {},
     price: priceNpr,
     compare: mrpNpr || priceNpr,
     desc: p.description || '',
-    img1: featuredImg?.url || p.img1 || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
-    img2: secondImg?.url || p.img2 || featuredImg?.url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
-    slug: p.slug || slugForProduct(p, 0),
+    img1: featuredImg?.url || p.img1 || '/assets/ea97fe30fd8d1dfc.q.jpg',
+    img2: secondImg?.url || p.img2 || featuredImg?.url || '/assets/ea97fe30fd8d1dfc.q.jpg',
+    images: p.images || [{ url: featuredImg?.url || p.img1, isFeatured: true }],
+    slug: p.slug || slugForProduct(p, idx),
     gender: p.gender || 'Unisex',
     brand: p.brand || p.brandName || (p.tags && p.tags.length ? p.tags[0] : 'Ramroxa'),
     category: p.category || p.categoryId || '',
@@ -36,14 +545,14 @@ function formatProductItem(p) {
       : ((p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors)
         ? [p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors]
         : []),
-    createdAt: p.createdAt || new Date().toISOString(),
-    id: p.id
+    createdAt: p.createdAt || new Date().toISOString()
   };
 }
 
 function buildFullCatalog() {
   return DEFAULT_CATALOG.map((item, idx) => ({
     ...item,
+    idx,
     slug: slugForProduct(item, idx)
   }));
 }
@@ -135,6 +644,23 @@ function saveStoredCart(cart) {
   } catch (e) {}
 }
 
+function loadStoredWishlist() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('zylo-store-wishlist');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveStoredWishlist(wishlist) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('zylo-store-wishlist', JSON.stringify(wishlist || []));
+  } catch (e) {}
+}
+
 export default class StoreApp extends React.Component {
   constructor(props) {
     super(props);
@@ -148,6 +674,7 @@ export default class StoreApp extends React.Component {
     }
 
     let initialCart = [];
+    let initialWishlist = [];
     let initialName = '';
     let initialPhone = '';
     let initialAddress = '';
@@ -155,6 +682,7 @@ export default class StoreApp extends React.Component {
 
     if (typeof window !== 'undefined') {
       initialCart = loadStoredCart();
+      initialWishlist = loadStoredWishlist();
       try {
         initialName = localStorage.getItem('zylo-c-name') || '';
         initialPhone = localStorage.getItem('zylo-c-phone') || '';
@@ -176,6 +704,7 @@ export default class StoreApp extends React.Component {
       savingProfile: false,
       accountDropdownOpen: false,
       cart: initialCart,
+      wishlist: initialWishlist,
       pay: 'cod',
       orderId: null,
       orderTotal: 0,
@@ -192,6 +721,8 @@ export default class StoreApp extends React.Component {
       cTopic: 'Order status',
       contactSent: false,
       colFilter: props.initialColFilter || 'all',
+      filterCategory: props.initialFilterCategory || 'all',
+      collectionsDropdownOpen: false,
       filterPriceBucket: 'all',
       filterMinPrice: '',
       filterMaxPrice: '',
@@ -205,7 +736,8 @@ export default class StoreApp extends React.Component {
       landingScale: 1,
       currentUser: null,
       showProfileModal: false,
-      heroPreset: 'Arctic'
+      heroPreset: 'Arctic',
+      showGoToTop: false
     };
   }
 
@@ -218,6 +750,7 @@ export default class StoreApp extends React.Component {
       shop: '/',
       collections: '/shop',
       cart: '/cart',
+      wishlist: '/wishlist',
       checkout: '/checkout',
       contact: '/contact',
       confirmed: '/order-confirmed',
@@ -263,34 +796,36 @@ export default class StoreApp extends React.Component {
   componentDidMount() {
     const loadDynamicCatalog = async () => {
       try {
-        const apiProds = await fetchProducts();
-        const apiCatalog = (apiProds || []).map(formatProductItem);
-        
-        let selIdx = this.state.sel;
-        let view = this.state.view;
+        const apiProds = await fetchProducts({ limit: 100 });
+        if (Array.isArray(apiProds) && apiProds.length > 0) {
+          const apiCatalog = apiProds.map((p, idx) => formatProductItem(p, idx));
+          
+          let selIdx = this.state.sel;
+          let view = this.state.view;
 
-        let currentSlug = this.props.initialProductSlug;
-        if (!currentSlug && typeof window !== 'undefined') {
-          const path = window.location.pathname;
-          if (path.startsWith('/product/')) {
-            currentSlug = path.replace('/product/', '').replace(/\/$/, '');
+          let currentSlug = this.props.initialProductSlug;
+          if (!currentSlug && typeof window !== 'undefined') {
+            const path = window.location.pathname;
+            if (path.startsWith('/product/')) {
+              currentSlug = path.replace('/product/', '').replace(/\/$/, '');
+            }
           }
-        }
 
-        if (currentSlug && apiCatalog.length > 0) {
-          const foundIdx = apiCatalog.findIndex((p, i) =>
-            slugForProduct(p, i) === currentSlug ||
-            p.slug === currentSlug ||
-            p.id === currentSlug ||
-            String(i) === currentSlug
-          );
-          if (foundIdx >= 0) {
-            selIdx = foundIdx;
-            view = 'detail';
+          if (currentSlug && apiCatalog.length > 0) {
+            const foundIdx = apiCatalog.findIndex((p, i) =>
+              slugForProduct(p, i) === currentSlug ||
+              p.slug === currentSlug ||
+              p.id === currentSlug ||
+              String(i) === currentSlug
+            );
+            if (foundIdx >= 0) {
+              selIdx = foundIdx;
+              view = 'detail';
+            }
           }
-        }
 
-        this.setState({ catalog: apiCatalog, sel: selIdx, view });
+          this.setState({ catalog: apiCatalog, sel: selIdx, view });
+        }
       } catch (err) {
         console.warn('API fetchProducts notice:', err.message);
       }
@@ -359,6 +894,8 @@ export default class StoreApp extends React.Component {
         this.setState({ view: 'collections', mobileMenuOpen: false });
       } else if (path === '/cart') {
         this.setState({ view: 'cart', mobileMenuOpen: false });
+      } else if (path === '/wishlist') {
+        this.setState({ view: 'wishlist', mobileMenuOpen: false });
       } else if (path === '/checkout') {
         this.setState({ view: 'checkout', mobileMenuOpen: false });
       } else if (path === '/contact') {
@@ -419,15 +956,44 @@ export default class StoreApp extends React.Component {
         logo.querySelector('span').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 400);
+
+    // 50% Scroll Detection for "Go to Top" button
+    this._onScroll = () => {
+      if (typeof window === 'undefined') return;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 150) {
+        const progress = scrollY / docHeight;
+        const shouldShow = progress >= 0.48; // 50% threshold
+        if (shouldShow !== this.state.showGoToTop) {
+          this.setState({ showGoToTop: shouldShow });
+        }
+      } else {
+        if (this.state.showGoToTop) {
+          this.setState({ showGoToTop: false });
+        }
+      }
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    this._onScroll();
   }
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.updateLandingScale);
     window.removeEventListener('popstate', this._popstateHandler);
+    if (this._onScroll) {
+      window.removeEventListener('scroll', this._onScroll);
+    }
     document.removeEventListener('click', this._click, true);
     clearInterval(this._logoT);
     clearTimeout(this._toastT);
   }
+
+  scrollToTop = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   scrollToText(snippet) {
     const el = [...document.querySelectorAll('div, p, h1, h2, h3, span')].find(d => (d.textContent || '').toLowerCase().includes(snippet.toLowerCase()));
@@ -467,6 +1033,106 @@ export default class StoreApp extends React.Component {
     saveStoredCart(newCart);
     this.setState({ cart: newCart });
   }
+
+  removeFromCart = (i) => {
+    const cat = this.getCatalog();
+    const item = this.state.cart[i];
+    const p = item ? cat[item.idx] : null;
+    const newCart = this.state.cart.filter((_, j) => j !== i);
+    saveStoredCart(newCart);
+    this.setState({ cart: newCart });
+    this.showToast(`Removed "${p ? p.name : 'item'}" from cart`);
+  };
+
+  clearCart = () => {
+    saveStoredCart([]);
+    this.setState({ cart: [] });
+    this.showToast('Cart cleared');
+  };
+
+  isWishlisted = (productOrSlug) => {
+    if (!productOrSlug) return false;
+    const { wishlist = [] } = this.state;
+    const idOrSlug = typeof productOrSlug === 'string'
+      ? productOrSlug
+      : (productOrSlug.id || productOrSlug.slug || productOrSlug._id || productOrSlug.name);
+
+    return wishlist.some(item => {
+      if (typeof item === 'string') return item === idOrSlug;
+      return (
+        (item.id && item.id === idOrSlug) ||
+        (item.slug && item.slug === idOrSlug) ||
+        (item._id && item._id === idOrSlug) ||
+        (item.name && productOrSlug.name && item.name === productOrSlug.name)
+      );
+    });
+  };
+
+  toggleWishlist = (p) => {
+    if (!p) return;
+    const { wishlist = [], currentUser } = this.state;
+    const idOrSlug = typeof p === 'string' ? p : (p.id || p.slug || p._id || p.name);
+    const exists = this.isWishlisted(p);
+
+    let newWishlist;
+    if (exists) {
+      newWishlist = wishlist.filter(item => {
+        if (typeof item === 'string') return item !== idOrSlug;
+        return !(
+          (item.id && item.id === idOrSlug) ||
+          (item.slug && item.slug === idOrSlug) ||
+          (item._id && item._id === idOrSlug) ||
+          (item.name && p.name && item.name === p.name)
+        );
+      });
+      this.showToast('Removed from wishlist');
+    } else {
+      const itemToAdd = typeof p === 'string'
+        ? { id: p, slug: p, name: p, price: 0 }
+        : {
+            id: p.id || p._id || p.slug,
+            slug: p.slug || slugForProduct(p, 0),
+            name: p.name || 'Product',
+            price: p.price || (p.basePrice ? Math.round(p.basePrice / 100) : 0),
+            compare: p.compare || p.price || 0,
+            brand: p.brand || 'Ramroxa',
+            img1: p.img1 || (p.images && p.images[0]?.url) || '',
+            tag: p.tag || '',
+            colors: p.colors || []
+          };
+      newWishlist = [itemToAdd, ...wishlist];
+      this.showToast(`Saved "${p.name || 'item'}" to your wishlist ❤️`);
+    }
+
+    saveStoredWishlist(newWishlist);
+    this.setState({ wishlist: newWishlist });
+
+    if (currentUser && typeof window !== 'undefined') {
+      const targetId = typeof p === 'string' ? p : (p.id || p.slug || p._id);
+      if (targetId) {
+        api.post(`/wishlist/toggle/${targetId}`, {}).catch(() => {});
+      }
+    }
+  };
+
+  addToCartFromWishlist = (item) => {
+    const cat = this.getCatalog();
+    const foundIdx = cat.findIndex(p => (
+      p.slug === item.slug || p.id === item.id || p.name === item.name
+    ));
+    const targetIdx = foundIdx >= 0 ? foundIdx : 0;
+    const targetSize = item.size || 'M';
+
+    const cart = [...this.state.cart];
+    const i = cart.findIndex(l => l.idx === targetIdx && l.size === targetSize);
+    if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + 1 };
+    else cart.push({ idx: targetIdx, size: targetSize, qty: 1 });
+
+    saveStoredCart(cart);
+    this.setState({ cart }, () => {
+      this.showToast(`Added ${item.name || 'product'} to cart`);
+    });
+  };
 
   totals() {
     const cat = this.getCatalog();
@@ -612,8 +1278,9 @@ export default class StoreApp extends React.Component {
   };
 
   header() {
-    const { view, cart, mobileMenuOpen, currentUser } = this.state;
+    const { view, cart, wishlist = [], mobileMenuOpen, currentUser } = this.state;
     const totalItems = cart.reduce((t, l) => t + l.qty, 0);
+    const totalWishlist = wishlist.length;
     const link = (label, active, onClick) => (
       <span onClick={onClick} style={{ fontSize: 13, letterSpacing: 1, color: active ? '#fff' : '#a1a1a1', cursor: 'pointer' }}>{label}</span>
     );
@@ -632,11 +1299,212 @@ export default class StoreApp extends React.Component {
               <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>RAMROXA</div>
               <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
                 {link('HOME', view === 'shop', this.nav('shop'))}
-                {link('COLLECTIONS', view === 'collections', this.nav('collections', 'all'))}
+
+                {/* Collections & Categories Hover Dropdown */}
+                <div
+                  className="zylo-nav-dropdown-wrapper"
+                  onMouseEnter={() => this.setState({ collectionsDropdownOpen: true })}
+                  onMouseLeave={() => this.setState({ collectionsDropdownOpen: false })}
+                >
+                  <button
+                    onClick={() => this.goToView('collections', { colFilter: 'all', filterCategory: 'all', collectionsDropdownOpen: false })}
+                    className="zylo-nav-dropdown-trigger"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '8px 0',
+                      fontSize: 13,
+                      letterSpacing: 1,
+                      color: view === 'collections' ? '#fff' : '#a1a1a1',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    <span>COLLECTIONS</span>
+                    <svg width="9" height="5" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s ease', transform: this.state.collectionsDropdownOpen ? 'rotate(180deg)' : 'none' }}>
+                      <path d="M1 1L5 5L9 1" />
+                    </svg>
+                  </button>
+
+                  {/* Mega Dropdown Menu */}
+                  <div className={`zylo-categories-dropdown ${this.state.collectionsDropdownOpen ? 'open' : ''}`}>
+                    <div className="zylo-categories-dropdown-inner">
+                      <div className="zylo-categories-dropdown-cols">
+                        {/* Column 1: Categories */}
+                        <div className="zylo-cat-col">
+                          <h4 className="zylo-cat-col-title">By Category</h4>
+                          <ul className="zylo-cat-list">
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'all', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">All Products</span>
+                                  <span className="zylo-cat-sub">Complete catalog ({this.getCatalog().length} items)</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_tops', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Tops &amp; Tees</span>
+                                  <span className="zylo-cat-sub">T-shirts, hoodies, knit shirts, sweaters</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_bottoms', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Bottoms &amp; Denim</span>
+                                  <span className="zylo-cat-sub">Trousers, cargos, selvedge denim, shorts</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_out', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Outerwear &amp; Jackets</span>
+                                  <span className="zylo-cat-sub">Windbreakers, trench coats, bombers</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_bags', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Bags &amp; Slings</span>
+                                  <span className="zylo-cat-sub">Tactical crossbody, heavy canvas totes</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_acc', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Accessories &amp; Headwear</span>
+                                  <span className="zylo-cat-sub">Merino beanies, taslan caps, hats</span>
+                                </div>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Column 2: By Gender / Collection */}
+                        <div className="zylo-cat-col">
+                          <h4 className="zylo-cat-col-title">By Collection</h4>
+                          <ul className="zylo-cat-list">
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { colFilter: 'men', filterCategory: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Men's Collection</span>
+                                  <span className="zylo-cat-sub">Tailored cuts &amp; everyday staples</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { colFilter: 'women', filterCategory: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Women's Collection</span>
+                                  <span className="zylo-cat-sub">Modern silhouettes &amp; layered sets</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { colFilter: 'kids', filterCategory: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Kids' Collection</span>
+                                  <span className="zylo-cat-sub">Overalls, vests, and minis</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { colFilter: 'unisex', filterCategory: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Unisex Core</span>
+                                  <span className="zylo-cat-sub">Universal luxury streetwear cuts</span>
+                                </div>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Column 3: Curations & Special Drops */}
+                        <div className="zylo-cat-col zylo-cat-col-featured">
+                          <h4 className="zylo-cat-col-title">Curated Drops</h4>
+                          <ul className="zylo-cat-list">
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { sortBy: 'bestselling', filterCategory: 'all', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Best Sellers</span>
+                                  <span className="zylo-cat-sub">Top rated customer favorites</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { sortBy: 'newest', filterCategory: 'all', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">New Arrivals</span>
+                                  <span className="zylo-cat-sub">Latest season drops &amp; additions</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => this.goToView('collections', { sortBy: 'featured', filterCategory: 'all', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Featured Drops</span>
+                                  <span className="zylo-cat-sub">Hand-picked spotlight styles</span>
+                                </div>
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {link('CONTACT', view === 'contact', this.nav('contact'))}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               {/* Amazon-style Account & Lists Button with Flyout Dropdown */}
               <div
                 className="zylo-nav-account-wrapper"
@@ -661,7 +1529,7 @@ export default class StoreApp extends React.Component {
                   <a
                     href="/login"
                     className="zylo-nav-account-btn"
-                    title="Sign in to your account"
+                    title="Sign In / Register"
                   >
                     <span className="zylo-nav-account-hello">Hello, sign in</span>
                     <div className="zylo-nav-account-title-row">
@@ -671,33 +1539,17 @@ export default class StoreApp extends React.Component {
                   </a>
                 )}
 
-                {/* Flyout Menu */}
+                {/* Flyout Panel */}
                 <div className={`zylo-account-flyout ${this.state.accountDropdownOpen ? 'open' : ''}`}>
-                  <div className="zylo-account-flyout-arrow" />
-
-                  <div className="zylo-account-flyout-card">
-                    {!currentUser ? (
-                      <div className="zylo-flyout-auth-header">
+                  <div className="zylo-account-flyout-inner">
+                    {!currentUser && (
+                      <div className="zylo-flyout-signin-row">
                         <a href="/login" className="zylo-flyout-signin-btn">
                           Sign in
                         </a>
-                        <div className="zylo-flyout-new-customer">
-                          New customer? <a href="/signup" className="zylo-flyout-start-link">Start here.</a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="zylo-flyout-auth-header logged-in">
-                        <div className="zylo-flyout-user-info">
-                          <span className="zylo-flyout-greeting">Hello,</span>
-                          <strong className="zylo-flyout-username">{currentUser.name}</strong>
-                          <span className="zylo-flyout-email">{currentUser.email}</span>
-                        </div>
-                        <button
-                          onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
-                          className="zylo-flyout-profile-btn"
-                        >
-                          Manage Profile
-                        </button>
+                        <p className="zylo-flyout-new-cust">
+                          New customer? <a href="/signup">Start here.</a>
+                        </p>
                       </div>
                     )}
 
@@ -708,6 +1560,11 @@ export default class StoreApp extends React.Component {
                       <div className="zylo-flyout-col">
                         <h4 className="zylo-flyout-col-title">Your Lists</h4>
                         <ul className="zylo-flyout-list">
+                          <li>
+                            <button onClick={() => { this.goToView('wishlist'); this.setState({ accountDropdownOpen: false }); }}>
+                              My Wishlist ({totalWishlist})
+                            </button>
+                          </li>
                           <li>
                             <button onClick={() => { this.goToView('collections', 'all'); this.setState({ accountDropdownOpen: false }); }}>
                               Explore Collections
@@ -788,39 +1645,74 @@ export default class StoreApp extends React.Component {
                 </div>
               </div>
 
+              {/* Wishlist Header Button */}
+              <button
+                onClick={this.nav('wishlist')}
+                className="zylo-nav-cart-btn"
+                title="Wishlist"
+                style={{ padding: '0 8px' }}
+              >
+                <div className="zylo-nav-cart-icon-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill={totalWishlist > 0 ? '#ffffff' : 'none'} stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                  {totalWishlist > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: -5,
+                        right: -8,
+                        background: '#ffffff',
+                        color: '#000000',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        borderRadius: 999,
+                        minWidth: 16,
+                        height: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0 3px',
+                        lineHeight: 1
+                      }}
+                    >
+                      {totalWishlist}
+                    </span>
+                  )}
+                </div>
+                <span className="zylo-nav-cart-label">Wishlist</span>
+              </button>
+
+              {/* Cart Button */}
               <button
                 onClick={this.nav('cart')}
                 className="zylo-nav-cart-btn"
                 title="Shopping Cart"
               >
                 <div className="zylo-nav-cart-icon-wrap">
-                  <svg className="zylo-nav-cart-svg" viewBox="0 0 46 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Top pill badge loop */}
-                    <rect x="16" y="2" width="13" height="15" rx="6.5" stroke="#ffffff" strokeWidth="2.2" fill="#000000" />
-                    
-                    {/* Cart body wireframe */}
+                  <svg className="zylo-nav-cart-svg" viewBox="0 0 38 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Cart wireframe */}
                     <path
-                      d="M 2 7 h 5.5 l 4.2 14.5 h 18.2 l 4.2 -11.5 H 9.5"
+                      d="M 2 4 h 5.5 l 3.8 13.5 h 14.2 l 3.8 -10.5"
                       stroke="#ffffff"
-                      strokeWidth="2.2"
+                      strokeWidth="2.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                    
-                    {/* Wheels */}
-                    <circle cx="14.5" cy="27.5" r="2.5" fill="#ffffff" />
-                    <circle cx="29.5" cy="27.5" r="2.5" fill="#ffffff" />
+                    {/* Solid white round wheels */}
+                    <circle cx="12.5" cy="23.5" r="2.2" fill="#ffffff" />
+                    <circle cx="22" cy="23.5" r="2.2" fill="#ffffff" />
 
-                    {/* Centered locked white count */}
+                    {/* Count number centered directly inside the cart basket */}
                     <text
-                      x="22.5"
-                      y="10.5"
+                      x="18.8"
+                      y="11"
                       textAnchor="middle"
                       dominantBaseline="central"
                       fill="#ffffff"
-                      fontSize="11.5"
-                      fontWeight="700"
-                      fontFamily="'Geist', sans-serif"
+                      fontSize="11"
+                      fontWeight="800"
+                      fontFamily="'Geist', -apple-system, BlinkMacSystemFont, sans-serif"
                     >
                       {totalItems}
                     </text>
@@ -838,9 +1730,21 @@ export default class StoreApp extends React.Component {
             <span style={{ fontSize: 22, letterSpacing: 4, fontWeight: 'bold' }}>RAMROXA</span>
             <button onClick={this.closeMobileMenu} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 8 }}>&times;</button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <button className="mobile-nav-link" onClick={this.nav('shop')}>HOME</button>
-            <button className="mobile-nav-link" onClick={this.nav('collections', 'all')}>COLLECTIONS</button>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button className="mobile-nav-link" onClick={this.nav('collections', 'all')}>COLLECTIONS (ALL)</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 14, borderLeft: '1px solid #333', marginLeft: 4, marginTop: 4 }}>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_tops', colFilter: 'all', mobileMenuOpen: false })}>Tops &amp; Tees</button>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_bottoms', colFilter: 'all', mobileMenuOpen: false })}>Bottoms &amp; Denim</button>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_out', colFilter: 'all', mobileMenuOpen: false })}>Outerwear &amp; Jackets</button>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_bags', colFilter: 'all', mobileMenuOpen: false })}>Bags &amp; Slings</button>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_acc', colFilter: 'all', mobileMenuOpen: false })}>Accessories &amp; Headwear</button>
+              </div>
+            </div>
+
+            <button className="mobile-nav-link" onClick={this.nav('wishlist')}>WISHLIST ({totalWishlist})</button>
             <button className="mobile-nav-link" onClick={this.nav('cart')}>CART ({totalItems})</button>
             <button className="mobile-nav-link" onClick={this.nav('contact')}>CONTACT US</button>
           </div>
@@ -951,12 +1855,12 @@ export default class StoreApp extends React.Component {
             </div>
           </div>
           <div style={{ borderTop: '1px solid #222', paddingTop: 24, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', flexWrap: 'wrap', gap: 12 }}>
-            <span>&copy; {new Date().getFullYear()} Zylo Pvt. Ltd. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} Ramroxa Pvt. Ltd. All rights reserved.</span>
             <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
           </div>
           <div style={{ width: '100%', overflow: 'hidden', textAlign: 'center', marginTop: 32, opacity: 0.16, pointerEvents: 'none', userSelect: 'none' }}>
-            <span style={{ fontFamily: "'Geist', sans-serif", fontSize: 'clamp(56px, 15vw, 210px)', fontWeight: 700, letterSpacing: 'clamp(8px, 2.5vw, 28px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
-              ZYLO
+            <span style={{ fontFamily: "'Geist', sans-serif", fontSize: 'clamp(44px, 11vw, 150px)', fontWeight: 700, letterSpacing: 'clamp(4px, 1vw, 10px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
+              RAMROXA
             </span>
           </div>
         </div>
@@ -1043,6 +1947,7 @@ export default class StoreApp extends React.Component {
   renderCollections() {
     const {
       colFilter,
+      filterCategory = 'all',
       filterPriceBucket,
       filterMinPrice,
       filterMaxPrice,
@@ -1104,8 +2009,45 @@ export default class StoreApp extends React.Component {
       unisex: catList.filter(p => (p.gender || '').toLowerCase() === 'unisex').length
     };
 
+    // 3b. Dynamic Category Counts
+    const categoryCounts = {
+      all: catList.length,
+      c_tops: catList.filter(p => {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        return catId === 'c_tops' || catId.includes('top') || (p.tags || []).some(t => ['tee', 'tshirt', 'hoodie', 'shirt', 'sweater', 'crewneck', 'fleece'].includes(t.toLowerCase()));
+      }).length,
+      c_bottoms: catList.filter(p => {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        return catId === 'c_bottoms' || catId.includes('bot') || (p.tags || []).some(t => ['trousers', 'cargo', 'denim', 'jeans', 'shorts', 'overalls', 'leggings', 'pants'].includes(t.toLowerCase()));
+      }).length,
+      c_out: catList.filter(p => {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        return catId === 'c_out' || catId.includes('out') || (p.tags || []).some(t => ['jacket', 'bomber', 'trench', 'windbreaker', 'coat', 'outerwear', 'vest'].includes(t.toLowerCase()));
+      }).length,
+      c_bags: catList.filter(p => {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        return catId === 'c_bags' || catId.includes('bag') || (p.tags || []).some(t => ['bag', 'crossbody', 'sling', 'tote', 'backpack'].includes(t.toLowerCase()));
+      }).length,
+      c_acc: catList.filter(p => {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        return catId === 'c_acc' || catId.includes('acc') || (p.tags || []).some(t => ['cap', 'hat', 'beanie', 'belt', 'accessories'].includes(t.toLowerCase()));
+      }).length,
+    };
+
     // 4. Filter Items
     let items = catList.filter(p => {
+      // Category Filter
+      if (filterCategory && filterCategory !== 'all') {
+        const catId = (p.categoryId || p.category || '').toLowerCase();
+        const catMatch = catId === filterCategory.toLowerCase() ||
+          (filterCategory === 'c_tops' && (catId.includes('top') || (p.tags || []).some(t => ['tee', 'tshirt', 'hoodie', 'shirt', 'sweater', 'crewneck', 'fleece'].includes(t.toLowerCase())))) ||
+          (filterCategory === 'c_bottoms' && (catId.includes('bot') || (p.tags || []).some(t => ['trousers', 'cargo', 'denim', 'jeans', 'shorts', 'overalls', 'leggings', 'pants'].includes(t.toLowerCase())))) ||
+          (filterCategory === 'c_out' && (catId.includes('out') || (p.tags || []).some(t => ['jacket', 'bomber', 'trench', 'windbreaker', 'coat', 'outerwear', 'vest'].includes(t.toLowerCase())))) ||
+          (filterCategory === 'c_bags' && (catId.includes('bag') || (p.tags || []).some(t => ['bag', 'crossbody', 'sling', 'tote', 'backpack'].includes(t.toLowerCase())))) ||
+          (filterCategory === 'c_acc' && (catId.includes('acc') || (p.tags || []).some(t => ['cap', 'hat', 'beanie', 'belt', 'accessories'].includes(t.toLowerCase()))));
+        if (!catMatch) return false;
+      }
+
       // Gender Filter
       if (colFilter && colFilter !== 'all') {
         const g = (p.gender || '').toLowerCase();
@@ -1161,6 +2103,7 @@ export default class StoreApp extends React.Component {
     }
 
     const hasActiveFilters = colFilter !== 'all' ||
+      (filterCategory && filterCategory !== 'all') ||
       filterPriceBucket !== 'all' ||
       (filterBrands && filterBrands.length > 0) ||
       (filterColors && filterColors.length > 0) ||
@@ -1177,6 +2120,7 @@ export default class StoreApp extends React.Component {
             <button
               onClick={() => this.setState({
                 colFilter: 'all',
+                filterCategory: 'all',
                 filterPriceBucket: 'all',
                 filterMinPrice: '',
                 filterMaxPrice: '',
@@ -1190,6 +2134,33 @@ export default class StoreApp extends React.Component {
               Clear all
             </button>
           )}
+        </div>
+
+        {/* 0. Category Filter */}
+        <div className="zylo-filter-section">
+          <h4 className="zylo-filter-section-title">Category</h4>
+          <div className="zylo-filter-options-list">
+            {[
+              { id: 'all', label: 'All Categories', count: categoryCounts.all },
+              { id: 'c_tops', label: 'Tops & Tees', count: categoryCounts.c_tops },
+              { id: 'c_bottoms', label: 'Bottoms & Denim', count: categoryCounts.c_bottoms },
+              { id: 'c_out', label: 'Outerwear & Jackets', count: categoryCounts.c_out },
+              { id: 'c_bags', label: 'Bags & Slings', count: categoryCounts.c_bags },
+              { id: 'c_acc', label: 'Accessories & Headwear', count: categoryCounts.c_acc }
+            ].map(({ id, label, count }) => (
+              <label key={id} className={`zylo-filter-option-row ${filterCategory === id ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="sidebarCategoryFilter"
+                  checked={filterCategory === id}
+                  onChange={() => this.setState({ filterCategory: id })}
+                  className="zylo-filter-radio"
+                />
+                <span className="zylo-filter-option-name">{label}</span>
+                <span className="zylo-filter-option-count">({count})</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* 1. Gender Filter */}
@@ -1391,7 +2362,33 @@ export default class StoreApp extends React.Component {
         <div id="zylo-shop-main" className="zylo-collections-toolbar">
           <div className="zylo-toolbar-left">
             <h2 className="zylo-toolbar-title">
-              {colFilter === 'all' ? 'All Products' : (colFilter === 'men' ? "Men's Collection" : (colFilter === 'women' ? "Women's Collection" : (colFilter === 'kids' ? "Kids' Collection" : "Unisex Collection")))}
+              {(() => {
+                const catNames = {
+                  c_tops: 'Tops & Tees',
+                  c_bottoms: 'Bottoms & Denim',
+                  c_out: 'Outerwear & Jackets',
+                  c_bags: 'Bags & Slings',
+                  c_acc: 'Accessories & Headwear'
+                };
+                const genNames = {
+                  men: "Men's Collection",
+                  women: "Women's Collection",
+                  kids: "Kids' Collection",
+                  unisex: "Unisex Core"
+                };
+                if (filterCategory && filterCategory !== 'all' && catNames[filterCategory]) {
+                  if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
+                    return `${genNames[colFilter]} — ${catNames[filterCategory]}`;
+                  }
+                  return catNames[filterCategory];
+                }
+                if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
+                  return genNames[colFilter];
+                }
+                if (sortBy === 'bestselling') return 'Best Sellers';
+                if (sortBy === 'newest') return 'New Arrivals';
+                return 'All Products';
+              })()}
             </h2>
             <span className="zylo-toolbar-count">Showing {items.length} {items.length === 1 ? 'item' : 'items'}</span>
           </div>
@@ -1532,10 +2529,24 @@ export default class StoreApp extends React.Component {
                     : (p.options?.Colour || p.options?.Color || []);
                   return (
                     <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
-                      <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee' }}>
+                      <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee', position: 'relative' }}>
                         <span className={`zylo-product-tag-badge ${best ? 'best-seller' : 'new'}`}>
                           {best ? '★ Best seller' : (p.tag || '✦ New')}
                         </span>
+                        <button
+                          type="button"
+                          className={`rmx-wishlist-heart-btn ${this.isWishlisted(p) ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            this.toggleWishlist(p);
+                          }}
+                          aria-label={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                        >
+                          <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                        </button>
                       </div>
                       <div className="zylo-product-card-body">
                         <div className="zylo-product-card-info">
@@ -1618,19 +2629,9 @@ export default class StoreApp extends React.Component {
       <main className="zylo-page-container">
         <a
           onClick={() => this.goToView('collections', { colFilter: 'all' })}
-          style={{
-            ...font,
-            fontSize: 13,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            marginBottom: 16,
-            color: '#000',
-            textDecoration: 'none'
-          }}
+          className="zylo-detail-back-link"
         >
-          &larr; Back to store
+          &larr; Back to all products
         </a>
 
         <div className="zylo-detail-grid">
@@ -1646,9 +2647,22 @@ export default class StoreApp extends React.Component {
                 backgroundColor: '#eee',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
+                position: 'relative',
                 overflow: 'hidden'
               }}
-            />
+            >
+              <button
+                type="button"
+                className={`rmx-wishlist-heart-btn ${this.isWishlisted(p) ? 'active' : ''}`}
+                onClick={() => this.toggleWishlist(p)}
+                aria-label={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            </div>
             {thumbs.length > 1 && (
               <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
                 {thumbs.map((t, i) => (
@@ -1751,18 +2765,29 @@ export default class StoreApp extends React.Component {
             </div>
 
             {/* Action Buttons */}
-            <div className="zylo-detail-actions">
+            <div className="zylo-detail-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button
                 onClick={() => this.addLine(false)}
-                style={{ ...pillBtn(true), flex: 1, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
+                style={{ ...pillBtn(true), flex: 2, minWidth: 160, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
               >
                 Add to cart — {rs(p.price * selQty)}
               </button>
               <button
                 onClick={() => this.addLine(true)}
-                style={{ ...pillBtn(false), flex: 1, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
+                style={{ ...pillBtn(false), flex: 1, minWidth: 100, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
               >
                 Buy now
+              </button>
+              <button
+                type="button"
+                onClick={() => this.toggleWishlist(p)}
+                className={`zylo-detail-wishlist-btn ${this.isWishlisted(p) ? 'active' : ''}`}
+                title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+                <span>{this.isWishlisted(p) ? 'In Wishlist' : 'Wishlist'}</span>
               </button>
             </div>
 
@@ -1778,55 +2803,307 @@ export default class StoreApp extends React.Component {
     );
   }
 
-  renderCart() {
-    const { cart } = this.state;
-    const { subtotal, delivery, total } = this.totals();
+  renderWishlist() {
+    const { wishlist = [] } = this.state;
     const cat = this.getCatalog();
-    if (!cart.length) {
-      return (
-        <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
-          <h2 style={{ fontSize: 32, fontWeight: 400, marginBottom: 12 }}>YOUR CART IS EMPTY</h2>
-          <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>Explore our latest collection of garments built for longevity.</p>
-          <button onClick={() => this.goToView('collections', { colFilter: 'all' })} style={pillBtn(true)}>SHOP NOW</button>
-        </div>
-      );
-    }
+
     return (
       <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
-        <h1 style={{ fontSize: 36, fontWeight: 400, marginBottom: 28 }}>SHOPPING CART</h1>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
           <div>
-            {cart.map((l, i) => {
-              const p = cat[l.idx] || { name: 'Item', price: 0, img1: '' };
+            <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 12 }}>
+              SAVED ITEMS &amp; FAVORITES
+            </span>
+            <h1 style={{ fontSize: 40, margin: '0 0 8px', fontWeight: 400, letterSpacing: 1 }}>YOUR WISHLIST</h1>
+            <p style={{ color: '#666', fontSize: 15, margin: 0 }}>
+              {wishlist.length === 0
+                ? 'Keep track of pieces you love across our collections.'
+                : `You have ${wishlist.length} saved ${wishlist.length === 1 ? 'item' : 'items'} in your wishlist.`}
+            </p>
+          </div>
+          {wishlist.length > 0 && (
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  wishlist.forEach(item => this.addToCartFromWishlist(item));
+                  this.showToast('All items added to cart!');
+                }}
+                style={{ ...pillBtn(true), fontSize: 13, padding: '10px 22px' }}
+              >
+                ADD ALL TO CART
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  saveStoredWishlist([]);
+                  this.setState({ wishlist: [] });
+                  this.showToast('Wishlist cleared');
+                }}
+                style={{ ...pillBtn(false), fontSize: 13, padding: '10px 20px', color: '#888' }}
+              >
+                CLEAR ALL
+              </button>
+            </div>
+          )}
+        </div>
+
+        {wishlist.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fafafa', border: '1px solid #e5e5e5', borderRadius: 20 }}>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 26, fontWeight: 500, margin: '0 0 10px' }}>Your Wishlist Is Empty</h2>
+            <p style={{ color: '#666', fontSize: 14.5, maxWidth: 440, margin: '0 auto 28px', lineHeight: 1.6 }}>
+              Explore our drops and tap the heart icon on any garment to save your favorite fits right here.
+            </p>
+            <button
+              type="button"
+              onClick={() => this.goToView('collections', { colFilter: 'all' })}
+              style={{ ...pillBtn(true), fontSize: 14, padding: '12px 32px' }}
+            >
+              EXPLORE COLLECTION &rarr;
+            </button>
+          </div>
+        ) : (
+          <div className="zylo-products-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '28px 20px' }}>
+            {wishlist.map((item, idx) => {
+              const fullProd = cat.find(p => p.slug === item.slug || p.id === item.id || p.name === item.name) || item;
+              const imgSrc = item.img1 || fullProd.img1 || '';
+              const priceNpr = item.price || fullProd.price || 0;
+              const compare = item.compare || fullProd.compare || priceNpr;
+
               return (
-                <div key={i} style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: '1px solid #e0e0e0', alignItems: 'center' }}>
-                  <div style={{ width: 70, height: 90, background: img(p.img1), borderRadius: 8, flexShrink: 0 }} />
-                  <div style={{ flex: 1, width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
-                    <div style={{ fontSize: 15, fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 12, color: '#888', margin: '2px 0 6px' }}>Size: {l.size}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{rs(p.price)}</div>
+                <div key={item.id || item.slug || idx} className="zylo-product-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div
+                    className="zylo-product-img-wrap"
+                    style={{ background: img(imgSrc), backgroundColor: '#eee', cursor: 'pointer', position: 'relative' }}
+                    onClick={() => {
+                      const catIdx = cat.findIndex(p => p.slug === item.slug || p.id === item.id || p.name === item.name);
+                      if (catIdx >= 0) this.openProduct(catIdx);
+                      else this.goToView('collections');
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="rmx-wishlist-heart-btn active"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        this.toggleWishlist(item);
+                      }}
+                      title="Remove from wishlist"
+                      aria-label="Remove from wishlist"
+                    >
+                      <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button onClick={() => this.bump(i, -1)} style={{ width: 28, height: 28, border: '1px solid #000', borderRadius: 4, background: '#fff', cursor: 'pointer', ...font }}>-</button>
-                    <span style={{ minWidth: 18, textAlign: 'center', fontSize: 13 }}>{l.qty}</span>
-                    <button onClick={() => this.bump(i, 1)} style={{ width: 28, height: 28, border: '1px solid #000', borderRadius: 4, background: '#fff', cursor: 'pointer', ...font }}>+</button>
+                  <div className="zylo-product-card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div className="zylo-product-card-info">
+                      <span className="zylo-product-brand-tag">{item.brand || fullProd.brand || 'Ramroxa'}</span>
+                      <span
+                        className="zylo-product-name"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          const catIdx = cat.findIndex(p => p.slug === item.slug || p.id === item.id || p.name === item.name);
+                          if (catIdx >= 0) this.openProduct(catIdx);
+                        }}
+                      >
+                        {item.name}
+                      </span>
+                      <div className="zylo-product-price-row">
+                        <div className="zylo-product-prices">
+                          <span className="zylo-product-price">{rs(priceNpr)}</span>
+                          {compare > priceNpr && <span className="zylo-product-compare">{rs(compare)}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                      <button
+                        type="button"
+                        onClick={() => this.addToCartFromWishlist(item)}
+                        style={{ ...pillBtn(true), flex: 1, fontSize: 12, padding: '9px 12px', textAlign: 'center' }}
+                      >
+                        Add to Cart
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => this.toggleWishlist(item)}
+                        style={{ ...pillBtn(false), fontSize: 12, padding: '9px 12px', color: '#dc2626', borderColor: '#fca5a5' }}
+                        title="Remove item"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div style={{ background: '#f5f5f5', padding: 24, borderRadius: 12, height: 'fit-content' }}>
-            <h3 style={{ fontSize: 18, margin: '0 0 16px', fontWeight: 500 }}>ORDER SUMMARY</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 14 }}>
-              <span>Subtotal</span><span>{rs(subtotal)}</span>
+        )}
+      </div>
+    );
+  }
+
+  renderCart() {
+    const { cart } = this.state;
+    const { subtotal, delivery, total } = this.totals();
+    const cat = this.getCatalog();
+    const totalCount = cart.reduce((t, l) => t + l.qty, 0);
+
+    if (!cart.length) {
+      return (
+        <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fafafa', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          </div>
+          <h2 style={{ fontSize: 32, fontWeight: 400, marginBottom: 12 }}>YOUR CART IS EMPTY</h2>
+          <p style={{ color: '#888', marginBottom: 28, fontSize: 14 }}>Explore our latest collection of garments built for longevity.</p>
+          <button onClick={() => this.goToView('collections', { colFilter: 'all' })} style={{ ...pillBtn(true), padding: '12px 32px' }}>SHOP NOW</button>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 36, fontWeight: 400, margin: '0 0 6px', letterSpacing: 0.5 }}>SHOPPING CART</h1>
+            <span style={{ color: '#666', fontSize: 14 }}>{totalCount} {totalCount === 1 ? 'item' : 'items'} in your bag</span>
+          </div>
+          <button
+            type="button"
+            onClick={this.clearCart}
+            style={{ ...pillBtn(false), fontSize: 12.5, padding: '8px 16px', color: '#888', borderColor: '#ddd' }}
+            title="Remove all items from cart"
+          >
+            Clear Cart
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40, alignItems: 'start' }}>
+          <div>
+            {cart.map((l, i) => {
+              const p = cat[l.idx] || { name: 'Item', price: 0, img1: '', brand: 'Ramroxa' };
+              const lineTotal = (p.price || 0) * (l.qty || 1);
+
+              return (
+                <div key={i} className="zylo-cart-item-row">
+                  {/* Product Thumbnail */}
+                  <div
+                    className="zylo-cart-item-img"
+                    style={{ backgroundImage: `url('${p.img1 || (p.images && p.images[0]?.url) || ''}')` }}
+                    onClick={() => this.openProduct(l.idx)}
+                    title="View product details"
+                  />
+
+                  {/* Product Details */}
+                  <div className="zylo-cart-item-info">
+                    <span className="zylo-cart-item-brand">{p.brand || 'Ramroxa'}</span>
+                    <a
+                      className="zylo-cart-item-title"
+                      onClick={() => this.openProduct(l.idx)}
+                    >
+                      {p.name}
+                    </a>
+                    <div className="zylo-cart-item-meta">
+                      <span className="zylo-cart-item-size-badge">Size: {l.size}</span>
+                      <span className="zylo-cart-item-price">{rs(p.price)}</span>
+                      {l.qty > 1 && (
+                        <span style={{ fontSize: 12, color: '#888' }}>
+                          ({rs(lineTotal)} total)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stepper and Remove Action */}
+                  <div className="zylo-cart-item-actions">
+                    <div className="zylo-cart-stepper">
+                      <button
+                        type="button"
+                        onClick={() => this.bump(i, -1)}
+                        className="zylo-cart-stepper-btn"
+                        title="Decrease quantity"
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <span className="zylo-cart-stepper-qty">{l.qty}</span>
+                      <button
+                        type="button"
+                        onClick={() => this.bump(i, 1)}
+                        className="zylo-cart-stepper-btn"
+                        title="Increase quantity"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    {/* Dedicated Remove Button */}
+                    <button
+                      type="button"
+                      onClick={() => this.removeFromCart(i)}
+                      className="zylo-cart-remove-btn"
+                      title={`Remove ${p.name} from cart`}
+                      aria-label={`Remove ${p.name} from cart`}
+                    >
+                      <svg className="zylo-cart-remove-icon" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Order Summary */}
+          <div style={{ background: '#f5f5f5', padding: 28, borderRadius: 16, border: '1px solid #eaeaea', position: 'sticky', top: 80 }}>
+            <h3 style={{ fontSize: 18, margin: '0 0 18px', fontWeight: 600, letterSpacing: 0.5 }}>ORDER SUMMARY</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 14 }}>
+              <span style={{ color: '#555' }}>Subtotal ({totalCount} items)</span>
+              <span style={{ fontWeight: 600 }}>{rs(subtotal)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, fontSize: 14 }}>
-              <span>Delivery</span><span>{delivery === 0 ? 'FREE' : rs(delivery)}</span>
+              <span style={{ color: '#555' }}>Delivery</span>
+              <span style={{ color: delivery === 0 ? '#10b981' : '#111', fontWeight: 600 }}>
+                {delivery === 0 ? 'FREE' : rs(delivery)}
+              </span>
             </div>
+            {subtotal < FREE_OVER && (
+              <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: '10px 14px', marginBottom: 18, fontSize: 12.5, color: '#666' }}>
+                Add <strong>{rs(FREE_OVER - subtotal)}</strong> more to unlock <strong>FREE Delivery</strong> across Nepal!
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #ddd', paddingTop: 16, marginBottom: 24, fontSize: 18, fontWeight: 700 }}>
-              <span>Total</span><span>{rs(total)}</span>
+              <span>Estimated Total</span>
+              <span>{rs(total)}</span>
             </div>
-            <button onClick={() => this.goToView('checkout')} style={{ ...pillBtn(true), width: '100%', textAlign: 'center' }}>PROCEED TO CHECKOUT</button>
+            <button
+              type="button"
+              onClick={() => this.goToView('checkout')}
+              style={{ ...pillBtn(true), width: '100%', textAlign: 'center', padding: '16px 20px', fontSize: 14, fontWeight: 700 }}
+            >
+              PROCEED TO CHECKOUT &rarr;
+            </button>
+            <div style={{ marginTop: 20, borderTop: '1px solid #e5e5e5', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: '#777' }}>
+              <span>✓ Pay via Cash on Delivery, eSewa, or Fonepay</span>
+              <span>✓ 100% genuine guaranteed garments</span>
+              <span>✓ Delivery in 2–4 business days</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1947,7 +3224,29 @@ export default class StoreApp extends React.Component {
                       <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                       <div style={{ fontSize: 11, color: '#666' }}>Size: {l.size} &times; {l.qty}</div>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{rs(p.price * l.qty)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{rs(p.price * l.qty)}</div>
+                      <button
+                        type="button"
+                        onClick={() => this.removeFromCart(i)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#999',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          fontSize: 16,
+                          lineHeight: 1,
+                          transition: 'color 0.15s ease'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#999'}
+                        title={`Remove ${p.name}`}
+                        aria-label={`Remove ${p.name}`}
+                      >
+                        &times;
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -2032,20 +3331,32 @@ export default class StoreApp extends React.Component {
 
     const faqs = [
       {
-        q: 'How long does shipping take across Nepal?',
-        a: 'Orders inside Kathmandu Valley are typically delivered within 24 to 48 hours. Outside valley orders are shipped via express courier and arrive in 2 to 4 business days.'
+        q: 'What is Ramroxa?',
+        a: 'Ramroxa is a contemporary streetwear and lifestyle label based in Kathmandu, Nepal. We craft premium heavyweight t-shirts, relaxed bottoms, hoodies, and everyday essentials focusing on structured cuts, durable craft, and sustainable textile sourcing.'
+      },
+      {
+        q: 'How long does delivery take across Nepal?',
+        a: 'Orders inside Kathmandu Valley are typically delivered within 24 to 48 hours. Orders for other major cities and districts across Nepal are dispatched via express courier network and arrive in 2 to 4 business days.'
       },
       {
         q: 'What payment methods do you accept?',
-        a: 'We accept Cash on Delivery (COD) across all major cities and districts in Nepal. We also accept instant digital payments via eSewa and Fonepay.'
+        a: 'We provide full payment flexibility: Cash on Delivery (COD) across all major cities and districts in Nepal, as well as instant and secure digital payments via eSewa and Fonepay QR.'
       },
       {
         q: 'What is your return & exchange policy?',
-        a: 'We offer an easy 7-day exchange policy for unwashed, unworn garments with original tags attached. Reach out with your Order ID to initiate an exchange.'
+        a: 'We offer an easy 7-day exchange window for all unwashed, unworn garments with original tags attached. Simply submit an inquiry with your Order ID or connect with our support team on WhatsApp to initiate an exchange.'
+      },
+      {
+        q: 'How do I choose the right size and fit?',
+        a: 'Each product page includes detailed size specifications and model dimensions. Our silhouettes generally feature relaxed and modern boxy cuts. If you are between sizes or need tailored styling advice, our team is always here to assist.'
       },
       {
         q: 'Can I visit your physical showroom in Kathmandu?',
-        a: 'Yes! Our flagship showroom in Thamel, Kathmandu is open 7 days a week for in-person fittings, product previews, and direct order pickups.'
+        a: 'Yes! Our flagship showroom in Thamel, Kathmandu (near Garden of Dreams) is open 7 days a week from 10:00 AM to 8:00 PM for in-person fittings, fabric previews, and direct order pickups.'
+      },
+      {
+        q: 'Do you accept corporate or custom bulk orders?',
+        a: 'Yes, we collaborate with creative studios, events, companies, and bulk buyers across Nepal. Select "Wholesale & custom" in our inquiry form or contact us directly on WhatsApp for custom catalog pricing.'
       }
     ];
 
@@ -2055,13 +3366,13 @@ export default class StoreApp extends React.Component {
           <span style={{ fontSize: 11, letterSpacing: 2, background: '#000', color: '#fff', padding: '4px 12px', borderRadius: 999, display: 'inline-block', marginBottom: 12 }}>
             CUSTOMER SUPPORT & INQUIRIES
           </span>
-          <h1 style={{ fontSize: 40, margin: '0 0 10px', fontWeight: 400, letterSpacing: 1 }}>CONTACT ZYLO</h1>
+          <h1 style={{ fontSize: 40, margin: '0 0 10px', fontWeight: 400, letterSpacing: 1 }}>CONTACT RAMROXA</h1>
           <p style={{ color: '#666', fontSize: 15, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
             Have questions about an existing order, sizing guidance, custom orders, or wholesale? Our Kathmandu team is here to assist you.
           </p>
         </div>
 
-        <div className="resp-contact-grid">
+        <div className="resp-contact-grid" id="contactFormSection">
           {/* Left Column: Interactive Contact Form or Confirmation */}
           <div style={{ background: '#fafafa', border: '1px solid #e5e5e5', borderRadius: 16, padding: '32px 28px' }}>
             {contactSent ? (
@@ -2124,6 +3435,7 @@ export default class StoreApp extends React.Component {
                       FULL NAME <span style={{ color: '#e53935' }}>*</span>
                     </label>
                     <input
+                      id="contactNameInput"
                       value={cName}
                       onChange={e => this.setState({ cName: e.target.value })}
                       placeholder="e.g. Aarav Sharma"
@@ -2247,35 +3559,92 @@ export default class StoreApp extends React.Component {
           </div>
         </div>
 
-        {/* FAQs Section */}
-        <div style={{ marginTop: 56, borderTop: '1px solid #eaeaea', paddingTop: 40 }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <span style={{ fontSize: 11, letterSpacing: 2, color: '#888' }}>HELP & ANSWERS</span>
-            <h2 style={{ fontSize: 28, fontWeight: 400, margin: '6px 0 0' }}>FREQUENTLY ASKED QUESTIONS</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                style={{
-                  border: '1px solid #e8e8e8',
-                  borderRadius: 12,
-                  padding: '20px 22px',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 0.2s, border-color 0.2s'
-                }}
-                onClick={() => this.setState({ activeFaq: activeFaq === idx ? null : idx })}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#111', lineHeight: 1.4 }}>{faq.q}</div>
-                  <span style={{ fontSize: 16, color: '#888', flexShrink: 0 }}>{activeFaq === idx ? '−' : '+'}</span>
-                </div>
-                <div style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: 10, display: activeFaq === idx ? 'block' : 'none' }}>
-                  {faq.a}
-                </div>
+        {/* FAQs Section (Modern 2-Column Split Layout) */}
+        <div className="contact-faq-wrapper" id="faqSection">
+          <div className="contact-faq-layout">
+            {/* Left Column: Heading & Callout Card */}
+            <div className="faq-left-col">
+              <div className="faq-badge">
+                <span className="faq-badge-icon">?</span>
+                <span>FAQS</span>
               </div>
-            ))}
+              <h2 className="faq-title">
+                Frequently asked<br />
+                <span className="faq-title-highlight">questions.</span>
+              </h2>
+              <p className="faq-desc">
+                Get clear answers about sizing, express delivery across Nepal, payment methods (COD, eSewa, Fonepay), exchanges, and order tracking.
+              </p>
+
+              <div className="faq-callout-card">
+                <h3 className="faq-callout-title">Got questions? We've got answers.</h3>
+                <p className="faq-callout-desc">
+                  Whether you're exploring our collection, choosing the right size, or finding where to start, get clear answers to the questions that matter.
+                </p>
+                <button
+                  type="button"
+                  className="faq-ask-btn"
+                  onClick={() => {
+                    const formEl = document.getElementById('contactFormSection');
+                    if (formEl) {
+                      formEl.scrollIntoView({ behavior: 'smooth' });
+                      setTimeout(() => {
+                        const inputEl = document.getElementById('contactNameInput') || formEl.querySelector('input, textarea');
+                        if (inputEl) inputEl.focus();
+                      }, 400);
+                    }
+                  }}
+                >
+                  <span>Ask A Question</span>
+                  <span className="faq-ask-icon">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="6 3 20 12 6 21 6 3" />
+                    </svg>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Accordion List */}
+            <div className="faq-right-col">
+              <div className="faq-accordion-list">
+                {faqs.map((faq, idx) => {
+                  const isOpen = activeFaq === idx;
+                  return (
+                    <div
+                      key={idx}
+                      className={`faq-accordion-item ${isOpen ? 'open' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="faq-question-btn"
+                        onClick={() => this.setState({ activeFaq: isOpen ? null : idx })}
+                        aria-expanded={isOpen}
+                      >
+                        <span className="faq-question-text">{faq.q}</span>
+                        <span className="faq-toggle-circle">
+                          {isOpen ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                          )}
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="faq-answer-content">
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2932,10 +4301,14 @@ export default class StoreApp extends React.Component {
               catalog={this.getCatalog()}
               onOpenProduct={this.openProduct}
               onNav={this.goToView}
+              wishlist={this.state.wishlist}
+              onToggleWishlist={this.toggleWishlist}
+              isWishlisted={this.isWishlisted}
             />
           )}
           {view === 'collections' && this.renderCollections()}
           {view === 'detail' && this.renderDetail()}
+          {view === 'wishlist' && this.renderWishlist()}
           {view === 'cart' && this.renderCart()}
           {view === 'checkout' && this.renderCheckout()}
           {view === 'confirmed' && this.renderConfirmed()}
@@ -2943,6 +4316,20 @@ export default class StoreApp extends React.Component {
           {view === 'account' && this.renderAccount()}
         </main>
         {this.footer()}
+
+        {/* 50% Scroll Go-To-Top Button */}
+        <button
+          type="button"
+          onClick={this.scrollToTop}
+          className={`rmx-go-to-top ${this.state.showGoToTop ? 'visible' : 'hidden'}`}
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <svg className="rmx-go-to-top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15" />
+          </svg>
+          <span>Top</span>
+        </button>
       </div>
     );
   }
