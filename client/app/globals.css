@@ -1863,16 +1863,16 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-account-flyout {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   right: -10px;
   width: 440px;
   background: #ffffff;
   color: #111111;
-  border: 1px solid #d5d9d9;
-  border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.06);
   z-index: 150;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-4px);
@@ -1902,16 +1902,22 @@ tbody tr:hover { background: var(--muted); }
   filter: drop-shadow(0 -1.5px 1px rgba(0, 0, 0, 0.12));
 }
 
+.zylo-account-flyout-inner,
 .zylo-account-flyout-card {
   padding: 0;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
-/* Auth Header */
+/* Sign In Top Row with Generous Padding */
+.zylo-flyout-signin-row,
 .zylo-flyout-auth-header {
-  padding: 16px 20px 14px 20px;
+  padding: 24px 28px 20px 28px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: #ffffff;
 }
 
@@ -1920,49 +1926,59 @@ tbody tr:hover { background: var(--muted); }
   justify-content: space-between;
   align-items: center;
   text-align: left;
-  background: #fcfcfc;
-  padding: 14px 18px;
+  background: #fafafa;
+  padding: 18px 24px;
 }
 
 .zylo-flyout-signin-btn {
-  display: block;
-  width: 200px;
-  margin: 0 auto 8px auto;
-  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  margin: 0 auto 12px auto;
+  padding: 10px 0;
   background: #000000;
   border: 1px solid #000000;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #ffffff;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 13.5px;
   letter-spacing: 0.5px;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
 .zylo-flyout-signin-btn:hover {
-  background: #222222;
-  border-color: #222222;
+  background: #27272a;
+  border-color: #27272a;
   color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.zylo-flyout-new-cust,
 .zylo-flyout-new-customer {
-  font-size: 11.5px;
-  color: #555555;
+  margin: 0;
+  font-size: 12px;
+  color: #71717a;
+  text-align: center;
 }
 
+.zylo-flyout-new-cust a,
 .zylo-flyout-start-link {
-  color: #000000;
+  color: #09090b;
   text-decoration: underline;
   font-weight: 600;
-  margin-left: 2px;
+  margin-left: 4px;
+  transition: color 0.15s ease;
 }
 
+.zylo-flyout-new-cust a:hover,
 .zylo-flyout-start-link:hover {
-  color: #666666;
+  color: #000000;
   text-decoration: underline;
 }
 
@@ -1973,18 +1989,18 @@ tbody tr:hover { background: var(--muted); }
 
 .zylo-flyout-greeting {
   font-size: 11px;
-  color: #666666;
+  color: #71717a;
 }
 
 .zylo-flyout-username {
   font-size: 14px;
   font-weight: 700;
-  color: #111111;
+  color: #09090b;
 }
 
 .zylo-flyout-email {
   font-size: 11.5px;
-  color: #777777;
+  color: #71717a;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1994,31 +2010,32 @@ tbody tr:hover { background: var(--muted); }
 .zylo-flyout-profile-btn {
   padding: 6px 12px;
   background: #ffffff;
-  border: 1px solid #d5d9d9;
+  border: 1px solid #e4e4e7;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #111111;
+  color: #09090b;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .zylo-flyout-profile-btn:hover {
-  background: #f7f7f7;
-  border-color: #a6a6a6;
+  background: #f4f4f5;
+  border-color: #d4d4d8;
 }
 
 .zylo-flyout-divider {
   height: 1px;
-  background: #eaeded;
+  background: #f4f4f5;
   width: 100%;
 }
 
-/* Two Columns */
+/* Two Columns with clean spacing */
 .zylo-flyout-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 14px 18px 18px 18px;
+  padding: 20px 28px 24px 28px;
+  gap: 24px;
   background: #ffffff;
 }
 
@@ -2028,15 +2045,15 @@ tbody tr:hover { background: var(--muted); }
 }
 
 .zylo-flyout-col:last-child {
-  border-left: 1px solid #eaeded;
-  padding-left: 18px;
+  border-left: 1px solid #f4f4f5;
+  padding-left: 24px;
 }
 
 .zylo-flyout-col-title {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: #0F1111;
-  margin: 0 0 10px 0;
+  color: #09090b;
+  margin: 0 0 12px 0;
   letter-spacing: -0.2px;
 }
 
@@ -2046,7 +2063,7 @@ tbody tr:hover { background: var(--muted); }
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .zylo-flyout-list li {
@@ -2057,26 +2074,25 @@ tbody tr:hover { background: var(--muted); }
 .zylo-flyout-list button {
   background: none;
   border: none;
-  padding: 0;
+  padding: 2px 0;
   text-align: left;
   font-size: 12.5px;
-  color: #444444;
+  color: #52525b;
   cursor: pointer;
   width: 100%;
   font-family: inherit;
-  transition: color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .zylo-flyout-list button:hover {
   color: #000000;
-  text-decoration: underline;
-  font-weight: 600;
+  transform: translateX(3px);
 }
 
 .zylo-flyout-signout-item {
-  margin-top: 6px;
-  padding-top: 8px !important;
-  border-top: 1px dashed #eaeded;
+  margin-top: 8px;
+  padding-top: 10px !important;
+  border-top: 1px dashed #e4e4e7;
 }
 
 .zylo-flyout-signout-btn {
