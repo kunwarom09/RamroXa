@@ -1644,12 +1644,12 @@ export default class StoreApp extends React.Component {
                 {/* Mobile Backdrop */}
                 {this.state.accountDropdownOpen && (
                   <div
-                    className="zylo-account-backdrop"
+                    className="zylo-account-backdrop open"
                     onClick={() => this.setState({ accountDropdownOpen: false })}
                   />
                 )}
 
-                {/* Flyout Panel */}
+                {/* Flyout Panel / Right Drawer */}
                 <div className={`zylo-account-flyout ${this.state.accountDropdownOpen ? 'open' : ''}`}>
                   <div className="zylo-account-flyout-inner">
                     <div className="zylo-flyout-mobile-header">
@@ -1664,7 +1664,22 @@ export default class StoreApp extends React.Component {
                       </button>
                     </div>
 
-                    {!currentUser && (
+                    {currentUser ? (
+                      <div className="zylo-flyout-auth-header logged-in">
+                        <div className="zylo-flyout-user-info">
+                          <span className="zylo-flyout-greeting">Hello,</span>
+                          <span className="zylo-flyout-username">{currentUser.name}</span>
+                          {currentUser.email && <span className="zylo-flyout-email">{currentUser.email}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className="zylo-flyout-profile-btn"
+                          onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
+                        >
+                          Profile
+                        </button>
+                      </div>
+                    ) : (
                       <div className="zylo-flyout-signin-row">
                         <a href="/login" className="zylo-flyout-signin-btn" onClick={() => this.setState({ accountDropdownOpen: false })}>
                           Sign in
