@@ -1370,11 +1370,13 @@ export default class StoreApp extends React.Component {
   };
 
   handleAccountEnter = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
     if (this._accountTimeout) clearTimeout(this._accountTimeout);
     this.setState({ accountDropdownOpen: true });
   };
 
   handleAccountLeave = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
     if (this._accountTimeout) clearTimeout(this._accountTimeout);
     this._accountTimeout = setTimeout(() => {
       this.setState({ accountDropdownOpen: false });

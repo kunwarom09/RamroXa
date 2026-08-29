@@ -1910,8 +1910,16 @@ tbody tr:hover { background: var(--muted); }
   pointer-events: auto;
 }
 
-/* Show on hover or when open class active */
-.zylo-nav-account-wrapper:hover .zylo-account-flyout,
+/* Show on hover only on desktop / pointer devices */
+@media (hover: hover) and (min-width: 769px) {
+  .zylo-nav-account-wrapper:hover .zylo-account-flyout {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
 .zylo-account-flyout.open {
   opacity: 1;
   visibility: visible;
@@ -3041,6 +3049,41 @@ tbody tr:hover { background: var(--muted); }
   }
   .rmx-community-img { flex: 0 0 160px; height: 200px; }
   .rmx-community-gallery { padding: 0 18px 24px; }
+
+  /* Account Flyout on Mobile */
+  .zylo-account-flyout {
+    position: fixed;
+    top: 60px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  }
+  .zylo-account-flyout::before {
+    display: none;
+  }
+  .zylo-account-flyout-arrow {
+    right: 56px;
+  }
+  .zylo-flyout-columns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px 20px 20px;
+  }
+  .zylo-flyout-col:last-child {
+    border-left: none;
+    border-top: 1px solid #f4f4f5;
+    padding-left: 0;
+    padding-top: 14px;
+  }
+  .zylo-flyout-signin-row,
+  .zylo-flyout-auth-header {
+    padding: 18px 20px 14px;
+  }
 }
 
 @media (max-width: 480px) {
