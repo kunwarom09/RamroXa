@@ -29,7 +29,7 @@ function LoginForm() {
 
   return (
     <div className="login-card">
-      <p className="brand">Ramroxa</p>
+      <div className="brand"><img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 24 }} /></div>
       <h2>Sign in to admin</h2>
       <form onSubmit={handleSubmit}>
         <div className="field">

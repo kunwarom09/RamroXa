@@ -10,6 +10,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="stylesheet" href="https://cdn.hugeicons.com/fonts/css/rounded-stroke.css" />
+      </head>
       <body>{children}</body>
     </html>
   );

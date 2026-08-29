@@ -1412,7 +1412,7 @@ export default class StoreApp extends React.Component {
                   <span />
                 </div>
               </button>
-              <div onClick={this.nav('shop')} style={{ fontSize: 24, letterSpacing: 4, cursor: 'pointer' }}>RAMROXA</div>
+              <div onClick={this.nav('shop')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}><img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 22, filter: 'brightness(0) invert(1)' }} /></div>
               <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
                 {link('HOME', view === 'shop', this.nav('shop'))}
 
@@ -1630,28 +1630,24 @@ export default class StoreApp extends React.Component {
                 {currentUser ? (
                   <button
                     onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
-                    className="zylo-nav-account-btn"
+                    className="zylo-nav-cart-btn"
                     title="Account Profile & Saved Addresses"
                   >
-                    <span className="zylo-nav-account-hello">
-                      Hello, {currentUser.name ? currentUser.name.split(' ')[0] : 'Member'}
-                    </span>
-                    <div className="zylo-nav-account-title-row">
-                      <span className="zylo-nav-account-title">Account &amp; Lists</span>
-                      <span className="zylo-nav-account-arrow">▾</span>
-                    </div>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6.57757 15.4816C5.1628 16.324 1.45336 18.0441 3.71266 20.1966C4.81631 21.248 6.04549 22 7.59087 22H16.4091C17.9545 22 19.1837 21.248 20.2873 20.1966C22.5466 18.0441 18.8372 16.324 17.4224 15.4816C14.1048 13.5061 9.89519 13.5061 6.57757 15.4816Z" />
+                      <path d="M16.5 6.5C16.5 8.98528 14.4853 11 12 11C9.51472 11 7.5 8.98528 7.5 6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5Z" />
+                    </svg>
                   </button>
                 ) : (
                   <a
                     href="/login"
-                    className="zylo-nav-account-btn"
+                    className="zylo-nav-cart-btn"
                     title="Sign In / Register"
                   >
-                    <span className="zylo-nav-account-hello">Hello, sign in</span>
-                    <div className="zylo-nav-account-title-row">
-                      <span className="zylo-nav-account-title">Account &amp; Lists</span>
-                      <span className="zylo-nav-account-arrow">▾</span>
-                    </div>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6.57757 15.4816C5.1628 16.324 1.45336 18.0441 3.71266 20.1966C4.81631 21.248 6.04549 22 7.59087 22H16.4091C17.9545 22 19.1837 21.248 20.2873 20.1966C22.5466 18.0441 18.8372 16.324 17.4224 15.4816C14.1048 13.5061 9.89519 13.5061 6.57757 15.4816Z" />
+                      <path d="M16.5 6.5C16.5 8.98528 14.4853 11 12 11C9.51472 11 7.5 8.98528 7.5 6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5Z" />
+                    </svg>
                   </a>
                 )}
 
@@ -1769,7 +1765,7 @@ export default class StoreApp extends React.Component {
                 style={{ padding: '0 8px' }}
               >
                 <div className="zylo-nav-cart-icon-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill={totalWishlist > 0 ? '#ffffff' : 'none'} stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                   {totalWishlist > 0 && (
@@ -1796,7 +1792,6 @@ export default class StoreApp extends React.Component {
                     </span>
                   )}
                 </div>
-                <span className="zylo-nav-cart-label">Wishlist</span>
               </button>
 
               {/* Cart Button */}
@@ -1805,36 +1800,35 @@ export default class StoreApp extends React.Component {
                 className="zylo-nav-cart-btn"
                 title="Shopping Cart"
               >
-                <div className="zylo-nav-cart-icon-wrap">
-                  <svg className="zylo-nav-cart-svg" viewBox="0 0 38 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Cart wireframe */}
-                    <path
-                      d="M 2 4 h 5.5 l 3.8 13.5 h 14.2 l 3.8 -10.5"
-                      stroke="#ffffff"
-                      strokeWidth="2.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {/* Solid white round wheels */}
-                    <circle cx="12.5" cy="23.5" r="2.2" fill="#ffffff" />
-                    <circle cx="22" cy="23.5" r="2.2" fill="#ffffff" />
-
-                    {/* Count number centered directly inside the cart basket */}
-                    <text
-                      x="18.8"
-                      y="11"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fill="#ffffff"
-                      fontSize="11"
-                      fontWeight="800"
-                      fontFamily="'Geist', -apple-system, BlinkMacSystemFont, sans-serif"
+                <div className="zylo-nav-cart-icon-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3.32352 13.0113C3.6739 10.009 4.18586 7.75784 4.66063 6.15851C5.04994 4.84711 5.24459 4.19141 6.04283 3.5957C6.84107 3 7.65697 3 9.28876 3H14.7113C16.3431 3 17.159 3 17.9572 3.5957C18.7554 4.19141 18.9501 4.84711 19.3394 6.15851C19.8142 7.75784 20.3261 10.009 20.6765 13.0113C21.0895 16.5497 21.2959 18.3189 20.1027 19.6594C18.9095 21 16.9758 21 13.1084 21H10.8916C7.02422 21 5.09052 21 3.89731 19.6594C2.70411 18.3189 2.91058 16.5497 3.32352 13.0113Z" />
+                    <path d="M9 7C9 8.65685 10.3431 10 12 10C13.6569 10 15 8.65685 15 7" />
+                  </svg>
+                  {totalItems > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: -5,
+                        right: -8,
+                        background: '#ffffff',
+                        color: '#000000',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        borderRadius: 999,
+                        minWidth: 16,
+                        height: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '0 3px',
+                        lineHeight: 1
+                      }}
                     >
                       {totalItems}
-                    </text>
-                  </svg>
+                    </span>
+                  )}
                 </div>
-                <span className="zylo-nav-cart-label">Cart</span>
               </button>
             </div>
           </div>
@@ -1843,7 +1837,7 @@ export default class StoreApp extends React.Component {
         {/* Mobile Navigation Drawer */}
         <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, borderBottom: '1px solid #222', paddingBottom: 16 }}>
-            <span style={{ fontSize: 22, letterSpacing: 4, fontWeight: 'bold' }}>RAMROXA</span>
+            <img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 20, filter: 'brightness(0) invert(1)' }} />
             <button onClick={this.closeMobileMenu} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 8 }}>&times;</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1943,7 +1937,7 @@ export default class StoreApp extends React.Component {
         <div className="store-footer-inner">
           <div className="store-footer-grid">
             <div>
-              <div style={{ fontSize: 28, letterSpacing: 4, marginBottom: 12 }}>RAMROXA</div>
+              <img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 24, filter: 'brightness(0) invert(1)', marginBottom: 12 }} />
               <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
                 Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
               </p>
