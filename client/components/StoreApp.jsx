@@ -549,9 +549,9 @@ function formatProductItem(p, i) {
           ? [p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors]
           : (Array.isArray(p.variants) && p.variants.length > 0
             ? Array.from(new Set(p.variants.flatMap(v => [
-                ...(Array.isArray(v.subVariants) ? v.subVariants.map(sv => (sv.name || '').split('/').pop().trim()) : []),
-                (v.name || '').split('/').pop().trim()
-              ]).filter(Boolean)))
+              ...(Array.isArray(v.subVariants) ? v.subVariants.map(sv => (sv.name || '').split('/').pop().trim()) : []),
+              (v.name || '').split('/').pop().trim()
+            ]).filter(Boolean)))
             : []))),
     createdAt: p.createdAt || new Date().toISOString()
   };
@@ -663,7 +663,7 @@ function saveStoredCart(cart) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem('zylo-store-cart', JSON.stringify(cart || []));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function loadStoredWishlist() {
@@ -680,7 +680,7 @@ function saveStoredWishlist(wishlist) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem('zylo-store-wishlist', JSON.stringify(wishlist || []));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 export default class StoreApp extends React.Component {
@@ -719,7 +719,7 @@ export default class StoreApp extends React.Component {
           if (u.name) initialName = u.name;
           if (u.phone) initialPhone = u.phone;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     this.state = {
@@ -846,7 +846,7 @@ export default class StoreApp extends React.Component {
         const apiProds = await fetchProducts({ limit: 100 });
         if (Array.isArray(apiProds) && apiProds.length > 0) {
           const apiCatalog = apiProds.map((p, idx) => formatProductItem(p, idx));
-          
+
           let selIdx = this.state.sel;
           let view = this.state.view;
 
@@ -953,7 +953,7 @@ export default class StoreApp extends React.Component {
         if (user && (this.state.view === 'account' || this.props.initialView === 'account')) {
           this.loadUserOrders();
         }
-      } catch (e) {}
+      } catch (e) { }
     };
     checkAuthSession();
 
@@ -1180,16 +1180,16 @@ export default class StoreApp extends React.Component {
       const itemToAdd = typeof p === 'string'
         ? { id: p, slug: p, name: p, price: 0 }
         : {
-            id: p.id || p._id || p.slug,
-            slug: p.slug || slugForProduct(p, 0),
-            name: p.name || 'Product',
-            price: p.price || (p.basePrice ? Math.round(p.basePrice / 100) : 0),
-            compare: p.compare || p.price || 0,
-            brand: p.brand || 'Ramroxa',
-            img1: p.img1 || (p.images && p.images[0]?.url) || '',
-            tag: p.tag || '',
-            colors: p.colors || []
-          };
+          id: p.id || p._id || p.slug,
+          slug: p.slug || slugForProduct(p, 0),
+          name: p.name || 'Product',
+          price: p.price || (p.basePrice ? Math.round(p.basePrice / 100) : 0),
+          compare: p.compare || p.price || 0,
+          brand: p.brand || 'Ramroxa',
+          img1: p.img1 || (p.images && p.images[0]?.url) || '',
+          tag: p.tag || '',
+          colors: p.colors || []
+        };
       newWishlist = [itemToAdd, ...wishlist];
       this.showToast(`Saved "${p.name || 'item'}" to your wishlist ❤️`);
     }
@@ -1200,7 +1200,7 @@ export default class StoreApp extends React.Component {
     if (currentUser && typeof window !== 'undefined') {
       const targetId = typeof p === 'string' ? p : (p.id || p.slug || p._id);
       if (targetId) {
-        api.post(`/wishlist/toggle/${targetId}`, {}).catch(() => {});
+        api.post(`/wishlist/toggle/${targetId}`, {}).catch(() => { });
       }
     }
   };
@@ -1264,7 +1264,7 @@ export default class StoreApp extends React.Component {
         localStorage.setItem('zylo-c-name', customerName);
         localStorage.setItem('zylo-c-phone', customerPhone);
         localStorage.setItem('zylo-c-address', customerAddress);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const id = 'ZY-' + Math.floor(100000 + Math.random() * 900000);
@@ -1352,7 +1352,7 @@ export default class StoreApp extends React.Component {
   handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    } catch (e) {}
+    } catch (e) { }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('zylo_user');
     }
@@ -1370,13 +1370,11 @@ export default class StoreApp extends React.Component {
   };
 
   handleAccountEnter = () => {
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
     if (this._accountTimeout) clearTimeout(this._accountTimeout);
     this.setState({ accountDropdownOpen: true });
   };
 
   handleAccountLeave = () => {
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) return;
     if (this._accountTimeout) clearTimeout(this._accountTimeout);
     this._accountTimeout = setTimeout(() => {
       this.setState({ accountDropdownOpen: false });
@@ -1629,40 +1627,50 @@ export default class StoreApp extends React.Component {
                 onMouseEnter={this.handleAccountEnter}
                 onMouseLeave={this.handleAccountLeave}
               >
-                {currentUser ? (
-                  <button
-                    onClick={() => this.goToView('account', { accountTab: 'profile', accountDropdownOpen: false })}
-                    className="zylo-nav-cart-btn"
-                    title="Account Profile & Saved Addresses"
-                  >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6.57757 15.4816C5.1628 16.324 1.45336 18.0441 3.71266 20.1966C4.81631 21.248 6.04549 22 7.59087 22H16.4091C17.9545 22 19.1837 21.248 20.2873 20.1966C22.5466 18.0441 18.8372 16.324 17.4224 15.4816C14.1048 13.5061 9.89519 13.5061 6.57757 15.4816Z" />
-                      <path d="M16.5 6.5C16.5 8.98528 14.4853 11 12 11C9.51472 11 7.5 8.98528 7.5 6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5Z" />
-                    </svg>
-                  </button>
-                ) : (
-                  <a
-                    href="/login"
-                    className="zylo-nav-cart-btn"
-                    title="Sign In / Register"
-                  >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6.57757 15.4816C5.1628 16.324 1.45336 18.0441 3.71266 20.1966C4.81631 21.248 6.04549 22 7.59087 22H16.4091C17.9545 22 19.1837 21.248 20.2873 20.1966C22.5466 18.0441 18.8372 16.324 17.4224 15.4816C14.1048 13.5061 9.89519 13.5061 6.57757 15.4816Z" />
-                      <path d="M16.5 6.5C16.5 8.98528 14.4853 11 12 11C9.51472 11 7.5 8.98528 7.5 6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5Z" />
-                    </svg>
-                  </a>
+                {/* Account Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => this.setState(s => ({ accountDropdownOpen: !s.accountDropdownOpen }))}
+                  className="zylo-nav-cart-btn"
+                  title="Account & Lists"
+                  aria-label="Account & Lists"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6.57757 15.4816C5.1628 16.324 1.45336 18.0441 3.71266 20.1966C4.81631 21.248 6.04549 22 7.59087 22H16.4091C17.9545 22 19.1837 21.248 20.2873 20.1966C22.5466 18.0441 18.8372 16.324 17.4224 15.4816C14.1048 13.5061 9.89519 13.5061 6.57757 15.4816Z" />
+                    <path d="M16.5 6.5C16.5 8.98528 14.4853 11 12 11C9.51472 11 7.5 8.98528 7.5 6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5Z" />
+                  </svg>
+                </button>
+
+                {/* Mobile Backdrop */}
+                {this.state.accountDropdownOpen && (
+                  <div
+                    className="zylo-account-backdrop"
+                    onClick={() => this.setState({ accountDropdownOpen: false })}
+                  />
                 )}
 
                 {/* Flyout Panel */}
                 <div className={`zylo-account-flyout ${this.state.accountDropdownOpen ? 'open' : ''}`}>
                   <div className="zylo-account-flyout-inner">
+                    <div className="zylo-flyout-mobile-header">
+                      <span className="zylo-flyout-mobile-title">Account &amp; Lists</span>
+                      <button
+                        type="button"
+                        className="zylo-flyout-close-btn"
+                        onClick={() => this.setState({ accountDropdownOpen: false })}
+                        aria-label="Close"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
                     {!currentUser && (
                       <div className="zylo-flyout-signin-row">
-                        <a href="/login" className="zylo-flyout-signin-btn">
+                        <a href="/login" className="zylo-flyout-signin-btn" onClick={() => this.setState({ accountDropdownOpen: false })}>
                           Sign in
                         </a>
                         <p className="zylo-flyout-new-cust">
-                          New customer? <a href="/signup">Start here.</a>
+                          New customer? <a href="/signup" onClick={() => this.setState({ accountDropdownOpen: false })}>Start here.</a>
                         </p>
                       </div>
                     )}
@@ -1844,7 +1852,7 @@ export default class StoreApp extends React.Component {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <button className="mobile-nav-link" onClick={this.nav('shop')}>HOME</button>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <button className="mobile-nav-link" onClick={this.nav('collections', 'all')}>COLLECTIONS (ALL)</button>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 14, borderLeft: '1px solid #333', marginLeft: 4, marginTop: 4 }}>
@@ -1862,60 +1870,82 @@ export default class StoreApp extends React.Component {
           </div>
 
           <div style={{ marginTop: 24, borderTop: '1px solid #222', paddingTop: 16 }}>
+            <div style={{ fontSize: 11, color: '#888', letterSpacing: 1.5, marginBottom: 12, textTransform: 'uppercase' }}>ACCOUNT &amp; LISTS</div>
             {currentUser ? (
-              <div>
-                <div style={{ fontSize: 13, color: '#aaa', marginBottom: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 13, color: '#aaa', marginBottom: 4 }}>
                   Signed in as <strong style={{ color: '#fff' }}>{currentUser.name}</strong>
                 </div>
                 <button
-                  className="mobile-nav-link"
+                  className="mobile-nav-sub-link"
                   onClick={() => this.goToView('account', { accountTab: 'profile', mobileMenuOpen: false })}
-                  style={{ textAlign: 'left', width: '100%', marginBottom: 12, fontSize: 13 }}
+                  style={{ textAlign: 'left', width: '100%', fontSize: 13 }}
                 >
-                  MY ACCOUNT &amp; ORDERS
+                  👤 Account Profile
                 </button>
                 <button
-                  className="mobile-nav-link"
-                  onClick={this.handleLogout}
-                  style={{ textAlign: 'left', width: '100%', color: '#ef4444', fontSize: 13 }}
+                  className="mobile-nav-sub-link"
+                  onClick={() => this.goToView('account', { accountTab: 'orders', mobileMenuOpen: false })}
+                  style={{ textAlign: 'left', width: '100%', fontSize: 13 }}
                 >
-                  SIGN OUT
+                  📦 Orders &amp; Purchases
+                </button>
+                <button
+                  className="mobile-nav-sub-link"
+                  onClick={() => this.goToView('account', { accountTab: 'addresses', mobileMenuOpen: false })}
+                  style={{ textAlign: 'left', width: '100%', fontSize: 13 }}
+                >
+                  📍 Saved Addresses
+                </button>
+                <button
+                  className="mobile-nav-sub-link"
+                  onClick={() => {
+                    this.handleLogout();
+                    this.closeMobileMenu();
+                  }}
+                  style={{ textAlign: 'left', width: '100%', color: '#ef4444', fontSize: 13, marginTop: 4 }}
+                >
+                  ↪ Sign Out
                 </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 10 }}>
-                <a
-                  href="/login"
-                  style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    background: '#fff',
-                    color: '#000',
-                    padding: '10px 0',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    fontSize: 13
-                  }}
-                >
-                  SIGN IN
-                </a>
-                <a
-                  href="/signup"
-                  style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    border: '1px solid #fff',
-                    color: '#fff',
-                    padding: '10px 0',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    fontSize: 13
-                  }}
-                >
-                  REGISTER
-                </a>
+              <div>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                  <a
+                    href="/login"
+                    onClick={this.closeMobileMenu}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      background: '#fff',
+                      color: '#000',
+                      padding: '10px 0',
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: 13
+                    }}
+                  >
+                    SIGN IN
+                  </a>
+                  <a
+                    href="/signup"
+                    onClick={this.closeMobileMenu}
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      border: '1px solid #fff',
+                      color: '#fff',
+                      padding: '10px 0',
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: 13
+                    }}
+                  >
+                    REGISTER
+                  </a>
+                </div>
               </div>
             )}
           </div>
@@ -2445,28 +2475,10 @@ export default class StoreApp extends React.Component {
           const heroSec = (cmsConfig?.sections || []).find(s => s.type === 'hero' && s.enabled !== false)
             || (cmsConfig?.sections || []).find(s => s.type === 'hero')
             || {
-              id: 'sec_hero_default',
-              type: 'hero',
-              config: {
-                slides: [
-                  {
-                    id: 'slide-1',
-                    image: '/hero-slide-1.jpg',
-                    eyebrow: 'Shop',
-                    heading: 'Elevate your daily\nwardrobe with ease',
-                    description: 'Explore our handpicked modern silhouettes crafted from sustainable fabrics.',
-                    primaryCta: 'Explore styles',
-                    primaryCtaUrl: '/shop',
-                    secondaryCta: 'About us',
-                    secondaryCtaUrl: '/contact'
-                  }
-                ]
-              }
-            };
-
-          const rawSlides = (heroSec?.config?.slides && heroSec.config.slides.length > 0)
-            ? heroSec.config.slides
-            : [
+            id: 'sec_hero_default',
+            type: 'hero',
+            config: {
+              slides: [
                 {
                   id: 'slide-1',
                   image: '/hero-slide-1.jpg',
@@ -2478,7 +2490,25 @@ export default class StoreApp extends React.Component {
                   secondaryCta: 'About us',
                   secondaryCtaUrl: '/contact'
                 }
-              ];
+              ]
+            }
+          };
+
+          const rawSlides = (heroSec?.config?.slides && heroSec.config.slides.length > 0)
+            ? heroSec.config.slides
+            : [
+              {
+                id: 'slide-1',
+                image: '/hero-slide-1.jpg',
+                eyebrow: 'Shop',
+                heading: 'Elevate your daily\nwardrobe with ease',
+                description: 'Explore our handpicked modern silhouettes crafted from sustainable fabrics.',
+                primaryCta: 'Explore styles',
+                primaryCtaUrl: '/shop',
+                secondaryCta: 'About us',
+                secondaryCtaUrl: '/contact'
+              }
+            ];
 
           const activeSlides = rawSlides.filter(s => s.active !== false);
           const slidesToUse = activeSlides.length > 0 ? activeSlides : rawSlides;
@@ -2589,229 +2619,229 @@ export default class StoreApp extends React.Component {
 
         {/* Collections Content Area */}
         <div className="zylo-collections-content">
-        {/* Collections Toolbar: Results Title & Count on Left, Sort & Mobile Filters on Right */}
-        <div id="zylo-shop-main" className="zylo-collections-toolbar">
-          <div className="zylo-toolbar-left">
-            <h2 className="zylo-toolbar-title">
-              {(() => {
-                const catNames = {
-                  c_tops: 'Tops & Tees',
-                  c_bottoms: 'Bottoms & Denim',
-                  c_out: 'Outerwear & Jackets',
-                  c_bags: 'Bags & Slings',
-                  c_acc: 'Accessories & Headwear'
-                };
-                const genNames = {
-                  men: "Men's Collection",
-                  women: "Women's Collection",
-                  kids: "Kids' Collection",
-                  unisex: "Unisex Core"
-                };
-                if (filterCategory && filterCategory !== 'all' && catNames[filterCategory]) {
-                  if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
-                    return `${genNames[colFilter]} — ${catNames[filterCategory]}`;
+          {/* Collections Toolbar: Results Title & Count on Left, Sort & Mobile Filters on Right */}
+          <div id="zylo-shop-main" className="zylo-collections-toolbar">
+            <div className="zylo-toolbar-left">
+              <h2 className="zylo-toolbar-title">
+                {(() => {
+                  const catNames = {
+                    c_tops: 'Tops & Tees',
+                    c_bottoms: 'Bottoms & Denim',
+                    c_out: 'Outerwear & Jackets',
+                    c_bags: 'Bags & Slings',
+                    c_acc: 'Accessories & Headwear'
+                  };
+                  const genNames = {
+                    men: "Men's Collection",
+                    women: "Women's Collection",
+                    kids: "Kids' Collection",
+                    unisex: "Unisex Core"
+                  };
+                  if (filterCategory && filterCategory !== 'all' && catNames[filterCategory]) {
+                    if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
+                      return `${genNames[colFilter]} — ${catNames[filterCategory]}`;
+                    }
+                    return catNames[filterCategory];
                   }
-                  return catNames[filterCategory];
-                }
-                if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
-                  return genNames[colFilter];
-                }
-                if (sortBy === 'bestselling') return 'Best Sellers';
-                if (sortBy === 'newest') return 'New Arrivals';
-                return 'All Products';
-              })()}
-            </h2>
-            <span className="zylo-toolbar-count">Showing {items.length} {items.length === 1 ? 'item' : 'items'}</span>
-          </div>
+                  if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
+                    return genNames[colFilter];
+                  }
+                  if (sortBy === 'bestselling') return 'Best Sellers';
+                  if (sortBy === 'newest') return 'New Arrivals';
+                  return 'All Products';
+                })()}
+              </h2>
+              <span className="zylo-toolbar-count">Showing {items.length} {items.length === 1 ? 'item' : 'items'}</span>
+            </div>
 
-          <div className="zylo-toolbar-right">
-            {/* Mobile Filter Toggle Button */}
-            <button
-              onClick={() => this.setState({ showMobileFilters: true })}
-              className="zylo-mobile-filter-btn"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="21" x2="4" y2="14" />
-                <line x1="4" y1="10" x2="4" y2="3" />
-                <line x1="12" y1="21" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12" y2="3" />
-                <line x1="20" y1="21" x2="20" y2="16" />
-                <line x1="20" y1="12" x2="20" y2="3" />
-                <line x1="1" y1="14" x2="7" y2="14" />
-                <line x1="9" y1="8" x2="15" y2="8" />
-                <line x1="17" y1="16" x2="23" y2="16" />
-              </svg>
-              <span>Filters {hasActiveFilters ? '•' : ''}</span>
-            </button>
-
-            {/* Top Right Sort Option */}
-            <div className="zylo-sort-wrapper">
-              <label htmlFor="zylo-sort-select" className="zylo-sort-label">Sort by:</label>
-              <select
-                id="zylo-sort-select"
-                value={sortBy}
-                onChange={(e) => this.setState({ sortBy: e.target.value })}
-                className="zylo-sort-select"
+            <div className="zylo-toolbar-right">
+              {/* Mobile Filter Toggle Button */}
+              <button
+                onClick={() => this.setState({ showMobileFilters: true })}
+                className="zylo-mobile-filter-btn"
               >
-                <option value="featured">Featured</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="newest">Newest Arrivals</option>
-                <option value="bestselling">Best Sellers</option>
-                <option value="name-asc">Product Name: A to Z</option>
-              </select>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="21" x2="4" y2="14" />
+                  <line x1="4" y1="10" x2="4" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12" y2="3" />
+                  <line x1="20" y1="21" x2="20" y2="16" />
+                  <line x1="20" y1="12" x2="20" y2="3" />
+                  <line x1="1" y1="14" x2="7" y2="14" />
+                  <line x1="9" y1="8" x2="15" y2="8" />
+                  <line x1="17" y1="16" x2="23" y2="16" />
+                </svg>
+                <span>Filters {hasActiveFilters ? '•' : ''}</span>
+              </button>
+
+              {/* Top Right Sort Option */}
+              <div className="zylo-sort-wrapper">
+                <label htmlFor="zylo-sort-select" className="zylo-sort-label">Sort by:</label>
+                <select
+                  id="zylo-sort-select"
+                  value={sortBy}
+                  onChange={(e) => this.setState({ sortBy: e.target.value })}
+                  className="zylo-sort-select"
+                >
+                  <option value="featured">Featured</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="newest">Newest Arrivals</option>
+                  <option value="bestselling">Best Sellers</option>
+                  <option value="name-asc">Product Name: A to Z</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Active Filter Chips / Pills */}
-        {hasActiveFilters && (
-          <div className="zylo-active-filter-chips">
-            <span className="zylo-active-chips-label">Active Filters:</span>
-            {colFilter !== 'all' && (
-              <span className="zylo-filter-chip">
-                Gender: {colFilter.toUpperCase()}
-                <button onClick={() => this.setState({ colFilter: 'all' })}>&times;</button>
-              </span>
-            )}
-            {filterPriceBucket !== 'all' && filterPriceBucket !== 'custom' && (
-              <span className="zylo-filter-chip">
-                Price: {filterPriceBucket.replace('-', ' to ').replace('under-', 'Under Rs ').replace('above-', 'Above Rs ')}
-                <button onClick={() => this.setState({ filterPriceBucket: 'all' })}>&times;</button>
-              </span>
-            )}
-            {(filterMinPrice !== '' || filterMaxPrice !== '' || debouncedMinPrice !== '' || debouncedMaxPrice !== '') && (
-              <span className="zylo-filter-chip">
-                Price: Rs {filterMinPrice || debouncedMinPrice || '0'} – Rs {filterMaxPrice || debouncedMaxPrice || '∞'}
-                <button onClick={() => this.setState({ filterMinPrice: '', filterMaxPrice: '', debouncedMinPrice: '', debouncedMaxPrice: '', filterPriceBucket: 'all' })}>&times;</button>
-              </span>
-            )}
-            {filterBrands.map(b => (
-              <span key={b} className="zylo-filter-chip">
-                Brand: {b}
-                <button onClick={() => this.setState(s => ({ filterBrands: s.filterBrands.filter(brand => brand !== b) }))}>&times;</button>
-              </span>
-            ))}
-            {filterColors.map(c => (
-              <span key={c} className="zylo-filter-chip">
-                Color: {c}
-                <button onClick={() => this.setState(s => ({ filterColors: s.filterColors.filter(color => color !== c) }))}>&times;</button>
-              </span>
-            ))}
-            <button
-              onClick={() => this.setState({
-                colFilter: 'all',
-                filterPriceBucket: 'all',
-                filterMinPrice: '',
-                filterMaxPrice: '',
-                debouncedMinPrice: '',
-                debouncedMaxPrice: '',
-                filterBrands: [],
-                filterColors: []
-              })}
-              className="zylo-clear-all-chips-btn"
-            >
-              Clear All
-            </button>
-          </div>
-        )}
+          {/* Active Filter Chips / Pills */}
+          {hasActiveFilters && (
+            <div className="zylo-active-filter-chips">
+              <span className="zylo-active-chips-label">Active Filters:</span>
+              {colFilter !== 'all' && (
+                <span className="zylo-filter-chip">
+                  Gender: {colFilter.toUpperCase()}
+                  <button onClick={() => this.setState({ colFilter: 'all' })}>&times;</button>
+                </span>
+              )}
+              {filterPriceBucket !== 'all' && filterPriceBucket !== 'custom' && (
+                <span className="zylo-filter-chip">
+                  Price: {filterPriceBucket.replace('-', ' to ').replace('under-', 'Under Rs ').replace('above-', 'Above Rs ')}
+                  <button onClick={() => this.setState({ filterPriceBucket: 'all' })}>&times;</button>
+                </span>
+              )}
+              {(filterMinPrice !== '' || filterMaxPrice !== '' || debouncedMinPrice !== '' || debouncedMaxPrice !== '') && (
+                <span className="zylo-filter-chip">
+                  Price: Rs {filterMinPrice || debouncedMinPrice || '0'} – Rs {filterMaxPrice || debouncedMaxPrice || '∞'}
+                  <button onClick={() => this.setState({ filterMinPrice: '', filterMaxPrice: '', debouncedMinPrice: '', debouncedMaxPrice: '', filterPriceBucket: 'all' })}>&times;</button>
+                </span>
+              )}
+              {filterBrands.map(b => (
+                <span key={b} className="zylo-filter-chip">
+                  Brand: {b}
+                  <button onClick={() => this.setState(s => ({ filterBrands: s.filterBrands.filter(brand => brand !== b) }))}>&times;</button>
+                </span>
+              ))}
+              {filterColors.map(c => (
+                <span key={c} className="zylo-filter-chip">
+                  Color: {c}
+                  <button onClick={() => this.setState(s => ({ filterColors: s.filterColors.filter(color => color !== c) }))}>&times;</button>
+                </span>
+              ))}
+              <button
+                onClick={() => this.setState({
+                  colFilter: 'all',
+                  filterPriceBucket: 'all',
+                  filterMinPrice: '',
+                  filterMaxPrice: '',
+                  debouncedMinPrice: '',
+                  debouncedMaxPrice: '',
+                  filterBrands: [],
+                  filterColors: []
+                })}
+                className="zylo-clear-all-chips-btn"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
 
-        {/* Main 2-Column Layout: Left Filters Sidebar + Right Product Grid */}
-        <div className="zylo-shop-layout">
-          {/* Desktop Left Sidebar */}
-          <aside className="zylo-filter-sidebar">
-            {renderFilterControls()}
-          </aside>
+          {/* Main 2-Column Layout: Left Filters Sidebar + Right Product Grid */}
+          <div className="zylo-shop-layout">
+            {/* Desktop Left Sidebar */}
+            <aside className="zylo-filter-sidebar">
+              {renderFilterControls()}
+            </aside>
 
-          {/* Right Column: Products Grid */}
-          <div className="zylo-shop-products-column">
-            {items.length === 0 ? (
-              <div className="zylo-no-products-box">
-                <div className="zylo-no-products-icon">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
+            {/* Right Column: Products Grid */}
+            <div className="zylo-shop-products-column">
+              {items.length === 0 ? (
+                <div className="zylo-no-products-box">
+                  <div className="zylo-no-products-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </div>
+                  <h3>No products match your filters</h3>
+                  <p>Try adjusting your gender, price range, brand, or color criteria to see available items.</p>
+                  <button
+                    onClick={() => this.setState({
+                      colFilter: 'all',
+                      filterPriceBucket: 'all',
+                      filterMinPrice: '',
+                      filterMaxPrice: '',
+                      debouncedMinPrice: '',
+                      debouncedMaxPrice: '',
+                      filterBrands: [],
+                      filterColors: []
+                    })}
+                    className="zylo-reset-filters-btn"
+                  >
+                    Reset All Filters
+                  </button>
                 </div>
-                <h3>No products match your filters</h3>
-                <p>Try adjusting your gender, price range, brand, or color criteria to see available items.</p>
-                <button
-                  onClick={() => this.setState({
-                    colFilter: 'all',
-                    filterPriceBucket: 'all',
-                    filterMinPrice: '',
-                    filterMaxPrice: '',
-                    debouncedMinPrice: '',
-                    debouncedMaxPrice: '',
-                    filterBrands: [],
-                    filterColors: []
-                  })}
-                  className="zylo-reset-filters-btn"
-                >
-                  Reset All Filters
-                </button>
-              </div>
-            ) : (
-              <div className="zylo-products-grid">
-                {items.map(p => {
-                  const best = p.tag === 'BEST SELLER';
-                  const pColors = (p.colors && p.colors.length > 0)
-                    ? p.colors
-                    : (p.options?.Colour || p.options?.Color || []);
-                  return (
-                    <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
-                      <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee', position: 'relative' }}>
-                        <span className={`zylo-product-tag-badge ${best ? 'best-seller' : 'new'}`}>
-                          {best ? '★ Best seller' : (p.tag || '✦ New')}
-                        </span>
-                        <button
-                          type="button"
-                          className={`rmx-wishlist-heart-btn ${this.isWishlisted(p) ? 'active' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            this.toggleWishlist(p);
-                          }}
-                          aria-label={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
-                          title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
-                        >
-                          <svg className="rmx-heart-svg" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="zylo-product-card-body">
-                        <div className="zylo-product-card-info">
-                          <span className="zylo-product-brand-tag">{p.brand || 'Ramroxa'}</span>
-                          <span className="zylo-product-name">{p.name}</span>
-                          <div className="zylo-product-price-row">
-                            <div className="zylo-product-prices">
-                              <span className="zylo-product-price">{rs(p.price)}</span>
-                              {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
-                            </div>
-                            {pColors && pColors.length > 0 && (
-                              <div className="zylo-card-color-swatches" title={`Available in: ${pColors.join(', ')}`}>
-                                {pColors.map(col => {
-                                  const hex = COLOR_HEX_MAP[String(col).toLowerCase().trim()] || '#333333';
-                                  return (
-                                    <span
-                                      key={col}
-                                      className="zylo-card-color-dot"
-                                      style={{ backgroundColor: hex }}
-                                    />
-                                  );
-                                })}
+              ) : (
+                <div className="zylo-products-grid">
+                  {items.map(p => {
+                    const best = p.tag === 'BEST SELLER';
+                    const pColors = (p.colors && p.colors.length > 0)
+                      ? p.colors
+                      : (p.options?.Colour || p.options?.Color || []);
+                    return (
+                      <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
+                        <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee', position: 'relative' }}>
+                          <span className={`zylo-product-tag-badge ${best ? 'best-seller' : 'new'}`}>
+                            {best ? '★ Best seller' : (p.tag || '✦ New')}
+                          </span>
+                          <button
+                            type="button"
+                            className={`rmx-wishlist-heart-btn ${this.isWishlisted(p) ? 'active' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              this.toggleWishlist(p);
+                            }}
+                            aria-label={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                            title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                          >
+                            <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="zylo-product-card-body">
+                          <div className="zylo-product-card-info">
+                            <span className="zylo-product-brand-tag">{p.brand || 'Ramroxa'}</span>
+                            <span className="zylo-product-name">{p.name}</span>
+                            <div className="zylo-product-price-row">
+                              <div className="zylo-product-prices">
+                                <span className="zylo-product-price">{rs(p.price)}</span>
+                                {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
                               </div>
-                            )}
+                              {pColors && pColors.length > 0 && (
+                                <div className="zylo-card-color-swatches" title={`Available in: ${pColors.join(', ')}`}>
+                                  {pColors.map(col => {
+                                    const hex = COLOR_HEX_MAP[String(col).toLowerCase().trim()] || '#333333';
+                                    return (
+                                      <span
+                                        key={col}
+                                        className="zylo-card-color-dot"
+                                        style={{ backgroundColor: hex }}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </div>{/* end zylo-collections-content */}
 
         {/* Mobile Filter Slide-in Drawer Modal */}
