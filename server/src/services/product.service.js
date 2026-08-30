@@ -106,7 +106,7 @@ export async function listProducts(params = {}) {
   // Enrich products with their active variants and stock count
   const productIds = products.map((p) => p.id || p._id.toString());
   const [variants, inventories] = await Promise.all([
-    Variant.find({ productId: { $in: productIds }, published: true, hidden: { $ne: true } }).lean(),
+    Variant.find({ productId: { $in: productIds }, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
     Inventory.find({ archived: false }).lean()
   ]);
 
@@ -176,7 +176,7 @@ export async function getProductBySlug(slug) {
 
   const [category, variants, inventories] = await Promise.all([
     Category.findOne({ id: product.categoryId }).lean(),
-    Variant.find({ productId: pId, published: true, hidden: { $ne: true } }).lean(),
+    Variant.find({ productId: pId, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
     Inventory.find({ archived: false }).lean()
   ]);
 
