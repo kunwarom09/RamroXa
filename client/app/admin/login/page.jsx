@@ -8,13 +8,13 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTarget = searchParams ? searchParams.get('redirect') || '/admin/dashboard' : '/admin/dashboard';
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@zylo.com.np');
+  const [password, setPassword] = useState('AdminPassword123!');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     try {
@@ -66,12 +66,14 @@ function LoginForm() {
           </div>
         )}
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? 'Signing in...' : 'Sign in to Dashboard'}
         </button>
       </form>
-      <p className="hint">
-        Sign in to access the Zylo admin management dashboard.
-      </p>
+      <div style={{ marginTop: '16px', padding: '10px', background: 'var(--muted, #f5f5f4)', borderRadius: '6px', fontSize: '12px', color: 'var(--muted-foreground)' }}>
+        <strong>Demo Admin Credentials:</strong><br />
+        Email: <code style={{ userSelect: 'all' }}>admin@zylo.com.np</code><br />
+        Password: <code style={{ userSelect: 'all' }}>AdminPassword123!</code>
+      </div>
     </div>
   );
 }
