@@ -614,31 +614,22 @@ export default function AdminInventoryPage() {
         </p>
       </div>
 
-      {/* Metrics Bar */}
-      <div className="stats-grid" style={{ marginBottom: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-        <div className="stat-card">
-          <div className="stat-label">Total Stock Balance</div>
-          <div className="stat-value">{stats.totalStockUnits.toLocaleString()} units</div>
+      <div className="metric-grid">
+        <div className="metric">
+          <div className="label">Total Stock Balance</div>
+          <div className="value">{stats.totalStockUnits.toLocaleString()} units</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Variants / SKUs</div>
-          <div className="stat-value">{stats.totalVariantsCount}</div>
+        <div className="metric">
+          <div className="label">Total Variants / SKUs</div>
+          <div className="value">{stats.totalVariantsCount}</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Master Products</div>
-          <div className="stat-value">{stats.masterProductsCount}</div>
+        <div className="metric">
+          <div className="label">Master Products</div>
+          <div className="value">{stats.masterProductsCount}</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Out of Stock</div>
-          <div className="stat-value" style={{ color: stats.outOfStockCount > 0 ? 'var(--danger)' : 'inherit' }}>
-            {stats.outOfStockCount}
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Low Stock (&le; 5)</div>
-          <div className="stat-value" style={{ color: stats.lowStockCount > 0 ? 'var(--warning)' : 'inherit' }}>
-            {stats.lowStockCount}
-          </div>
+        <div className="metric">
+          <div className="label">Out of Stock</div>
+          <div className="value">{stats.outOfStockCount}</div>
         </div>
       </div>
 
