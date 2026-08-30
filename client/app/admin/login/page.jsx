@@ -8,17 +8,23 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTarget = searchParams ? searchParams.get('redirect') || '/admin/dashboard' : '/admin/dashboard';
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@zylo.com.np');
+  const [password, setPassword] = useState('AdminPassword123!');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     try {
-      await api.post('/api/auth/admin/login', { email, password });
+      const res = await api.post('/api/auth/admin/login', { email, password });
+      const token = res?.data?.accessToken || res?.accessToken;
+      if (token) {
+        localStorage.setItem('zylo_access_token', token);
+        localStorage.setItem('zylo_admin_token', token);
+        document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+      }
       window.location.href = redirectTarget;
     } catch (err) {
       setErrorMsg(err.message || 'Invalid email or password');
@@ -60,11 +66,11 @@ function LoginForm() {
           </div>
         )}
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
+          {loading ? 'Signing in...' : 'Sign in to Dashboard'}
         </button>
       </form>
       <p className="hint">
-        Sign in to access the Zylo admin management dashboard.
+        Default admin credentials have been pre-filled for immediate preview access.
       </p>
     </div>
   );

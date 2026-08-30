@@ -45,6 +45,7 @@ export default function ProductForm({ productId = null }) {
   const [previewMode, setPreviewMode] = useState(false);
   const [previewDevice, setPreviewDevice] = useState('desktop');
   const [toastMsg, setToastMsg] = useState('');
+  const [formErrors, setFormErrors] = useState({});
 
   const [formData, setFormData] = useState({
     name: '',
@@ -567,9 +568,30 @@ export default function ProductForm({ productId = null }) {
     }, 0);
   }, 0);
 
+  const validateProductForm = () => {
+    const errs = {};
+    if (!formData.name || !formData.name.trim()) {
+      errs.name = 'Product Name is required';
+    }
+    if (!formData.categoryId || !formData.categoryId.trim()) {
+      errs.categoryId = 'Category is required';
+    }
+    if (formData.price === '' || formData.price === null || formData.price === undefined || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+      errs.price = 'Price is required';
+    }
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const saveMasterProduct = async (shouldPublish = false) => {
-    if (!formData.name.trim()) { alert('Name is required'); return; }
-    if (!formData.sku.trim()) { alert('SKU is required'); return; }
+    if (!validateProductForm()) {
+      showToast('Please fix required field errors.');
+      return;
+    }
+    if (!formData.sku.trim()) {
+      setFormErrors((prev) => ({ ...prev, sku: 'SKU is required' }));
+      return;
+    }
 
     const prodId = editingProd ? (editingProd.id || editingProd._id) : ('m_' + Date.now().toString(36));
     const prodSlug = (formData.slug || slugify(formData.name)).trim();
@@ -607,7 +629,7 @@ export default function ProductForm({ productId = null }) {
       productType: formData.productType || 'Top Wear',
       brand: formData.brand.trim() || 'Zylo',
       categoryId: formData.categoryId || 'c_tops',
-      status: shouldPublish ? 'published' : formData.status || 'published',
+      status: shouldPublish ? 'published' : 'draft',
       gender: formData.gender.trim() || 'Unisex',
       season: formData.season.trim() || 'SS26',
       tags: formData.tags ? formData.tags.split(',').map((s) => s.trim()).filter(Boolean) : [],
@@ -640,24 +662,49 @@ export default function ProductForm({ productId = null }) {
     };
 
     const newVariants = [];
+    const usedLocalSkus = new Set();
+    const cleanMasterSku = formData.sku.trim() || 'SKU';
+    usedLocalSkus.add(cleanMasterSku.toUpperCase());
+
     variantGroups.forEach((vg, vgIndex) => {
       (vg.values || []).forEach((val, valIndex) => {
         const topAmount = val.amount !== '' && val.amount != null ? Number(val.amount) : masterPrice;
         const topPricePaisa = Math.round(topAmount * 100);
 
+        let valSku = (val.sku && val.sku.trim()) || `${cleanMasterSku}-V${vgIndex + 1}-${valIndex + 1}`;
+        let candidateValSku = valSku.toUpperCase();
+        let valCounter = 1;
+        while (usedLocalSkus.has(candidateValSku)) {
+          valCounter++;
+          candidateValSku = `${valSku}-${valCounter}`.toUpperCase();
+        }
+        usedLocalSkus.add(candidateValSku);
+        valSku = candidateValSku;
+
         const subList = (val.subsets || []).map((sub, subIndex) => {
           const subAmt = sub.amount !== '' && sub.amount != null ? Number(sub.amount) : topAmount;
           const isHidden = sub.status === 'Hidden';
+
+          let subSku = (sub.sku && sub.sku.trim()) || `${valSku}-S${subIndex + 1}`;
+          let candidateSubSku = subSku.toUpperCase();
+          let subCounter = 1;
+          while (usedLocalSkus.has(candidateSubSku)) {
+            subCounter++;
+            candidateSubSku = `${subSku}-${subCounter}`.toUpperCase();
+          }
+          usedLocalSkus.add(candidateSubSku);
+          subSku = candidateSubSku;
+
           return {
             id: sub.id,
             name: `${vg.name || 'Variant'}: ${val.name || 'Value'} / ${sub.name || `Sub ${subIndex + 1}`}`,
-            sku: (sub.sku && sub.sku.trim()) || `${formData.sku || 'SKU'}-S${vgIndex + 1}-${valIndex + 1}-${subIndex + 1}`,
+            sku: subSku,
             price: Math.round(subAmt * 100),
             amount: Math.round(subAmt * 100),
             stock: Number(sub.stock) || 0,
             image: sub.image || '',
-            status: sub.status === 'Published' ? 'active' : (isHidden ? 'hidden' : 'draft'),
-            published: shouldPublish ? !isHidden : sub.status === 'Published',
+            status: isHidden ? 'hidden' : (shouldPublish ? (sub.status === 'Published' ? 'active' : 'draft') : 'draft'),
+            published: shouldPublish ? !isHidden && sub.status === 'Published' : false,
             hidden: isHidden
           };
         });
@@ -666,13 +713,13 @@ export default function ProductForm({ productId = null }) {
         newVariants.push({
           id: val.id,
           name: `${vg.name || 'Variant'}: ${val.name || `Value ${valIndex + 1}`}`,
-          sku: (val.sku && val.sku.trim()) || `${formData.sku || 'SKU'}-V${vgIndex + 1}-${valIndex + 1}`,
+          sku: valSku,
           price: topPricePaisa,
           amount: topPricePaisa,
           stock: Number(val.stock) || 0,
           image: val.image || '',
-          status: val.status === 'Published' ? 'active' : (isValHidden ? 'hidden' : 'draft'),
-          published: shouldPublish ? !isValHidden : val.status === 'Published',
+          status: isValHidden ? 'hidden' : (shouldPublish ? (val.status === 'Published' ? 'active' : 'draft') : 'draft'),
+          published: shouldPublish ? !isValHidden && val.status === 'Published' : false,
           hidden: isValHidden,
           subVariants: subList
         });
@@ -685,13 +732,20 @@ export default function ProductForm({ productId = null }) {
         variants: newVariants
       };
 
+      let savedProduct = null;
       if (editingProd && (editingProd.id || editingProd._id)) {
         const tId = editingProd.id || editingProd._id;
-        await api.put(`/api/admin/products/${tId}`, apiPayload);
+        const res = await api.put(`/api/admin/products/${tId}`, apiPayload);
+        savedProduct = res?.data?.product || res?.data;
       } else {
-        await api.post('/api/admin/products', apiPayload);
+        const res = await api.post('/api/admin/products', apiPayload);
+        savedProduct = res?.data?.product || res?.data;
+        if (savedProduct) {
+          setEditingProd(savedProduct);
+        }
       }
-      showToast('Product saved successfully in MongoDB');
+      const successMsg = shouldPublish ? 'Product published successfully.' : 'Product saved as draft.';
+      showToast(successMsg);
       router.push('/admin/products');
     } catch (apiErr) {
       const errMsg = apiErr.message || 'Error';
@@ -842,14 +896,14 @@ export default function ProductForm({ productId = null }) {
             className="btn btn-sm"
             onClick={() => saveMasterProduct(false)}
           >
-            Save master product
+            Save as draft
           </button>
           <button
             type="button"
             className="btn btn-sm btn-primary"
             onClick={() => saveMasterProduct(true)}
           >
-            Publish + all variants
+            Publish master product
           </button>
         </div>
       </div>
@@ -860,13 +914,21 @@ export default function ProductForm({ productId = null }) {
           <h2>Basics</h2>
           <div className="form-grid-2">
             <div className="field">
-              <label>Name</label>
+              <label>Product Name <span style={{ color: '#ef4444' }}>*</span></label>
               <input
                 value={formData.name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                onChange={(e) => {
+                  handleNameChange(e.target.value);
+                  if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: undefined }));
+                }}
                 placeholder="e.g. Monolith Tee"
-                required
+                style={formErrors.name ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {}}
               />
+              {formErrors.name && (
+                <span className="field-error" style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  {formErrors.name}
+                </span>
+              )}
             </div>
             <div className="field">
               <label>Slug</label>
@@ -897,16 +959,25 @@ export default function ProductForm({ productId = null }) {
               />
             </div>
             <div className="field">
-              <label>Category</label>
+              <label>Category <span style={{ color: '#ef4444' }}>*</span></label>
               <select
                 value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, categoryId: e.target.value });
+                  if (formErrors.categoryId) setFormErrors((prev) => ({ ...prev, categoryId: undefined }));
+                }}
+                style={formErrors.categoryId ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {}}
               >
-                <option value="">Uncategorised</option>
+                <option value="">Select Category</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+              {formErrors.categoryId && (
+                <span className="field-error" style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  {formErrors.categoryId}
+                </span>
+              )}
             </div>
             <div className="field">
               <label>Product Type</label>
@@ -1146,13 +1217,22 @@ export default function ProductForm({ productId = null }) {
           <h2>Pricing (NPR)</h2>
           <div className="form-grid-3">
             <div className="field">
-              <label>Price</label>
+              <label>Price (NPR) <span style={{ color: '#ef4444' }}>*</span></label>
               <input
                 type="number"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, price: e.target.value });
+                  if (formErrors.price) setFormErrors((prev) => ({ ...prev, price: undefined }));
+                }}
                 placeholder="0"
+                style={formErrors.price ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {}}
               />
+              {formErrors.price && (
+                <span className="field-error" style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  {formErrors.price}
+                </span>
+              )}
             </div>
             <div className="field">
               <label>Compare-at / MRP</label>

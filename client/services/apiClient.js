@@ -1,6 +1,7 @@
 /**
  * Zylo Frontend API Client
- * Handles requests to /api with standardized error normalization and credential cookies.
+ * Handles requests to /api with standardized error normalization,
+ * automatic Bearer token passing, CSRF token handling, and credential cookies.
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
@@ -15,7 +16,64 @@ export class ApiClientError extends Error {
   }
 }
 
-export async function apiRequest(endpoint, options = {}) {
+function getStoredToken() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const local = localStorage.getItem('zylo_access_token') || localStorage.getItem('zylo_admin_token');
+    if (local) return local;
+
+    if (document.cookie) {
+      const match = document.cookie.match(/(?:^|;\s*)zylo_access_token=([^;]+)/);
+      if (match) return decodeURIComponent(match[1]);
+    }
+  } catch (e) {
+    // Ignore localStorage access errors
+  }
+  return null;
+}
+
+function getStoredCsrfToken() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const local = localStorage.getItem('zylo_csrf_token');
+    if (local) return local;
+
+    if (document.cookie) {
+      const match = document.cookie.match(/(?:^|;\s*)(?:XSRF-TOKEN|xsrf-token)=([^;]+)/i);
+      if (match) return decodeURIComponent(match[1]);
+    }
+  } catch (e) {
+    // Ignore
+  }
+  return null;
+}
+
+function persistTokens(data) {
+  if (typeof window === 'undefined' || !data) return;
+  try {
+    const token = data?.data?.accessToken || data?.accessToken;
+    if (token) {
+      localStorage.setItem('zylo_access_token', token);
+      localStorage.setItem('zylo_admin_token', token);
+      document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+    }
+
+    const csrfToken = data?.data?.csrfToken || data?.csrfToken;
+    if (csrfToken) {
+      localStorage.setItem('zylo_csrf_token', csrfToken);
+      document.cookie = `XSRF-TOKEN=${csrfToken}; path=/; max-age=86400; SameSite=Lax;`;
+    }
+
+    const user = data?.data?.user || data?.user;
+    if (user) {
+      localStorage.setItem('zylo_user', JSON.stringify(user));
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+export async function apiRequest(endpoint, options = {}, isRetry = false) {
   let url = endpoint;
   if (!url.startsWith('http')) {
     const rawBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
@@ -31,10 +89,24 @@ export async function apiRequest(endpoint, options = {}) {
       }
     }
   }
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
   };
+
+  // Attach Bearer token if present
+  const token = getStoredToken();
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Attach CSRF token for mutating methods
+  const csrfToken = getStoredCsrfToken();
+  const method = (options.method || 'GET').toUpperCase();
+  if (csrfToken && !headers['x-csrf-token'] && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    headers['x-csrf-token'] = csrfToken;
+  }
 
   const config = {
     ...options,
@@ -48,7 +120,32 @@ export async function apiRequest(endpoint, options = {}) {
     const isJson = contentType && contentType.includes('application/json');
     const data = isJson ? await res.json() : null;
 
+    // If login or auth refresh endpoint returned tokens, persist them immediately
+    if (res.ok && data) {
+      if (endpoint.includes('/auth/login') || endpoint.includes('/auth/admin/login') || endpoint.includes('/auth/refresh')) {
+        persistTokens(data);
+      }
+    }
+
     if (!res.ok) {
+      // Handle 401 Unauthorized with automatic single retry via refresh token if not already an auth endpoint
+      if (res.status === 401 && !isRetry && !endpoint.includes('/auth/')) {
+        try {
+          const refreshRes = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          });
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            persistTokens(refreshData);
+            return await apiRequest(endpoint, options, true);
+          }
+        } catch (refreshErr) {
+          // Fall through to throw original 401
+        }
+      }
+
       const err = data?.error || {};
       throw new ApiClientError(
         res.status,

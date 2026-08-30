@@ -4,6 +4,29 @@ import { ApiError } from '../utils/ApiError.js';
 import { escapeRegex } from '../utils/regex.js';
 import crypto from 'crypto';
 
+export function categoryPrefix(catId) {
+  if (!catId) return 'GEN';
+  return String(catId).replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'GEN';
+}
+
+export async function ensureUniqueVariantSku(baseSkuCandidate, currentVariantId = null, usedSkusInBatch = new Set()) {
+  let cleanBase = String(baseSkuCandidate || 'SKU').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '-').replace(/--+/g, '-');
+  if (!cleanBase || cleanBase === '-') cleanBase = 'SKU';
+  let candidate = cleanBase;
+  let counter = 1;
+
+  while (
+    usedSkusInBatch.has(candidate) ||
+    (await Variant.findOne({ sku: candidate, ...(currentVariantId ? { id: { $ne: currentVariantId } } : {}) }))
+  ) {
+    counter++;
+    candidate = `${cleanBase}-${counter}`;
+  }
+
+  usedSkusInBatch.add(candidate);
+  return candidate;
+}
+
 export async function findProduct(productId) {
   if (!productId) return null;
   if (mongoose.Types.ObjectId.isValid(productId) && String(new mongoose.Types.ObjectId(productId)) === String(productId)) {
@@ -147,18 +170,32 @@ export async function createAdminProduct(data, user) {
     initialStock = 10
   } = data;
 
-  if (!name || !categoryId) {
-    throw ApiError.badRequest('Product name and categoryId are required.');
+  if (!name || !name.trim()) {
+    throw ApiError.badRequest('Product Name is required.');
+  }
+  if (!categoryId || !categoryId.trim()) {
+    throw ApiError.badRequest('Category is required.');
   }
 
-  const finalPrice = basePrice !== undefined ? basePrice : price || 0;
-  const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  const id = 'p_' + crypto.randomBytes(6).toString('hex');
-  const finalSku = sku || `ZYL-${categoryPrefix(categoryId)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  const finalPrice = basePrice !== undefined && basePrice !== null ? Number(basePrice) : (price !== undefined && price !== null ? Number(price) : 0);
+  if (isNaN(finalPrice) || finalPrice <= 0) {
+    throw ApiError.badRequest('Price is required and must be greater than 0.');
+  }
 
-  const existingSlug = await Product.findOne({ slug: finalSlug, deletedAt: null });
-  if (existingSlug) {
-    throw ApiError.conflict(`Product with slug '${finalSlug}' already exists.`);
+  const baseSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'product';
+  let finalSlug = baseSlug;
+  let counter = 1;
+  while (await Product.findOne({ slug: finalSlug, deletedAt: null })) {
+    counter++;
+    finalSlug = `${baseSlug}-${counter}`;
+  }
+  const id = 'p_' + crypto.randomBytes(6).toString('hex');
+  let baseSku = sku || `ZYL-${categoryPrefix(categoryId)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  let finalSku = baseSku;
+  let skuCounter = 1;
+  while (await Product.findOne({ sku: finalSku, deletedAt: null })) {
+    skuCounter++;
+    finalSku = `${baseSku}-${skuCounter}`;
   }
 
   const validGenders = ['Men', 'Women', 'Unisex', 'Kids'];
@@ -209,16 +246,22 @@ export async function createAdminProduct(data, user) {
 
   // Create variants & subvariants
   const createdVariants = [];
+  const usedSkusInBatch = new Set();
+  usedSkusInBatch.add(finalSku.toUpperCase());
 
   if (variants && variants.length) {
     for (let vIndex = 0; vIndex < variants.length; vIndex++) {
       const v = variants[vIndex];
       const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
       const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || `Variant ${vIndex + 1}`;
-      const vSku = (v.sku && v.sku.trim()) || `${finalSku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'VAR'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      const rawVSku = (v.sku && v.sku.trim()) || `${finalSku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'VAR'}-${vIndex + 1}`;
+      const vSku = await ensureUniqueVariantSku(rawVSku, null, usedSkusInBatch);
       const vPrice = (v.amount !== undefined && v.amount !== null && v.amount !== '')
         ? Number(v.amount)
         : ((v.price !== undefined && v.price !== null && v.price !== '') ? Number(v.price) : finalPrice);
+
+      const isValHidden = v.hidden === true || v.status === 'hidden';
+      const isValPublished = normalizedStatus === 'published' && !isValHidden && v.published !== false && v.status !== 'draft';
 
       const newVariant = await Variant.create({
         id: vId,
@@ -228,9 +271,9 @@ export async function createAdminProduct(data, user) {
         sku: vSku,
         options: v.options || {},
         price: vPrice,
-        hidden: !!v.hidden,
-        published: v.published !== false && !v.hidden,
-        status: v.status || (v.hidden ? 'hidden' : (normalizedStatus === 'published' ? 'active' : 'draft'))
+        hidden: isValHidden,
+        published: isValPublished,
+        status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
       });
 
       const stockQty = v.stock !== undefined ? v.stock : initialStock;
@@ -262,11 +305,13 @@ export async function createAdminProduct(data, user) {
         const sv = subList[sIndex];
         const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
         const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || `SubVariant ${sIndex + 1}`;
-        const svSku = (sv.sku && sv.sku.trim()) || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase() || 'SUB'}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+        const rawSvSku = (sv.sku && sv.sku.trim()) || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'SUB'}-${sIndex + 1}`;
+        const svSku = await ensureUniqueVariantSku(rawSvSku, null, usedSkusInBatch);
         const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
           ? Number(sv.amount)
           : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
-        const isHidden = sv.hidden === true;
+        const isHidden = sv.hidden === true || sv.status === 'hidden';
+        const isSubPublished = normalizedStatus === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
 
         await Variant.create({
           id: svId,
@@ -277,8 +322,8 @@ export async function createAdminProduct(data, user) {
           options: sv.options || {},
           price: svPrice,
           hidden: isHidden,
-          published: !isHidden && sv.published !== false,
-          status: isHidden ? 'hidden' : (sv.status || 'active')
+          published: isSubPublished,
+          status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
         });
       }
 
@@ -287,15 +332,18 @@ export async function createAdminProduct(data, user) {
   } else {
     // Default single variant
     const vId = 'v_' + crypto.randomBytes(6).toString('hex');
+    const defaultSku = await ensureUniqueVariantSku(`${finalSku}-DEF`, null, usedSkusInBatch);
     const newVariant = await Variant.create({
       id: vId,
       name: 'Default',
       productId: product.id,
       parentVariantId: null,
-      sku: `${finalSku}-DEF`,
+      sku: defaultSku,
       options: {},
       price: finalPrice,
-      published: true
+      hidden: false,
+      published: normalizedStatus === 'published',
+      status: normalizedStatus === 'published' ? 'active' : 'draft'
     });
 
     await Inventory.create({
@@ -321,7 +369,14 @@ export async function updateAdminProduct(productId, updates, user) {
   if (updates.slug && updates.slug !== product.slug) {
     const existing = await Product.findOne({ slug: updates.slug, id: { $ne: product.id }, deletedAt: null });
     if (existing) {
-      throw ApiError.conflict(`Product with slug '${updates.slug}' already exists.`);
+      const baseSlug = updates.slug;
+      let candidateSlug = baseSlug;
+      let counter = 1;
+      while (await Product.findOne({ slug: candidateSlug, id: { $ne: product.id }, deletedAt: null })) {
+        counter++;
+        candidateSlug = `${baseSlug}-${counter}`;
+      }
+      updates.slug = candidateSlug;
     }
   }
 
@@ -378,15 +433,22 @@ export async function updateAdminProduct(productId, updates, user) {
     const existingMap = new Map(existingVariants.map((v) => [v.id, v]));
 
     const processedIds = new Set();
+    const usedSkusInBatch = new Set();
+    usedSkusInBatch.add(product.sku.toUpperCase());
 
-    for (const v of updates.variants) {
+    for (let vIndex = 0; vIndex < updates.variants.length; vIndex++) {
+      const v = updates.variants[vIndex];
       const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
       processedIds.add(vId);
-      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || 'Variant';
-      const vSku = v.sku || `${product.sku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()}`;
+      const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || `Variant ${vIndex + 1}`;
+      const rawVSku = (v.sku && v.sku.trim()) || `${product.sku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'VAR'}-${vIndex + 1}`;
+      const vSku = await ensureUniqueVariantSku(rawVSku, vId, usedSkusInBatch);
       const vPrice = (v.amount !== undefined && v.amount !== null && v.amount !== '')
         ? Number(v.amount)
         : ((v.price !== undefined && v.price !== null && v.price !== '') ? Number(v.price) : finalPrice);
+
+      const isValHidden = v.hidden === true || v.status === 'hidden';
+      const isValPublished = product.status === 'published' && !isValHidden && v.published !== false && v.status !== 'draft';
 
       if (existingMap.has(vId)) {
         await Variant.updateOne(
@@ -397,9 +459,9 @@ export async function updateAdminProduct(productId, updates, user) {
             parentVariantId: null,
             options: v.options || {},
             price: vPrice,
-            hidden: !!v.hidden,
-            published: v.published !== false && !v.hidden,
-            status: v.status || (v.hidden ? 'hidden' : 'active')
+            hidden: isValHidden,
+            published: isValPublished,
+            status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
           }
         );
       } else {
@@ -411,9 +473,9 @@ export async function updateAdminProduct(productId, updates, user) {
           sku: vSku,
           options: v.options || {},
           price: vPrice,
-          hidden: !!v.hidden,
-          published: v.published !== false && !v.hidden,
-          status: v.status || (v.hidden ? 'hidden' : 'active')
+          hidden: isValHidden,
+          published: isValPublished,
+          status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
         });
 
         await Inventory.create({
@@ -427,15 +489,18 @@ export async function updateAdminProduct(productId, updates, user) {
 
       // Handle Subvariants
       const subList = v.subVariants || v.subvariants || [];
-      for (const sv of subList) {
+      for (let sIndex = 0; sIndex < subList.length; sIndex++) {
+        const sv = subList[sIndex];
         const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
         processedIds.add(svId);
-        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || 'SubVariant';
-        const svSku = sv.sku || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase()}`;
+        const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || `SubVariant ${sIndex + 1}`;
+        const rawSvSku = (sv.sku && sv.sku.trim()) || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'SUB'}-${sIndex + 1}`;
+        const svSku = await ensureUniqueVariantSku(rawSvSku, svId, usedSkusInBatch);
         const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
           ? Number(sv.amount)
           : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
-        const isHidden = sv.hidden === true;
+        const isHidden = sv.hidden === true || sv.status === 'hidden';
+        const isSubPublished = product.status === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
 
         if (existingMap.has(svId)) {
           await Variant.updateOne(
@@ -447,8 +512,8 @@ export async function updateAdminProduct(productId, updates, user) {
               options: sv.options || {},
               price: svPrice,
               hidden: isHidden,
-              published: !isHidden && sv.published !== false,
-              status: isHidden ? 'hidden' : (sv.status || 'active')
+              published: isSubPublished,
+              status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
             }
           );
         } else {
@@ -461,8 +526,8 @@ export async function updateAdminProduct(productId, updates, user) {
             options: sv.options || {},
             price: svPrice,
             hidden: isHidden,
-            published: !isHidden && sv.published !== false,
-            status: isHidden ? 'hidden' : (sv.status || 'active')
+            published: isSubPublished,
+            status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
           });
         }
       }
@@ -511,13 +576,6 @@ export async function purgeAllProducts() {
 export async function getAllDistinctTags() {
   const tags = await Product.distinct('tags', { deletedAt: null });
   return tags.filter(Boolean).sort();
-}
-
-function categoryPrefix(catId) {
-  if (catId.includes('tops') || catId.includes('apparel')) return 'APP';
-  if (catId.includes('acc')) return 'ACC';
-  if (catId.includes('bag')) return 'BAG';
-  return 'OBJ';
 }
 
 export default {

@@ -541,6 +541,8 @@ function formatProductItem(p, i) {
     categoryId: p.categoryId || '',
     tags: p.tags || [],
     options: p.options || {},
+    variantGroups: p.variantGroups || [],
+    variants: p.variants || [],
     colors: (Array.isArray(p.colors) && p.colors.length > 0)
       ? p.colors
       : (Array.isArray(p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors)
@@ -608,8 +610,99 @@ const COLOR_HEX_MAP = {
   indigo: '#2e4482',
   denim: '#466d98',
   sage: '#9caf88',
-  'heather grey': '#9e9e9e'
+  'heather grey': '#9e9e9e',
+  'matte black': '#1a1a1a',
+  'cobalt blue': '#1e40af',
+  'cement grey': '#94a3b8',
+  'washed charcoal': '#475569',
+  'vintage cream': '#fef3c7',
+  'pitch black': '#09090b',
+  'obsidian black': '#0f172a',
+  'slate grey': '#64748b',
+  'midnight navy': '#0f172a',
+  'tactical black': '#18181b',
+  'desert sand': '#d4b996',
+  'stealth olive': '#3f4f38',
+  'vintage black': '#27272a',
+  'raw indigo': '#1e3a8a',
+  'jet black': '#050505',
+  'pure white': '#ffffff',
+  'muted olive': '#556b2f',
+  'ash grey': '#b0b0b0',
+  'monochrome stripe': '#222222',
+  pinstripe: '#333333'
 };
+
+function getProductCardVariants(p) {
+  if (!p) return { sizes: [], colours: [] };
+
+  // 1. Dynamic Sizes
+  let sizes = [];
+  if (Array.isArray(p.options?.Size)) {
+    sizes = p.options.Size;
+  } else if (Array.isArray(p.options?.size)) {
+    sizes = p.options.size;
+  } else if (Array.isArray(p.options?.sizes)) {
+    sizes = p.options.sizes;
+  } else if (Array.isArray(p.sizes)) {
+    sizes = p.sizes;
+  } else if (Array.isArray(p.variantGroups)) {
+    const sizeGroup = p.variantGroups.find(vg => /size|sizes/i.test(vg.name || ''));
+    if (sizeGroup && Array.isArray(sizeGroup.values)) {
+      sizes = sizeGroup.values.map(v => v.name).filter(Boolean);
+    } else if (p.variantGroups.length > 0 && Array.isArray(p.variantGroups[0]?.values)) {
+      sizes = p.variantGroups[0].values.map(v => v.name).filter(Boolean);
+    }
+  }
+
+  // 2. Dynamic Colours & solid colour values from Master Products sub-variants
+  const colourMap = new Map();
+
+  // From Master Products variantGroups subsets
+  if (Array.isArray(p.variantGroups)) {
+    p.variantGroups.forEach(vg => {
+      (vg.values || []).forEach(val => {
+        (val.subsets || []).forEach(sub => {
+          const subName = (sub.name || '').trim();
+          if (subName && !colourMap.has(subName.toLowerCase())) {
+            const hex = sub.colorHex || COLOR_HEX_MAP[subName.toLowerCase()] || '#333333';
+            const isAvail = sub.status !== 'Archived' && sub.status !== 'Disabled';
+            colourMap.set(subName.toLowerCase(), { name: subName, hex, available: isAvail });
+          }
+        });
+      });
+    });
+  }
+
+  // From Master Products variants array
+  if (Array.isArray(p.variants)) {
+    p.variants.forEach(v => {
+      const vCol = v.options?.Colour || v.options?.Color || v.color || (v.name && v.name.includes('/') ? v.name.split('/').pop().trim() : null);
+      if (vCol) {
+        const colName = String(vCol).trim();
+        if (!colourMap.has(colName.toLowerCase())) {
+          const hex = v.colorHex || COLOR_HEX_MAP[colName.toLowerCase()] || '#333333';
+          const isAvail = v.status !== 'archived' && v.available !== false;
+          colourMap.set(colName.toLowerCase(), { name: colName, hex, available: isAvail });
+        }
+      }
+    });
+  }
+
+  // From product options (Colour / Color)
+  const rawColours = p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors || [];
+  const colourList = Array.isArray(rawColours) ? rawColours : (rawColours ? [rawColours] : []);
+  colourList.forEach(col => {
+    const colName = String(col).trim();
+    if (colName && !colourMap.has(colName.toLowerCase())) {
+      const hex = COLOR_HEX_MAP[colName.toLowerCase()] || (colName.startsWith('#') ? colName : '#333333');
+      colourMap.set(colName.toLowerCase(), { name: colName, hex, available: true });
+    }
+  });
+
+  const colours = Array.from(colourMap.values());
+  return { sizes, colours };
+}
 
 const FREE_OVER = 5000;
 const rs = n => 'Rs ' + (n || 0).toLocaleString('en-US');
@@ -761,6 +854,7 @@ export default class StoreApp extends React.Component {
       debouncedMaxPrice: '',
       filterBrands: [],
       filterColors: [],
+      showMoreColors: false,
       sortBy: 'featured',
       showMobileFilters: false,
       mobileMenuOpen: false,
@@ -2113,7 +2207,8 @@ export default class StoreApp extends React.Component {
       filterBrands,
       filterColors,
       sortBy,
-      showMobileFilters
+      showMobileFilters,
+      showMoreColors
     } = this.state;
 
     const catList = this.getCatalog().map((p, idx) => ({
@@ -2449,7 +2544,7 @@ export default class StoreApp extends React.Component {
           <div className="zylo-filter-section">
             <h4 className="zylo-filter-section-title">Colour</h4>
             <div className="zylo-filter-options-list">
-              {allColors.map(colName => {
+              {(showMoreColors ? allColors : allColors.slice(0, 10)).map(colName => {
                 const isChecked = filterColors.includes(colName);
                 const hex = COLOR_HEX_MAP[colName.toLowerCase()] || '#cccccc';
                 return (
@@ -2477,6 +2572,28 @@ export default class StoreApp extends React.Component {
                 );
               })}
             </div>
+            {allColors.length > 10 && (
+              <button
+                type="button"
+                onClick={() => this.setState(s => ({ showMoreColors: !s.showMoreColors }))}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#09090b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '8px 0 2px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontFamily: 'inherit',
+                  textDecoration: 'underline'
+                }}
+              >
+                {showMoreColors ? 'Show less −' : `Show more (+${allColors.length - 10}) +`}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -2800,9 +2917,7 @@ export default class StoreApp extends React.Component {
                 <div className="zylo-products-grid">
                   {items.map(p => {
                     const best = p.tag === 'BEST SELLER';
-                    const pColors = (p.colors && p.colors.length > 0)
-                      ? p.colors
-                      : (p.options?.Colour || p.options?.Color || []);
+                    const { sizes: pSizes, colours: pColours } = getProductCardVariants(p);
                     return (
                       <div key={p.idx} onClick={() => this.openProduct(p.idx)} className="zylo-product-card">
                         <div className="zylo-product-img-wrap" style={{ background: img(p.img1), backgroundColor: '#eee', position: 'relative' }}>
@@ -2833,21 +2948,56 @@ export default class StoreApp extends React.Component {
                                 <span className="zylo-product-price">{rs(p.price)}</span>
                                 {p.compare > p.price && <span className="zylo-product-compare">{rs(p.compare)}</span>}
                               </div>
-                              {pColors && pColors.length > 0 && (
-                                <div className="zylo-card-color-swatches" title={`Available in: ${pColors.join(', ')}`}>
-                                  {pColors.map(col => {
-                                    const hex = COLOR_HEX_MAP[String(col).toLowerCase().trim()] || '#333333';
-                                    return (
-                                      <span
-                                        key={col}
-                                        className="zylo-card-color-dot"
-                                        style={{ backgroundColor: hex }}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              )}
                             </div>
+
+                            {/* Size Information Row */}
+                            {pSizes && pSizes.length > 0 && (
+                              <div className="zylo-card-size-row" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#71717a', marginTop: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, color: '#18181b', letterSpacing: '0.4px' }}>Size:</span>
+                                <span style={{ color: '#52525b', letterSpacing: '0.6px', fontWeight: 500 }}>{pSizes.join('  ')}</span>
+                              </div>
+                            )}
+
+                            {/* Colour sub-variant swatches directly under size */}
+                            {pColours && pColours.length > 0 && (
+                              <div className="zylo-card-colour-block" style={{ marginTop: '5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#18181b', letterSpacing: '0.4px' }}>Colour:</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  {pColours.map((colItem) => (
+                                    <span
+                                      key={colItem.name}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (colItem.available !== false) {
+                                          this.goToView('detail', { sel: p.idx, selImg: 0, selSize: pSizes[0] || 'M', selColor: colItem.name, selQty: 1 });
+                                        } else {
+                                          this.openProduct(p.idx);
+                                        }
+                                      }}
+                                      title={colItem.available !== false ? colItem.name : `${colItem.name} (Unavailable)`}
+                                      style={{
+                                        width: '11px',
+                                        height: '11px',
+                                        borderRadius: '50%',
+                                        backgroundColor: colItem.hex,
+                                        display: 'inline-block',
+                                        border: colItem.hex.toLowerCase() === '#ffffff' || colItem.hex.toLowerCase() === '#fff' ? '1px solid #d4d4d8' : '1px solid rgba(0,0,0,0.18)',
+                                        cursor: colItem.available !== false ? 'pointer' : 'not-allowed',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                                        transition: 'transform 0.15s ease',
+                                        opacity: colItem.available !== false ? 1 : 0.35
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (colItem.available !== false) e.currentTarget.style.transform = 'scale(1.35)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

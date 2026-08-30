@@ -20,7 +20,7 @@ export default function AdminLayout({ children }) {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('zylo-db');
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Auth verification guard for admin
@@ -120,7 +120,7 @@ export default function AdminLayout({ children }) {
         }
 
         setSearchResults(results);
-      } catch (err) {}
+      } catch (err) { }
     }
 
     const t = setTimeout(doSearch, 200);
@@ -231,27 +231,6 @@ export default function AdminLayout({ children }) {
             <kbd>⌘K</kbd>
           </div>
           <div className="topbar-right">
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-sm"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                textDecoration: 'none',
-                height: '32px',
-                fontSize: '12px',
-                fontWeight: 500,
-                padding: '0 12px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)'
-              }}
-              title="Preview storefront in new tab"
-            >
-              <span>↗</span> View Store
-            </a>
             <button className="icon-btn" aria-label="Notifications" onClick={() => alert('No new notifications')}>
               <Icon name="bell" size={17} />
             </button>
