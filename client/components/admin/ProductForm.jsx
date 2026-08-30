@@ -1317,80 +1317,43 @@ export default function ProductForm({ productId = null }) {
               </div>
 
               {/* Footwear Size Type Option */}
-              {formData.productType === 'Footwear' && (vg.name || '').trim().toLowerCase() === 'size' && (
+              {/* Unified Size Pills (Footwear UK 3-12, Apparel S-XL, etc.) */}
+              {(vg.name || '').trim().toLowerCase() === 'size' && (
                 <div style={{
+                  marginBottom: '14px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '16px',
-                  margin: '10px 0 12px',
-                  background: 'var(--surface)',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)'
+                  flexWrap: 'wrap',
+                  gap: '6px'
                 }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Size Type:</span>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', cursor: 'pointer', margin: 0 }}>
-                    <input
-                      type="radio"
-                      name={`sizeType_${vg.id || vgIdx}`}
-                      value="UK Shoe Size"
-                      checked={(vg.sizeType || 'UK Shoe Size') === 'UK Shoe Size'}
-                      onChange={() => handleUpdateVariantGroup(vgIdx, { sizeType: 'UK Shoe Size' })}
-                    />
-                    UK Shoe Size
-                  </label>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', cursor: 'pointer', margin: 0 }}>
-                    <input
-                      type="radio"
-                      name={`sizeType_${vg.id || vgIdx}`}
-                      value="Custom Size"
-                      checked={vg.sizeType === 'Custom Size'}
-                      onChange={() => handleUpdateVariantGroup(vgIdx, { sizeType: 'Custom Size' })}
-                    />
-                    Custom Size
-                  </label>
-                </div>
-              )}
-
-              {/* UK Shoe Size Quick Selection */}
-              {formData.productType === 'Footwear' && (vg.name || '').trim().toLowerCase() === 'size' && (vg.sizeType || 'UK Shoe Size') === 'UK Shoe Size' && (
-                <div style={{
-                  marginBottom: '12px',
-                  background: 'var(--canvas)',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)' }}>
-                      Select UK Shoe Sizes:
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>
-                      Click to toggle sizes
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {UK_SHOE_SIZES.map((sizeName) => {
-                      const isSelected = (vg.values || []).some(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
-                      return (
-                        <button
-                          key={sizeName}
-                          type="button"
-                          className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
-                          onClick={() => handleToggleUkSize(vgIdx, sizeName)}
-                          style={{
-                            minWidth: '58px',
-                            fontSize: '12px',
-                            fontWeight: isSelected ? 600 : 400,
-                            padding: '4px 10px',
-                            borderRadius: '4px'
-                          }}
-                        >
-                          {isSelected ? `✓ ${sizeName}` : sizeName}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)', marginRight: '6px' }}>
+                    Size:
+                  </span>
+                  {(formData.productType === 'Footwear'
+                    ? ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12']
+                    : (formData.productType === 'Bottom Wear'
+                      ? ['28', '30', '32', '34', '36', '38']
+                      : ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+                  ).map((sizeName) => {
+                    const isSelected = (vg.values || []).some(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
+                    return (
+                      <button
+                        key={sizeName}
+                        type="button"
+                        className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
+                        onClick={() => handleToggleUkSize(vgIdx, sizeName)}
+                        style={{
+                          minWidth: '48px',
+                          fontSize: '12px',
+                          fontWeight: isSelected ? 600 : 400,
+                          padding: '4px 10px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        {isSelected ? `✓ ${sizeName}` : sizeName}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
