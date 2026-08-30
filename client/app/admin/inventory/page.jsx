@@ -459,7 +459,7 @@ export default function AdminInventoryPage() {
 
   // 2. Queue manual stock change without immediate saving
   const handleInlineStockChange = (variantItem, value) => {
-    const rawNum = value === '' ? 0 : Number(value);
+    const rawNum = value === '' ? 0 : parseInt(value, 10);
     if (isNaN(rawNum) || rawNum < 0) return;
     const vId = variantItem.v?.id || String(variantItem.v?._id || '');
     const wId = variantItem.warehouse?.id || 'w1';
@@ -478,6 +478,19 @@ export default function AdminInventoryPage() {
       }
       return next;
     });
+  };
+
+  // Step stock change (+1 or -1) exactly
+  const handleStepStockChange = (variantItem, delta) => {
+    const vId = variantItem.v?.id || String(variantItem.v?._id || '');
+    const wId = variantItem.warehouse?.id || 'w1';
+    const itemKey = `${vId}_${wId}`;
+    const currentVal = pendingStockChanges[itemKey] !== undefined
+      ? Number(pendingStockChanges[itemKey].newStock)
+      : Number(variantItem.available) || 0;
+
+    const nextVal = Math.max(0, currentVal + delta);
+    handleInlineStockChange(variantItem, nextVal);
   };
 
   // Save a single variant's modified stock immediately
@@ -946,39 +959,96 @@ export default function AdminInventoryPage() {
                                             return (
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 <span style={{ fontSize: '11px', color: isModified ? 'var(--accent, #b45309)' : 'var(--muted-foreground)', fontWeight: isModified ? 600 : 400 }}>Qty:</span>
-                                                <input
-                                                  type="number"
-                                                  min="0"
-                                                  value={currentQtyVal}
-                                                  onChange={(e) => handleInlineStockChange(item, e.target.value)}
-                                                  onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                      e.preventDefault();
-                                                      handleSaveSingleStockChange(item);
-                                                    } else if (e.key === 'Escape') {
-                                                      setPendingStockChanges(prev => {
-                                                        const next = { ...prev };
-                                                        delete next[itemKey];
-                                                        return next;
-                                                      });
-                                                    }
-                                                  }}
-                                                  style={{
-                                                    width: '58px',
-                                                    height: '28px',
-                                                    textAlign: 'center',
-                                                    fontSize: '13px',
-                                                    fontWeight: 700,
-                                                    padding: '0 4px',
-                                                    background: isModified ? 'var(--accent-soft, #fef3c7)' : (item.available <= 0 ? 'var(--danger-soft)' : 'var(--surface)'),
-                                                    color: isModified ? 'var(--accent, #b45309)' : (item.available <= 0 ? 'var(--danger)' : 'var(--primary)'),
-                                                    border: isModified ? '2px solid var(--accent, #f59e0b)' : '1px solid var(--border)',
-                                                    borderRadius: '5px',
-                                                    outline: 'none',
-                                                    boxShadow: isModified ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none'
-                                                  }}
-                                                  title={isModified ? `Unsaved change: was ${item.available}, now ${currentQtyVal}. Press Enter or click ✓ to save.` : "Edit quantity for this exact Size + Colour"}
-                                                />
+                                                <div style={{
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  background: isModified ? 'var(--accent-soft, #fef3c7)' : (item.available <= 0 ? 'var(--danger-soft)' : 'var(--surface)'),
+                                                  border: isModified ? '2px solid var(--accent, #f59e0b)' : '1px solid var(--border)',
+                                                  borderRadius: '6px',
+                                                  boxShadow: isModified ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none',
+                                                  overflow: 'hidden'
+                                                }}>
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); handleStepStockChange(item, -1); }}
+                                                    disabled={currentQtyVal <= 0}
+                                                    title="Decrease by 1"
+                                                    style={{
+                                                      border: 'none',
+                                                      background: 'transparent',
+                                                      width: '20px',
+                                                      height: '28px',
+                                                      cursor: currentQtyVal <= 0 ? 'not-allowed' : 'pointer',
+                                                      fontSize: '13px',
+                                                      fontWeight: 700,
+                                                      color: currentQtyVal <= 0 ? 'var(--muted-foreground)' : (isModified ? 'var(--accent, #b45309)' : 'var(--primary)'),
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center',
+                                                      padding: 0,
+                                                      userSelect: 'none'
+                                                    }}
+                                                  >
+                                                    &minus;
+                                                  </button>
+                                                  <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    value={currentQtyVal}
+                                                    onChange={(e) => handleInlineStockChange(item, e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        handleSaveSingleStockChange(item);
+                                                      } else if (e.key === 'Escape') {
+                                                        setPendingStockChanges(prev => {
+                                                          const next = { ...prev };
+                                                          delete next[itemKey];
+                                                          return next;
+                                                        });
+                                                      }
+                                                    }}
+                                                    style={{
+                                                      width: '40px',
+                                                      height: '28px',
+                                                      textAlign: 'center',
+                                                      fontSize: '13px',
+                                                      fontWeight: 700,
+                                                      padding: '0 2px',
+                                                      background: 'transparent',
+                                                      color: isModified ? 'var(--accent, #b45309)' : (item.available <= 0 ? 'var(--danger)' : 'var(--primary)'),
+                                                      border: 'none',
+                                                      borderLeft: '1px solid var(--border)',
+                                                      borderRight: '1px solid var(--border)',
+                                                      borderRadius: 0,
+                                                      outline: 'none'
+                                                    }}
+                                                    title={isModified ? `Unsaved change: was ${item.available}, now ${currentQtyVal}. Press Enter or click ✓ to save.` : "Edit quantity for this exact Size + Colour"}
+                                                  />
+                                                  <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); handleStepStockChange(item, 1); }}
+                                                    title="Increase by 1"
+                                                    style={{
+                                                      border: 'none',
+                                                      background: 'transparent',
+                                                      width: '20px',
+                                                      height: '28px',
+                                                      cursor: 'pointer',
+                                                      fontSize: '13px',
+                                                      fontWeight: 700,
+                                                      color: isModified ? 'var(--accent, #b45309)' : 'var(--primary)',
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center',
+                                                      padding: 0,
+                                                      userSelect: 'none'
+                                                    }}
+                                                  >
+                                                    +
+                                                  </button>
+                                                </div>
                                                 {isModified && (
                                                   <button
                                                     type="button"
