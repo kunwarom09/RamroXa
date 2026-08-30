@@ -638,24 +638,44 @@ const COLOR_HEX_MAP = {
 function getProductCardVariants(p) {
   if (!p) return { sizes: [], colours: [] };
 
+  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', '28', '30', '32', '34', '36', '38', '40'];
+
   // 1. Dynamic Sizes
-  let sizes = [];
-  if (Array.isArray(p.options?.Size)) {
-    sizes = p.options.Size;
-  } else if (Array.isArray(p.options?.size)) {
-    sizes = p.options.size;
-  } else if (Array.isArray(p.options?.sizes)) {
-    sizes = p.options.sizes;
-  } else if (Array.isArray(p.sizes)) {
-    sizes = p.sizes;
-  } else if (Array.isArray(p.variantGroups)) {
+  const sizeSet = new Set();
+  const rawSizes = p.options?.Size || p.options?.size || p.options?.sizes || p.sizes || [];
+  (Array.isArray(rawSizes) ? rawSizes : [rawSizes]).forEach(s => {
+    if (s) sizeSet.add(String(s).trim());
+  });
+
+  if (Array.isArray(p.variantGroups)) {
     const sizeGroup = p.variantGroups.find(vg => /size|sizes/i.test(vg.name || ''));
     if (sizeGroup && Array.isArray(sizeGroup.values)) {
-      sizes = sizeGroup.values.map(v => v.name).filter(Boolean);
+      sizeGroup.values.forEach(v => { if (v.name) sizeSet.add(String(v.name).trim()); });
     } else if (p.variantGroups.length > 0 && Array.isArray(p.variantGroups[0]?.values)) {
-      sizes = p.variantGroups[0].values.map(v => v.name).filter(Boolean);
+      p.variantGroups[0].values.forEach(v => { if (v.name) sizeSet.add(String(v.name).trim()); });
     }
   }
+
+  // Extract from variants / allVariants
+  const allVars = Array.isArray(p.allVariants) && p.allVariants.length ? p.allVariants : (Array.isArray(p.variants) ? p.variants : []);
+  allVars.forEach(v => {
+    const optSize = v.options?.Size || v.options?.size;
+    if (optSize) {
+      sizeSet.add(String(optSize).trim());
+    } else if (v.name && !v.parentVariantId) {
+      const cleanName = v.name.replace(/^(Size|Variant)\s*:\s*/i, '').trim();
+      if (cleanName && !cleanName.includes('/')) sizeSet.add(cleanName);
+    }
+  });
+
+  const sizes = Array.from(sizeSet).sort((a, b) => {
+    const idxA = sizeOrder.indexOf(a);
+    const idxB = sizeOrder.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b, undefined, { numeric: true });
+  });
 
   // 2. Dynamic Colours & solid colour values from Master Products sub-variants
   const colourMap = new Map();
@@ -676,28 +696,33 @@ function getProductCardVariants(p) {
     });
   }
 
-  // From Master Products variants array
-  if (Array.isArray(p.variants)) {
-    p.variants.forEach(v => {
-      const vCol = v.options?.Colour || v.options?.Color || v.color || (v.name && v.name.includes('/') ? v.name.split('/').pop().trim() : null);
-      if (vCol) {
-        const colName = String(vCol).trim();
-        if (!colourMap.has(colName.toLowerCase())) {
-          const hex = v.colorHex || COLOR_HEX_MAP[colName.toLowerCase()] || '#333333';
-          const isAvail = v.status !== 'archived' && v.available !== false;
-          colourMap.set(colName.toLowerCase(), { name: colName, hex, available: isAvail });
-        }
+  // From variants & subvariants
+  allVars.forEach(v => {
+    const optCol = v.options?.Colour || v.options?.colour || v.options?.Color || v.options?.color;
+    if (optCol) {
+      const colName = String(optCol).trim();
+      if (!colourMap.has(colName.toLowerCase())) {
+        const hex = v.colorHex || COLOR_HEX_MAP[colName.toLowerCase()] || '#333333';
+        const isAvail = v.status !== 'archived' && v.available !== false;
+        colourMap.set(colName.toLowerCase(), { name: colName, hex, available: isAvail });
       }
-    });
-  }
+    } else if (v.name && v.name.includes('/')) {
+      const parts = v.name.split('/');
+      const colName = parts[parts.length - 1].trim();
+      if (colName && !colourMap.has(colName.toLowerCase())) {
+        const hex = COLOR_HEX_MAP[colName.toLowerCase()] || '#333333';
+        colourMap.set(colName.toLowerCase(), { name: colName, hex, available: true });
+      }
+    }
+  });
 
   // From product options (Colour / Color)
   const rawColours = p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors || p.colors || [];
   const colourList = Array.isArray(rawColours) ? rawColours : (rawColours ? [rawColours] : []);
   colourList.forEach(col => {
-    const colName = String(col).trim();
+    const colName = String(typeof col === 'string' ? col : (col.name || '')).trim();
     if (colName && !colourMap.has(colName.toLowerCase())) {
-      const hex = COLOR_HEX_MAP[colName.toLowerCase()] || (colName.startsWith('#') ? colName : '#333333');
+      const hex = typeof col === 'object' && col.hex ? col.hex : (COLOR_HEX_MAP[colName.toLowerCase()] || (colName.startsWith('#') ? colName : '#333333'));
       colourMap.set(colName.toLowerCase(), { name: colName, hex, available: true });
     }
   });
@@ -709,8 +734,9 @@ function getProductCardVariants(p) {
 function getVariantStock(p, selectedSize, selectedColor) {
   if (!p) return { stock: 0, variant: null, isOutOfStock: true };
 
-  const targetSize = (selectedSize || '').trim().toLowerCase();
-  const targetColor = (selectedColor || '').trim().toLowerCase();
+  const clean = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const targetSize = clean(selectedSize);
+  const targetColor = clean(selectedColor);
 
   const variants = Array.isArray(p.variants) ? p.variants : [];
   const allVariants = Array.isArray(p.allVariants) && p.allVariants.length ? p.allVariants : variants;
@@ -719,93 +745,96 @@ function getVariantStock(p, selectedSize, selectedColor) {
     const topVars = variants.filter(v => !v.parentVariantId);
     const subVars = allVariants.filter(v => !!v.parentVariantId).concat(variants.flatMap(v => Array.isArray(v.subVariants) ? v.subVariants : []));
 
+    const getVarSize = (v) => clean(v.options?.Size || v.options?.size || (v.name && !v.parentVariantId ? v.name.replace(/^(Size|Variant)\s*:\s*/i, '') : ''));
+    const getVarColor = (v) => clean(v.options?.Colour || v.options?.colour || v.options?.Color || v.options?.color || (v.name && v.name.includes('/') ? v.name.split('/').pop() : ''));
+    const getVarAvail = (v) => Number(v.availableStock ?? v.stock ?? 0);
+
     // Case 1: Both Size and Colour are selected
     if (targetSize && targetColor) {
-      // Find top variant matching targetSize
+      // 1. Try finding matching sub-variant
+      const matchedSub = subVars.find(sv => {
+        const sSize = getVarSize(sv);
+        const sCol = getVarColor(sv);
+        let parentSize = '';
+        if (sv.parentVariantId) {
+          const parent = topVars.find(tv => tv.id === sv.parentVariantId);
+          if (parent) parentSize = getVarSize(parent);
+        }
+        const sizeMatches = (sSize && (sSize === targetSize || sSize.includes(targetSize) || targetSize.includes(sSize))) ||
+                            (parentSize && (parentSize === targetSize || parentSize.includes(targetSize) || targetSize.includes(parentSize)));
+        const colMatches = sCol && (sCol === targetColor || sCol.includes(targetColor) || targetColor.includes(sCol));
+        return sizeMatches && colMatches;
+      });
+
+      if (matchedSub) {
+        const stock = getVarAvail(matchedSub);
+        return { stock: Math.max(0, stock), variant: matchedSub, isOutOfStock: stock <= 0 };
+      }
+
+      // 2. Try topVars directly matching
       const matchedTop = topVars.find(tv => {
-        const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
-        const nameMatch = (tv.name || '').toLowerCase();
-        return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
-               (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
+        const tSize = getVarSize(tv);
+        const tCol = getVarColor(tv);
+        const sizeMatches = tSize && (tSize === targetSize || tSize.includes(targetSize) || targetSize.includes(tSize));
+        const colMatches = tCol && (tCol === targetColor || tCol.includes(targetColor) || targetColor.includes(tCol));
+        return sizeMatches && (colMatches || !tCol);
       });
 
       if (matchedTop) {
-        // Find matching sub-variant under this top variant
-        const matchedSub = (matchedTop.subVariants || []).find(sv => {
-          const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
-          const nameMatch = (sv.name || '').toLowerCase();
-          return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
-                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
-        }) || subVars.find(sv => {
-          if (sv.parentVariantId !== matchedTop.id) return false;
-          const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
-          const nameMatch = (sv.name || '').toLowerCase();
-          return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
-                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
-        });
-
-        if (matchedSub) {
-          const stock = matchedSub.availableStock !== undefined ? Number(matchedSub.availableStock) : (matchedSub.stock !== undefined ? Number(matchedSub.stock) : 0);
-          return { stock: Math.max(0, stock), variant: matchedSub, isOutOfStock: stock <= 0 };
+        const childSubs = subVars.filter(sv => sv.parentVariantId === matchedTop.id);
+        if (childSubs.length > 0) {
+          const matchedChild = childSubs.find(sv => {
+            const sCol = getVarColor(sv);
+            return sCol && (sCol === targetColor || sCol.includes(targetColor) || targetColor.includes(sCol));
+          });
+          if (matchedChild) {
+            const stock = getVarAvail(matchedChild);
+            return { stock: Math.max(0, stock), variant: matchedChild, isOutOfStock: stock <= 0 };
+          }
         }
-
-        const topStock = matchedTop.availableStock !== undefined ? Number(matchedTop.availableStock) : (matchedTop.stock !== undefined ? Number(matchedTop.stock) : 0);
+        const topStock = getVarAvail(matchedTop);
         return { stock: Math.max(0, topStock), variant: matchedTop, isOutOfStock: topStock <= 0 };
-      }
-
-      // Check subVars directly matching color and size
-      const directSub = subVars.find(sv => {
-        const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
-        const optSize = (sv.options?.get ? (sv.options.get('Size') || sv.options.get('size')) : (sv.options?.Size || sv.options?.size || ''))?.toLowerCase();
-        const nameMatch = (sv.name || '').toLowerCase();
-        const colMatch = (optCol && (optCol === targetColor || optCol.includes(targetColor))) || (nameMatch && nameMatch.includes(targetColor));
-        const sizeMatch = (optSize && (optSize === targetSize || optSize.includes(targetSize))) || (nameMatch && nameMatch.includes(targetSize));
-        return colMatch && sizeMatch;
-      });
-
-      if (directSub) {
-        const stock = directSub.availableStock !== undefined ? Number(directSub.availableStock) : (directSub.stock !== undefined ? Number(directSub.stock) : 0);
-        return { stock: Math.max(0, stock), variant: directSub, isOutOfStock: stock <= 0 };
       }
     }
 
     // Case 2: Only Size is selected
     if (targetSize) {
       const matchedTop = topVars.find(tv => {
-        const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
-        const nameMatch = (tv.name || '').toLowerCase();
-        return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
-               (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
-      }) || variants[0];
+        const tSize = getVarSize(tv);
+        return tSize && (tSize === targetSize || tSize.includes(targetSize) || targetSize.includes(tSize));
+      });
 
       if (matchedTop) {
-        const stock = matchedTop.availableStock !== undefined ? Number(matchedTop.availableStock) : (matchedTop.stock !== undefined ? Number(matchedTop.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
+        const childSubs = subVars.filter(sv => sv.parentVariantId === matchedTop.id);
+        let stock = 0;
+        if (childSubs.length > 0) {
+          stock = childSubs.reduce((sum, sv) => sum + getVarAvail(sv), 0);
+        } else {
+          stock = getVarAvail(matchedTop);
+        }
         return { stock: Math.max(0, stock), variant: matchedTop, isOutOfStock: stock <= 0 };
       }
     }
 
     // Case 3: Only Colour is selected
     if (targetColor) {
-      const matchedSub = subVars.find(sv => {
-        const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
-        const nameMatch = (sv.name || '').toLowerCase();
-        return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
-               (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
-      }) || variants[0];
+      const matchedSubs = subVars.filter(sv => {
+        const sCol = getVarColor(sv);
+        return sCol && (sCol === targetColor || sCol.includes(targetColor) || targetColor.includes(sCol));
+      });
 
-      if (matchedSub) {
-        const stock = matchedSub.availableStock !== undefined ? Number(matchedSub.availableStock) : (matchedSub.stock !== undefined ? Number(matchedSub.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
-        return { stock: Math.max(0, stock), variant: matchedSub, isOutOfStock: stock <= 0 };
+      if (matchedSubs.length > 0) {
+        const stock = matchedSubs.reduce((sum, sv) => sum + getVarAvail(sv), 0);
+        return { stock: Math.max(0, stock), variant: matchedSubs[0], isOutOfStock: stock <= 0 };
       }
     }
 
-    // Fallback: first variant
-    const firstVar = variants[0];
-    const stock = firstVar.availableStock !== undefined ? Number(firstVar.availableStock) : (firstVar.stock !== undefined ? Number(firstVar.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
-    return { stock: Math.max(0, stock), variant: firstVar, isOutOfStock: stock <= 0 };
+    // Fallback: Product totalStock or first variant
+    const totStock = p.totalStock !== undefined ? Number(p.totalStock) : (p.availableStock !== undefined ? Number(p.availableStock) : 0);
+    return { stock: Math.max(0, totStock), variant: topVars[0] || allVariants[0], isOutOfStock: totStock <= 0 };
   }
 
-  const defaultStock = p.totalStock !== undefined ? Number(p.totalStock) : (p.availableStock !== undefined ? Number(p.availableStock) : 10);
+  const defaultStock = p.totalStock !== undefined ? Number(p.totalStock) : (p.availableStock !== undefined ? Number(p.availableStock) : 0);
   return { stock: Math.max(0, defaultStock), variant: null, isOutOfStock: defaultStock <= 0 };
 }
 
