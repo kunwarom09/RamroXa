@@ -203,6 +203,31 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
   res.status(200).json({ data: result });
 });
 
+// --- Sales Returns ---
+export const listSalesReturns = asyncHandler(async (req, res) => {
+  const { listSalesReturns: fetchReturns } = await import('../services/adminReturn.service.js');
+  const result = await fetchReturns(req.query);
+  res.status(200).json({ data: result.returns, count: result.count });
+});
+
+export const createSalesReturn = asyncHandler(async (req, res) => {
+  const { createSalesReturn: addReturn } = await import('../services/adminReturn.service.js');
+  const result = await addReturn(req.body, req.user);
+  res.status(201).json({ message: 'Sales return created successfully.', data: result });
+});
+
+export const updateSalesReturnStatus = asyncHandler(async (req, res) => {
+  const { updateSalesReturnStatus: updateStatus } = await import('../services/adminReturn.service.js');
+  const result = await updateStatus(req.params.id, req.body);
+  res.status(200).json({ message: 'Sales return status updated.', data: result });
+});
+
+export const deleteSalesReturn = asyncHandler(async (req, res) => {
+  const { deleteSalesReturn: removeReturn } = await import('../services/adminReturn.service.js');
+  const result = await removeReturn(req.params.id);
+  res.status(200).json(result);
+});
+
 export default {
   listCategories,
   createCategory,
@@ -223,5 +248,9 @@ export default {
   refundOrder,
   listCustomers,
   getCustomer,
-  getDashboardStats
+  getDashboardStats,
+  listSalesReturns,
+  createSalesReturn,
+  updateSalesReturnStatus,
+  deleteSalesReturn
 };

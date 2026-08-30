@@ -28,7 +28,11 @@ import {
   refundOrder,
   listCustomers,
   getCustomer,
-  getDashboardStats
+  getDashboardStats,
+  listSalesReturns,
+  createSalesReturn,
+  updateSalesReturnStatus,
+  deleteSalesReturn
 } from '../controllers/admin.controller.js';
 import {
   listAdminCoupons,
@@ -103,6 +107,13 @@ router.get('/orders/:id', getOrder);
 router.put('/orders/:id/status', updateOrderStatus);
 router.patch('/orders/:id/status', updateOrderStatus);
 router.post('/orders/:id/refund', refundOrder);
+
+// Sales Returns
+router.get('/returns', listSalesReturns);
+router.post('/returns', createSalesReturn);
+router.put('/returns/:id/status', updateSalesReturnStatus);
+router.patch('/returns/:id/status', updateSalesReturnStatus);
+router.delete('/returns/:id', deleteSalesReturn);
 
 // Coupons Management
 router.get('/coupons', listAdminCoupons);

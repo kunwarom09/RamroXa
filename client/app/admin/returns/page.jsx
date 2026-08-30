@@ -4,6 +4,16 @@ import { money, today, docSubtotal, docVat, docTotal } from '../../../services/f
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
+const badgeClassForStatus = {
+  pending: 'badge-warning',
+  inspected: 'badge-accent',
+  approved: 'badge-success',
+  refunded: 'badge-success',
+  refund_processed: 'badge-success',
+  completed: 'badge-success',
+  rejected: 'badge-danger'
+};
+
 export default function AdminReturnsPage() {
   const [returns, setReturns] = useState([]);
   const [sales, setSales] = useState([]);
@@ -32,33 +42,49 @@ export default function AdminReturnsPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState(null);
 
+  const [submitting, setSubmitting] = useState(false);
+
   const refreshData = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/admin/orders');
-      const orders = res.data?.orders || res.data || [];
-      const normalizedSales = orders.map((o, idx) => {
-        const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
-        const rawItems = o.items && o.items.length ? o.items : [{ name: 'Garment', qty: 1, unitPrice: grand * 100 }];
-        return {
-          id: o._id || o.orderNo || `s_${idx}`,
-          invoice: o.orderNo || `INV-${2030 + idx}`,
-          orderNo: o.orderNo || o.no,
-          date: (o.createdAt || o.date || today()).slice(0, 10),
-          customer: o.shippingAddress?.fullName || o.customer || 'Storefront Customer',
-          customerPhone: o.shippingAddress?.phone || o.phone || '',
-          total: grand,
-          items: rawItems.map(i => ({
-            desc: i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
-            sku: i.sku || 'SKU',
-            rate: i.unitPrice != null ? Math.round(i.unitPrice / 100) : (Number(i.rate) || grand),
-            qty: Number(i.qty) || 1
-          }))
-        };
-      });
-      setSales(normalizedSales);
+      const [ordersRes, returnsRes] = await Promise.allSettled([
+        api.get('/api/admin/orders'),
+        api.get('/api/admin/returns')
+      ]);
+
+      if (ordersRes.status === 'fulfilled') {
+        const orders = ordersRes.value.data?.orders || ordersRes.value.data || [];
+        const normalizedSales = orders.map((o, idx) => {
+          const grand = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+          const rawItems = o.items && o.items.length ? o.items : [{ name: 'Garment', qty: 1, unitPrice: grand * 100 }];
+          return {
+            id: o._id || o.id || o.orderNo || `s_${idx}`,
+            invoice: o.orderNo || `INV-${2030 + idx}`,
+            orderNo: o.orderNo || o.no,
+            date: (o.createdAt || o.date || today()).slice(0, 10),
+            customer: o.shippingAddress?.fullName || o.customer || 'Storefront Customer',
+            customerPhone: o.shippingAddress?.phone || o.phone || '',
+            total: grand,
+            items: rawItems.map(i => ({
+              desc: i.name + (i.variantLabel ? ` (${i.variantLabel})` : ''),
+              sku: i.sku || 'SKU',
+              variantId: i.variantId || '',
+              rate: i.unitPrice != null ? Math.round(i.unitPrice / 100) : (Number(i.rate) || grand),
+              qty: Number(i.qty) || 1
+            }))
+          };
+        });
+        setSales(normalizedSales);
+      }
+
+      if (returnsRes.status === 'fulfilled') {
+        const retList = returnsRes.value.data?.data || returnsRes.value.data?.returns || returnsRes.value.data || [];
+        if (Array.isArray(retList)) {
+          setReturns(retList);
+        }
+      }
     } catch (e) {
-      console.error('Failed to load orders for returns:', e);
+      console.error('Failed to load data for returns:', e);
     } finally {
       setLoading(false);
     }
@@ -89,6 +115,7 @@ export default function AdminReturnsPage() {
       index: idx,
       desc: it.desc || 'Item',
       sku: it.sku || `SKU-${idx + 1}`,
+      variantId: it.variantId || '',
       rate: Number(it.rate) || 0,
       bought: Number(it.qty) || 1,
       returned: 0,
@@ -142,8 +169,8 @@ export default function AdminReturnsPage() {
     setAttachments(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleCreateReturn = (e) => {
-    e.preventDefault();
+  const handleCreateReturn = async (e) => {
+    if (e) e.preventDefault();
     if (!selectedSale) return;
     if (calculatedRefundTotal <= 0) {
       alert('Return refund amount must be greater than Rs 0.');
@@ -152,16 +179,17 @@ export default function AdminReturnsPage() {
 
     const returnNet = Math.round(calculatedRefundTotal / (1 + vatRate / 100));
     const refundVat = calculatedRefundTotal - returnNet;
+    const finalReason = returnReason === 'Other' ? (customReason || 'Other') : returnReason;
 
-    const newReturn = {
-      id: 'ret_' + Date.now().toString(36),
-      no: 'RET-' + (1000 + returns.length + 1),
+    const payload = {
       saleId: selectedSale.id,
+      orderNo: selectedSale.orderNo || selectedSale.invoice,
       invoice: selectedSale.invoice,
       customer: selectedSale.customer,
+      customerPhone: selectedSale.customerPhone || '',
       date: today(),
       type: returnType,
-      reason: returnReason === 'Other' ? (customReason || 'Other') : returnReason,
+      reason: finalReason,
       restock: restockDest,
       items: returnItemsList,
       refundNet: returnNet,
@@ -169,26 +197,46 @@ export default function AdminReturnsPage() {
       refundAmount: calculatedRefundTotal,
       status: 'pending',
       notes,
-      attachments,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      attachments
     };
 
-    setReturns(prev => [newReturn, ...prev]);
-    setModalOpen(false);
-  };
-
-  const updateReturnStatus = (retId, newStatus) => {
-    setReturns(prev => prev.map(r => r.id === retId ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r));
-    if (selectedReturn?.id === retId) {
-      setSelectedReturn(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
+    setSubmitting(true);
+    try {
+      const res = await api.post('/api/admin/returns', payload);
+      const created = res.data?.data || res.data;
+      if (created) {
+        setReturns(prev => [created, ...prev.filter(r => r.id !== created.id)]);
+      }
+      setModalOpen(false);
+      await refreshData();
+    } catch (err) {
+      alert('Failed to create sales return: ' + (err.message || 'Server error'));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleDeleteReturn = (retId) => {
+  const updateReturnStatus = async (retId, newStatus) => {
+    try {
+      await api.patch(`/api/admin/returns/${retId}/status`, { status: newStatus });
+      setReturns(prev => prev.map(r => (r.id === retId || r._id === retId) ? { ...r, status: newStatus, updatedAt: new Date().toISOString() } : r));
+      if (selectedReturn && (selectedReturn.id === retId || selectedReturn._id === retId)) {
+        setSelectedReturn(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
+      }
+    } catch (err) {
+      alert('Failed to update status: ' + (err.message || 'Error'));
+    }
+  };
+
+  const handleDeleteReturn = async (retId) => {
     if (!confirm('Are you sure you want to delete this return record?')) return;
-    setReturns(prev => prev.filter(r => r.id !== retId));
-    setViewModalOpen(false);
+    try {
+      await api.delete(`/api/admin/returns/${retId}`);
+      setReturns(prev => prev.filter(r => r.id !== retId && r._id !== retId));
+      setViewModalOpen(false);
+    } catch (err) {
+      alert('Failed to delete return: ' + (err.message || 'Error'));
+    }
   };
 
   const filteredReturns = returns.filter(r => {
@@ -562,10 +610,15 @@ export default function AdminReturnsPage() {
             )}
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '18px' }}>
-              <button className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
+              <button className="btn" type="button" onClick={() => setModalOpen(false)}>Cancel</button>
               {step === 'form' && (
-                <button className="btn btn-primary" onClick={handleSubmitReturn}>
-                  Save return authorization
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={handleCreateReturn}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : 'Save return authorization'}
                 </button>
               )}
             </div>
@@ -589,7 +642,7 @@ export default function AdminReturnsPage() {
                 <div><strong>Original Invoice:</strong> <code>{selectedReturn.invoice}</code></div>
                 <div><strong>Customer:</strong> {selectedReturn.customer}</div>
                 <div><strong>Return Date:</strong> {selectedReturn.date}</div>
-                <div><strong>Restock Destination:</strong> {selectedReturn.restockDest}</div>
+                <div><strong>Restock Destination:</strong> {selectedReturn.restockDest || selectedReturn.restock || 'available'}</div>
                 <div><strong>Reason:</strong> {selectedReturn.reason}</div>
                 <div><strong>Type:</strong> {selectedReturn.type}</div>
               </div>
