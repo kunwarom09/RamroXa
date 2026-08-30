@@ -294,18 +294,33 @@ export async function toggleVariantPublish({ variantId, published, user }) {
 export async function getVariantTransactions({ variantId, sku }) {
   const { Order, Purchase } = await import('../models/index.js');
   
-  let targetVariantId = variantId;
+  let targetVariantId = String(variantId || '').trim();
   let targetSku = sku;
-  if (!targetSku && targetVariantId) {
-    const v = await Variant.findOne({ id: targetVariantId });
-    if (v) targetSku = v.sku;
+  const v = await Variant.findOne({
+    $or: [
+      { id: targetVariantId },
+      ...(mongoose.Types.ObjectId.isValid(targetVariantId) ? [{ _id: targetVariantId }] : []),
+      ...(targetSku ? [{ sku: targetSku }] : [])
+    ]
+  }).lean();
+
+  if (v) {
+    if (!targetSku) targetSku = v.sku;
   }
+
+  const allVarKeys = [
+    targetVariantId,
+    targetSku,
+    v?.id,
+    v?._id?.toString(),
+    v?.sku
+  ].filter(Boolean);
 
   const [orders, purchases, moves] = await Promise.all([
     Order.find({
       $or: [
-        { 'items.variantId': targetVariantId },
-        { 'items.sku': targetSku }
+        { 'items.variantId': { $in: allVarKeys } },
+        { 'items.sku': { $in: allVarKeys } }
       ]
     }).sort({ createdAt: -1 }).limit(50).lean(),
     Purchase.find({
@@ -313,7 +328,7 @@ export async function getVariantTransactions({ variantId, sku }) {
         { 'items.name': { $regex: targetSku || 'NONE', $options: 'i' } }
       ]
     }).sort({ date: -1 }).limit(50).lean(),
-    StockMove.find({ variantId: targetVariantId }).sort({ createdAt: -1 }).limit(100).lean()
+    StockMove.find({ variantId: { $in: allVarKeys } }).sort({ createdAt: -1 }).limit(100).lean()
   ]);
 
   const sales = orders.map(o => ({

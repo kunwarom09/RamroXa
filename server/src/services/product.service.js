@@ -107,18 +107,28 @@ export async function listProducts(params = {}) {
   const productIds = products.map((p) => p.id || p._id.toString());
   const [variants, inventories] = await Promise.all([
     Variant.find({ productId: { $in: productIds }, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
-    Inventory.find({ archived: false }).lean()
+    Inventory.find({ $or: [{ warehouseId: 'w1' }, { warehouseId: null }], archived: false }).lean()
   ]);
 
   const invByVariantId = inventories.reduce((acc, inv) => {
-    acc[inv.variantId] = (acc[inv.variantId] || 0) + (inv.available || 0);
+    if (inv.variantId) acc[inv.variantId] = (acc[inv.variantId] || 0) + (Number(inv.available) || 0);
+    if (inv.id) acc[inv.id] = (acc[inv.id] || 0) + (Number(inv.available) || 0);
     return acc;
   }, {});
+
+  const getVarStock = (v) => {
+    if (!v) return 0;
+    const vId = v.id || v._id?.toString();
+    const vMongoId = v._id?.toString();
+    const vSku = v.sku;
+    return invByVariantId[vId] ?? (vMongoId ? invByVariantId[vMongoId] : undefined) ?? (vSku ? invByVariantId[vSku] : undefined) ?? 0;
+  };
 
   const variantsByProductId = variants.reduce((acc, v) => {
     const vWithStock = {
       ...v,
-      availableStock: invByVariantId[v.id] || 0
+      availableStock: getVarStock(v),
+      stock: getVarStock(v)
     };
     if (!acc[v.productId]) acc[v.productId] = [];
     acc[v.productId].push(vWithStock);
@@ -126,7 +136,7 @@ export async function listProducts(params = {}) {
   }, {});
 
   const enriched = products.map((p) => {
-    const pId = p.id || p._id.toString();
+    const pId = p.id || p._id?.toString();
     const allProdVars = variantsByProductId[pId] || [];
     const topVars = allProdVars.filter((v) => !v.parentVariantId);
     const subVars = allProdVars.filter((v) => !!v.parentVariantId);
@@ -139,7 +149,7 @@ export async function listProducts(params = {}) {
 
     const enrichedTopVars = (topVars.length ? topVars : allProdVars).map((v) => ({
       ...v,
-      subVariants: subVarsByParent[v.id] || []
+      subVariants: subVarsByParent[v.id || v._id?.toString()] || []
     }));
 
     const effectiveStockVars = subVars.length > 0 ? subVars : allProdVars;
@@ -177,22 +187,26 @@ export async function getProductBySlug(slug) {
   const [category, variants, inventories] = await Promise.all([
     Category.findOne({ id: product.categoryId }).lean(),
     Variant.find({ productId: pId, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
-    Inventory.find({ archived: false }).lean()
+    Inventory.find({ $or: [{ warehouseId: 'w1' }, { warehouseId: null }], archived: false }).lean()
   ]);
 
   const invByVariantId = inventories.reduce((acc, inv) => {
-    if (!acc[inv.variantId]) acc[inv.variantId] = [];
-    acc[inv.variantId].push(inv);
+    const keys = [inv.variantId, inv.id].filter(Boolean);
+    keys.forEach(k => {
+      if (!acc[k]) acc[k] = [];
+      acc[k].push(inv);
+    });
     return acc;
   }, {});
 
   const enrichedVariants = variants.map((v) => {
-    const records = invByVariantId[v.id] || [];
+    const records = invByVariantId[v.id] || invByVariantId[v._id?.toString()] || invByVariantId[v.sku] || [];
     const available = records.reduce((sum, r) => sum + (r.available || 0), 0);
     const reserved = records.reduce((sum, r) => sum + (r.reserved || 0), 0);
     return {
       ...v,
       availableStock: available,
+      stock: available,
       reservedStock: reserved,
       sellableStock: Math.max(0, available - reserved),
       inventoryRecords: records
@@ -210,7 +224,7 @@ export async function getProductBySlug(slug) {
 
   const structuredTopVars = (topVars.length ? topVars : enrichedVariants).map((v) => ({
     ...v,
-    subVariants: subVarsByParent[v.id] || []
+    subVariants: subVarsByParent[v.id || v._id?.toString()] || []
   }));
 
   const effectiveStockVars = subVars.length > 0 ? subVars : enrichedVariants;

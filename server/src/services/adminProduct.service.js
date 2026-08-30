@@ -72,18 +72,28 @@ export async function listAdminProducts(query = {}) {
   ]);
 
   const invByVariantId = inventories.reduce((acc, inv) => {
-    acc[inv.variantId] = (acc[inv.variantId] || 0) + (inv.available || 0);
+    if (inv.variantId) acc[inv.variantId] = (acc[inv.variantId] || 0) + (Number(inv.available) || 0);
+    if (inv.id) acc[inv.id] = (acc[inv.id] || 0) + (Number(inv.available) || 0);
     return acc;
   }, {});
+
+  const getVarStock = (v) => {
+    if (!v) return 0;
+    const vId = v.id || v._id?.toString();
+    const vMongoId = v._id?.toString();
+    const vSku = v.sku;
+    return invByVariantId[vId] ?? (vMongoId ? invByVariantId[vMongoId] : undefined) ?? (vSku ? invByVariantId[vSku] : undefined) ?? 0;
+  };
 
   const subVariants = variants.filter((v) => !!v.parentVariantId);
 
   const subVariantsByParent = subVariants.reduce((acc, sv) => {
     if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+    const stock = getVarStock(sv);
     acc[sv.parentVariantId].push({
       ...sv,
-      availableStock: invByVariantId[sv.id] || 0,
-      stock: invByVariantId[sv.id] || 0
+      availableStock: stock,
+      stock
     });
     return acc;
   }, {});
@@ -95,13 +105,14 @@ export async function listAdminProducts(query = {}) {
   }, {});
 
   const enrichedProducts = products.map((p) => {
-    const prodAllVars = variantsByProdId[p.id] || [];
+    const pId = p.id || p._id?.toString();
+    const prodAllVars = variantsByProdId[pId] || [];
     const prodTopVars = prodAllVars.filter((v) => !v.parentVariantId);
     const prodSubVars = prodAllVars.filter((v) => !!v.parentVariantId);
 
     const structuredVariants = (prodTopVars.length ? prodTopVars : prodAllVars).map((v) => {
-      const subs = subVariantsByParent[v.id] || [];
-      const directStock = invByVariantId[v.id] || 0;
+      const subs = subVariantsByParent[v.id || v._id?.toString()] || [];
+      const directStock = getVarStock(v);
       const subStock = subs.reduce((sum, s) => sum + (s.availableStock || 0), 0);
       const stock = subs.length > 0 ? subStock : directStock;
       return {
@@ -113,16 +124,16 @@ export async function listAdminProducts(query = {}) {
     });
 
     const totalStock = prodSubVars.length > 0
-      ? prodSubVars.reduce((sum, sv) => sum + (invByVariantId[sv.id] || 0), 0)
-      : prodTopVars.reduce((sum, tv) => sum + (invByVariantId[tv.id] || 0), 0);
+      ? prodSubVars.reduce((sum, sv) => sum + getVarStock(sv), 0)
+      : prodTopVars.reduce((sum, tv) => sum + getVarStock(tv), 0);
 
     return {
       ...p,
       variants: structuredVariants,
       allVariants: prodAllVars.map((v) => ({
         ...v,
-        availableStock: invByVariantId[v.id] || 0,
-        stock: invByVariantId[v.id] || 0
+        availableStock: getVarStock(v),
+        stock: getVarStock(v)
       })),
       variantCount: structuredVariants.length,
       totalStock
