@@ -399,19 +399,14 @@ export function VideoPickerField({
 
   const presets = [
     {
-      name: '🌆 Neon Streetwear Brand Film',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+      name: '🎬 Ramroxa Brand Narrative Film',
+      url: '/videos/ramroxa-brand-video.mp4',
       poster: '/assets/59a3737ee018272f.q.jpg'
     },
     {
-      name: '👟 Sneakers In Motion',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-feet-of-a-person-walking-in-sneakers-42930-large.mp4',
+      name: '👟 Everyday Motion Showcase',
+      url: '/videos/sample-video.mp4',
       poster: '/assets/98eab38550301ca9.q.jpg'
-    },
-    {
-      name: '🧥 Tailoring & Artisan Workshop',
-      url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-cutting-fabric-in-a-tailoring-workshop-43759-large.mp4',
-      poster: '/assets/44312e50fe56c782.q.jpg'
     }
   ];
 

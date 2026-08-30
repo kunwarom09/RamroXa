@@ -153,7 +153,7 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
       enabled: true,
       widgetType: 'video_bg',
       config: {
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+        videoUrl: '/videos/ramroxa-brand-video.mp4',
         posterImage: '/assets/59a3737ee018272f.q.jpg',
         autoplay: true,
         muted: true,
@@ -317,12 +317,12 @@ export function loadHomepageConfig() {
     if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
       // Ensure video sections have valid videoUrl fallback
       const sections = parsed.sections.map((sec) => {
-        if (sec.type === 'video' && sec.config && !sec.config.videoUrl) {
+        if (sec.type === 'video' && sec.config && (!sec.config.videoUrl || sec.config.videoUrl.includes('mixkit.co'))) {
           return {
             ...sec,
             config: {
               ...sec.config,
-              videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+              videoUrl: '/videos/ramroxa-brand-video.mp4',
               autoplay: sec.config.autoplay !== false,
               muted: sec.config.muted !== false,
               loop: sec.config.loop !== false
