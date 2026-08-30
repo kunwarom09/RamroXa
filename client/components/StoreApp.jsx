@@ -3248,8 +3248,8 @@ export default class StoreApp extends React.Component {
     }
 
     return (
-      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+      <div className="zylo-cart-page" style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
+        <div className="zylo-cart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
           <div>
             <h2 style={{ fontSize: 36, fontWeight: 300, margin: '0 0 6px', letterSpacing: 0.5 }}>SHOPPING CART</h2>
             <span style={{ color: '#666', fontSize: 14 }}>{totalCount} {totalCount === 1 ? 'item' : 'items'} in your bag</span>
@@ -3264,7 +3264,7 @@ export default class StoreApp extends React.Component {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40, alignItems: 'start' }}>
+        <div className="zylo-cart-grid" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 40, alignItems: 'start' }}>
           <div>
             {cart.map((l, i) => {
               const p = cat[l.idx] || { name: 'Item', price: 0, img1: '', brand: 'Ramroxa' };
@@ -3347,7 +3347,7 @@ export default class StoreApp extends React.Component {
           </div>
 
           {/* Order Summary */}
-          <div style={{ background: '#f5f5f5', padding: 28, borderRadius: 16, border: '1px solid #eaeaea', position: 'sticky', top: 80 }}>
+          <div className="zylo-cart-summary" style={{ background: '#f5f5f5', padding: 28, borderRadius: 16, border: '1px solid #eaeaea', position: 'sticky', top: 80 }}>
             <h3 style={{ fontSize: 18, margin: '0 0 18px', fontWeight: 600, letterSpacing: 0.5 }}>ORDER SUMMARY</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 14 }}>
               <span style={{ color: '#555' }}>Subtotal ({totalCount} items)</span>
@@ -3402,11 +3402,11 @@ export default class StoreApp extends React.Component {
     }
 
     return (
-      <div style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
-        <h2 style={{ fontSize: 36, fontWeight: 300, marginBottom: 32 }}>CHECKOUT</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
+      <div className="zylo-checkout-page" style={{ width: '100%', maxWidth: 1188, margin: '0 auto', padding: '48px 24px', boxSizing: 'border-box' }}>
+        <h2 className="zylo-checkout-title" style={{ fontSize: 36, fontWeight: 300, marginBottom: 32 }}>CHECKOUT</h2>
+        <div className="zylo-checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
           {/* Left: Customer & Shipping Details */}
-          <div>
+          <div className="zylo-checkout-form">
             <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, letterSpacing: 0.5 }}>1. SHIPPING & CONTACT</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -3540,7 +3540,7 @@ export default class StoreApp extends React.Component {
           </div>
 
           {/* Right: Order Summary & Place Button */}
-          <div style={{ background: '#f9f9f9', border: '1px solid #eaeaea', padding: 24, borderRadius: 12, position: 'sticky', top: 80 }}>
+          <div className="zylo-checkout-summary" style={{ background: '#f9f9f9', border: '1px solid #eaeaea', padding: 24, borderRadius: 12, position: 'sticky', top: 80 }}>
             <h3 style={{ fontSize: 18, margin: '0 0 16px', fontWeight: 600 }}>ORDER ITEMS ({cart.reduce((s, l) => s + l.qty, 0)})</h3>
             <div style={{ maxHeight: 240, overflowY: 'auto', marginBottom: 16, borderBottom: '1px solid #e0e0e0', paddingBottom: 8 }}>
               {cart.map((l, i) => {
