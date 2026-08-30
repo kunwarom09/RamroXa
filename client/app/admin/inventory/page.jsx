@@ -17,15 +17,15 @@ export default function AdminInventoryPage() {
   const [inventoryList, setInventoryList] = useState([]);
   const [stockMoves, setStockMoves] = useState([]);
 
-  // Filters & Search
+  // Search & Filters
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [publishFilter, setPublishFilter] = useState('');
+  const [expandedProductIds, setExpandedProductIds] = useState(new Set());
   const [toastMsg, setToastMsg] = useState('');
 
-  // Active Action Menu state
-  const [openMenuRowId, setOpenMenuRowId] = useState(null);
+  // Action Menu dropdown state
+  const [openMenuKey, setOpenMenuKey] = useState(null);
   const menuRef = useRef(null);
 
   // Modals state
@@ -38,23 +38,23 @@ export default function AdminInventoryPage() {
   const [returnsModalOpen, setReturnsModalOpen] = useState(false);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
 
-  // Target item for modals
+  // Active target variant item & transactions
   const [activeItem, setActiveItem] = useState(null);
   const [variantTransactions, setVariantTransactions] = useState({ sales: [], purchases: [], returns: [], ledger: [] });
   const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-  // Adjustment Form
-  const [adjMode, setAdjMode] = useState('increase'); // 'increase', 'decrease', 'replace'
+  // Adjustment form
+  const [adjMode, setAdjMode] = useState('increase');
   const [adjQty, setAdjQty] = useState(1);
   const [adjReason, setAdjReason] = useState('Stock correction');
   const [adjNotes, setAdjNotes] = useState('');
   const [adjRef, setAdjRef] = useState('');
   const [adjWarehouse, setAdjWarehouse] = useState('w1');
 
-  // Price Form
+  // Price form
   const [editPriceVal, setEditPriceVal] = useState(0);
 
-  // Transfer Form
+  // Transfer form
   const [trfTo, setTrfTo] = useState('');
   const [trfQty, setTrfQty] = useState(1);
   const [trfReason, setTrfReason] = useState('Warehouse stock rebalance');
@@ -64,11 +64,10 @@ export default function AdminInventoryPage() {
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  // Close action menu on click outside
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenuRowId(null);
+        setOpenMenuKey(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -78,16 +77,11 @@ export default function AdminInventoryPage() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const [invRes, prodRes, moveRes] = await Promise.allSettled([
-        api.get('/api/admin/inventory'),
+      const [prodRes, invRes, moveRes] = await Promise.allSettled([
         api.get('/api/admin/products'),
+        api.get('/api/admin/inventory'),
         api.get('/api/admin/inventory/moves')
       ]);
-
-      let rawInv = [];
-      if (invRes.status === 'fulfilled') {
-        rawInv = invRes.value.data?.inventory || invRes.value.data || [];
-      }
 
       let rawProds = [];
       let extractedVars = [];
@@ -110,14 +104,19 @@ export default function AdminInventoryPage() {
         });
       }
 
+      let rawInv = [];
+      if (invRes.status === 'fulfilled') {
+        rawInv = invRes.value.data?.inventory || invRes.value.data || [];
+      }
+
       let rawMoves = [];
       if (moveRes.status === 'fulfilled') {
         rawMoves = moveRes.value.data?.moves || moveRes.value.data || [];
       }
 
-      setInventoryList(rawInv);
       setProducts(rawProds);
       setVariants(extractedVars);
+      setInventoryList(rawInv);
       setStockMoves(rawMoves);
     } catch (err) {
       console.error('Failed to load inventory data:', err);
@@ -131,8 +130,6 @@ export default function AdminInventoryPage() {
     refreshData();
   }, []);
 
-  const masterById = (id) => products.find(p => p.id === id || String(p._id) === id);
-  const variantById = (id) => variants.find(v => v.id === id);
   const warehouseById = (id) => warehouses.find(w => w.id === id) || { id, name: id || 'Kathmandu DC' };
 
   const getVariantLabel = (v) => {
@@ -148,19 +145,17 @@ export default function AdminInventoryPage() {
     return parts.join(' / ') || v.name || 'Default';
   };
 
-  const getVariantSize = (v, r) => {
-    if (r?.size && r.size !== 'Standard' && r.size !== '—') return r.size;
+  const getVariantSize = (v) => {
     if (v?.options?.Size || v?.options?.size) return v.options.Size || v.options.size;
     if (v?.parentVariant?.options?.Size || v?.parentVariant?.options?.size) {
       return v.parentVariant.options.Size || v.parentVariant.options.size;
     }
     if (v?.parentVariant?.name) return v.parentVariant.name;
     if (v?.name && v.name.includes('/')) return v.name.split('/')[0].trim();
-    return r?.size || '—';
+    return v?.name || 'Standard';
   };
 
-  const getVariantColor = (v, r) => {
-    if (r?.color && r.color !== 'Default' && r.color !== '—') return r.color;
+  const getVariantColor = (v) => {
     if (v?.options?.Colour || v?.options?.colour || v?.options?.Color || v?.options?.color) {
       return v.options.Colour || v.options.colour || v.options.Color || v.options.color;
     }
@@ -169,7 +164,7 @@ export default function AdminInventoryPage() {
     }
     if (v?.parentVariantId && v?.name) return v.name;
     if (v?.name && v.name.includes('/')) return v.name.split('/')[1].trim();
-    return r?.color || '—';
+    return 'Default';
   };
 
   const getVariantPrice = (v, m) => {
@@ -179,85 +174,151 @@ export default function AdminInventoryPage() {
     return 0;
   };
 
-  const stockState = (r) => {
-    if (!r || r.available <= 0) return 'out';
-    if (r.reorderLevel && r.available <= r.reorderLevel) return 'low';
-    return 'ok';
+  const stockBadge = (available, reorderLevel = 5) => {
+    if (available <= 0) return <span className="badge badge-danger">out of stock</span>;
+    if (available <= reorderLevel) return <span className="badge badge-warning">low stock</span>;
+    return <span className="badge badge-success">in stock</span>;
   };
 
-  const STOCK_BADGES = {
-    ok: <span className="badge badge-success">in stock</span>,
-    low: <span className="badge badge-warning">low stock</span>,
-    out: <span className="badge badge-danger">out of stock</span>
-  };
-
-  // Build Unified Enriched Operational Rows
-  const enrichedRows = useMemo(() => {
-    const list = [];
-
-    // Map all inventory records
-    inventoryList.forEach(r => {
-      const v = variantById(r.variantId) || (r.variantId ? { id: r.variantId, sku: r.sku || r.variantSku, name: r.variantLabel || r.name, options: {} } : null);
-      const m = (v && masterById(v.productId)) || (r.productId && masterById(r.productId)) || { id: r.productId || 'p_unknown', name: r.name || 'Master Product', sku: r.sku };
-      const w = warehouseById(r.warehouseId);
-      const price = r.price !== undefined ? r.price : getVariantPrice(v, m);
-      const isArchived = r.archived === true || (v && v.status === 'archived');
-      const isPublished = v ? (v.published !== false && v.status !== 'draft' && v.status !== 'archived') : true;
-
-      list.push({
-        id: r.id || `${r.variantId}_${r.warehouseId}`,
-        invId: r.id,
-        r,
-        v: v || { id: r.variantId, sku: r.sku || 'SKU' },
-        m,
-        w,
-        sku: r.sku || (v && v.sku) || m.sku || 'SKU',
-        barcode: (v && v.barcode) || r.barcode || r.sku || (v && v.sku),
-        size: getVariantSize(v, r),
-        color: getVariantColor(v, r),
-        available: Number(r.available) || 0,
-        reserved: Number(r.reserved) || 0,
-        incoming: Number(r.incoming) || 0,
-        damaged: Number(r.damaged) || 0,
-        returned: Number(r.returned) || 0,
-        reorderLevel: r.reorderLevel || 5,
-        price,
-        state: stockState(r),
-        published: isPublished,
-        archived: isArchived
-      });
+  // Map inventories by variantId + warehouseId
+  const invMap = useMemo(() => {
+    const map = {};
+    inventoryList.forEach(inv => {
+      if (!inv.archived) {
+        map[`${inv.variantId}_${inv.warehouseId}`] = inv;
+        map[inv.variantId] = inv;
+      }
     });
+    return map;
+  }, [inventoryList]);
 
-    return list;
-  }, [inventoryList, variants, products, warehouses]);
+  // Group variants directly under their Master Product with Size → Colour hierarchy
+  const groupedProducts = useMemo(() => {
+    return products.map(prod => {
+      const pId = prod.id || String(prod._id);
+      const prodVariants = variants.filter(v => v.productId === pId && v.status !== 'archived');
 
-  // Filtered rows
-  const filtered = useMemo(() => {
-    return enrichedRows.filter(x => {
-      if (x.archived) return false; // Archived variants hidden from active operational view
-      if (warehouseFilter && x.w.id !== warehouseFilter) return false;
-      if (statusFilter && x.state !== statusFilter) return false;
-      if (publishFilter === 'published' && !x.published) return false;
-      if (publishFilter === 'unpublished' && x.published) return false;
+      // Filter out top-level parent variants if child sub-variants exist
+      const childVars = prodVariants.filter(v => !!v.parentVariantId);
+      const activeVars = childVars.length > 0 ? childVars : prodVariants;
+
+      // Group by Size → Colour
+      const sizeGroups = {};
+      let totalProdStock = 0;
+      let totalProdReserved = 0;
+      const sizeSet = new Set();
+      const colorSet = new Set();
+
+      activeVars.forEach(v => {
+        const size = getVariantSize(v);
+        const color = getVariantColor(v);
+        sizeSet.add(size);
+        colorSet.add(color);
+
+        const invDoc = invMap[v.id] || null;
+        const available = invDoc ? Number(invDoc.available) || 0 : 0;
+        const reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
+        const price = getVariantPrice(v, prod);
+
+        totalProdStock += available;
+        totalProdReserved += reserved;
+
+        if (!sizeGroups[size]) {
+          sizeGroups[size] = {
+            size,
+            totalStock: 0,
+            colours: []
+          };
+        }
+
+        sizeGroups[size].totalStock += available;
+        sizeGroups[size].colours.push({
+          v,
+          m: prod,
+          r: invDoc,
+          sku: v.sku || `${prod.sku}-${size}-${color.slice(0, 3).toUpperCase()}`,
+          size,
+          color,
+          available,
+          reserved,
+          price,
+          published: v.published !== false && v.status !== 'draft',
+          warehouse: invDoc ? warehouseById(invDoc.warehouseId) : { id: 'w1', name: 'Kathmandu DC' }
+        });
+      });
+
+      const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', '28', '30', '32', '34', '36', '38', '40'];
+      const sizesList = Object.values(sizeGroups).sort((a, b) => {
+        const idxA = sizeOrder.indexOf(a.size);
+        const idxB = sizeOrder.indexOf(b.size);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.size.localeCompare(b.size, undefined, { numeric: true });
+      });
+      const isOutOfStock = totalProdStock <= 0;
+
+      return {
+        product: prod,
+        id: pId,
+        name: prod.name,
+        sku: prod.sku,
+        brand: prod.brand || 'Ramroxa',
+        price: prod.price || prod.basePrice || (activeVars[0] ? activeVars[0].price : 0),
+        totalStock: totalProdStock,
+        totalReserved: totalProdReserved,
+        isOutOfStock,
+        sizesCount: sizeSet.size,
+        coloursCount: colorSet.size,
+        sizesListSummary: Array.from(sizeSet).join(', ') || 'Standard',
+        coloursListSummary: Array.from(colorSet).join(', ') || 'Standard',
+        sizeGroups: sizesList,
+        variantsCount: activeVars.length,
+        published: prod.status === 'published'
+      };
+    });
+  }, [products, variants, invMap, warehouses]);
+
+  // Overall metrics
+  const totalStockUnits = useMemo(() => groupedProducts.reduce((sum, p) => sum + p.totalStock, 0), [groupedProducts]);
+  const outOfStockCount = useMemo(() => groupedProducts.filter(p => p.isOutOfStock).length, [groupedProducts]);
+  const totalVariantsCount = useMemo(() => groupedProducts.reduce((sum, p) => sum + p.variantsCount, 0), [groupedProducts]);
+
+  // Filter products by search, warehouse, and status
+  const filteredProducts = useMemo(() => {
+    return groupedProducts.filter(p => {
+      if (statusFilter === 'out' && !p.isOutOfStock) return false;
+      if (statusFilter === 'ok' && p.isOutOfStock) return false;
       if (search) {
         const q = search.toLowerCase().trim();
-        const matchName = x.m?.name?.toLowerCase().includes(q);
-        const matchSku = x.sku?.toLowerCase().includes(q);
-        const matchLabel = getVariantLabel(x.v)?.toLowerCase().includes(q);
-        const matchSize = x.size?.toLowerCase().includes(q);
-        const matchColor = x.color?.toLowerCase().includes(q);
-        return matchName || matchSku || matchLabel || matchSize || matchColor;
+        const matchName = p.name.toLowerCase().includes(q);
+        const matchSku = p.sku.toLowerCase().includes(q);
+        const matchSize = p.sizesListSummary.toLowerCase().includes(q);
+        const matchColor = p.coloursListSummary.toLowerCase().includes(q);
+        return matchName || matchSku || matchSize || matchColor;
       }
       return true;
     });
-  }, [enrichedRows, warehouseFilter, statusFilter, publishFilter, search]);
+  }, [groupedProducts, statusFilter, search]);
 
-  const totalUnits = filtered.reduce((a, b) => a + (Number(b.available) || 0), 0);
-  const lowStockCount = filtered.filter(r => r.state === 'low').length;
-  const outOfStockCount = filtered.filter(r => r.state === 'out').length;
-  const publishedCount = filtered.filter(r => r.published).length;
+  const toggleExpand = (prodId) => {
+    setExpandedProductIds(prev => {
+      const next = new Set(prev);
+      if (next.has(prodId)) next.delete(prodId);
+      else next.add(prodId);
+      return next;
+    });
+  };
 
-  // Load Transactions & Ledger for exact variant
+  const expandAll = () => {
+    setExpandedProductIds(new Set(filteredProducts.map(p => p.id)));
+  };
+
+  const collapseAll = () => {
+    setExpandedProductIds(new Set());
+  };
+
+  // Load variant transaction history (Sales, Purchases, Returns, Ledger)
   const loadVariantDetails = async (variantId, sku) => {
     setLoadingTransactions(true);
     try {
@@ -266,30 +327,29 @@ export default function AdminInventoryPage() {
         setVariantTransactions(res.data);
       }
     } catch (err) {
-      console.error('Failed to load variant transactions:', err);
+      console.error('Failed to load transactions:', err);
     } finally {
       setLoadingTransactions(false);
     }
   };
 
   // ----------------------------------------------------
-  // ACTION HANDLERS
+  // EXACT VARIANT ACTIONS
   // ----------------------------------------------------
 
-  // 1. Open Stock Adjustment
-  const handleOpenAdjust = (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
+  // 1. Stock Adjustment for exact Size + Colour
+  const handleOpenAdjust = (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
     setAdjMode('increase');
     setAdjQty(1);
     setAdjReason('Stock correction');
     setAdjNotes('');
     setAdjRef('');
-    setAdjWarehouse(row.w.id || 'w1');
+    setAdjWarehouse(variantItem.warehouse.id || 'w1');
     setAdjustModalOpen(true);
   };
 
-  // Submit Stock Adjustment
   const handleApplyAdjust = async (e) => {
     e.preventDefault();
     if (!activeItem) return;
@@ -300,7 +360,7 @@ export default function AdminInventoryPage() {
     else if (adjMode === 'replace') delta = adjQty - currentStock;
 
     if (currentStock + delta < 0) {
-      alert(`Adjustment cannot result in negative stock balance. Current stock is ${currentStock}.`);
+      alert(`Adjustment cannot result in negative stock balance. Current stock for ${activeItem.size} / ${activeItem.color} is ${currentStock}.`);
       return;
     }
 
@@ -313,7 +373,7 @@ export default function AdminInventoryPage() {
         note: adjNotes,
         reference: adjRef || `ADJ-${Date.now().toString().slice(-4)}`
       });
-      showToast(`Stock updated for SKU ${activeItem.sku} (${delta >= 0 ? '+' : ''}${delta})`);
+      showToast(`Stock updated for ${activeItem.size} / ${activeItem.color} (${delta >= 0 ? '+' : ''}${delta})`);
       setAdjustModalOpen(false);
       refreshData();
     } catch (err) {
@@ -321,15 +381,35 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // 2. Open Edit Price
-  const handleOpenPrice = (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
-    setEditPriceVal(row.price || 0);
+  // 2. Direct inline stock adjustment on exact Size + Colour
+  const handleInlineStockChange = async (variantItem, newStock) => {
+    const target = Number(newStock);
+    if (isNaN(target) || target < 0) return;
+    if (target === variantItem.available) return;
+
+    try {
+      await api.post('/api/admin/inventory/adjust', {
+        variantId: variantItem.v.id,
+        warehouseId: variantItem.warehouse.id,
+        change: target - variantItem.available,
+        reason: 'Stock correction',
+        note: `Inline edit: ${variantItem.size} / ${variantItem.color}`
+      });
+      showToast(`Stock updated for ${variantItem.size} / ${variantItem.color} → ${target} units`);
+      refreshData();
+    } catch (err) {
+      console.error('Inline stock adjustment failed:', err);
+    }
+  };
+
+  // 3. Edit Selling Price for exact variant
+  const handleOpenPrice = (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
+    setEditPriceVal(variantItem.price || 0);
     setPriceModalOpen(true);
   };
 
-  // Submit Price Update
   const handleSavePrice = async (e) => {
     e.preventDefault();
     if (!activeItem) return;
@@ -344,7 +424,7 @@ export default function AdminInventoryPage() {
         variantId: activeItem.v.id,
         price: p
       });
-      showToast(`Price updated to ${money(p)} for ${activeItem.sku}`);
+      showToast(`Selling price updated to ${money(p)} for ${activeItem.size} / ${activeItem.color}`);
       setPriceModalOpen(false);
       refreshData();
     } catch (err) {
@@ -352,106 +432,72 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // 3. Open Stock History & Ledger
-  const handleOpenHistory = async (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
-    setHistoryModalOpen(true);
-    await loadVariantDetails(row.v.id, row.sku);
+  // 4. Toggle Publish Status
+  const handleTogglePublish = async (variantItem) => {
+    setOpenMenuKey(null);
+    const newStatus = !variantItem.published;
+    try {
+      await api.post(`/api/admin/inventory/variants/${variantItem.v.id}/publish`, {
+        published: newStatus
+      });
+      showToast(`Variant ${variantItem.size} / ${variantItem.color} ${newStatus ? 'Published' : 'Unpublished'}`);
+      refreshData();
+    } catch (err) {
+      alert('Failed to update publishing status: ' + (err.message || 'Error'));
+    }
   };
 
-  // 4. Open Barcode Modal
-  const handleOpenBarcode = (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
+  // 5. Open Stock Ledger History
+  const handleOpenHistory = async (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
+    setHistoryModalOpen(true);
+    await loadVariantDetails(variantItem.v.id, variantItem.sku);
+  };
+
+  // 6. View Barcode
+  const handleOpenBarcode = (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
     setLabelModalOpen(true);
   };
 
-  // 5. Open Sales / Orders
-  const handleOpenSales = async (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
+  // 7. View Sales
+  const handleOpenSales = async (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
     setSalesModalOpen(true);
-    await loadVariantDetails(row.v.id, row.sku);
+    await loadVariantDetails(variantItem.v.id, variantItem.sku);
   };
 
-  // 6. Open Purchases
-  const handleOpenPurchases = async (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
+  // 8. View Purchases
+  const handleOpenPurchases = async (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
     setPurchasesModalOpen(true);
-    await loadVariantDetails(row.v.id, row.sku);
+    await loadVariantDetails(variantItem.v.id, variantItem.sku);
   };
 
-  // 7. Open Returns
-  const handleOpenReturns = async (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
+  // 9. View Returns
+  const handleOpenReturns = async (variantItem) => {
+    setOpenMenuKey(null);
+    setActiveItem(variantItem);
     setReturnsModalOpen(true);
-    await loadVariantDetails(row.v.id, row.sku);
+    await loadVariantDetails(variantItem.v.id, variantItem.sku);
   };
 
-  // 8. Open Transfer Modal
-  const handleOpenTransfer = (row) => {
-    setOpenMenuRowId(null);
-    setActiveItem(row);
-    const dest = warehouses.find(w => w.id !== row.w.id);
-    setTrfTo(dest ? dest.id : '');
-    setTrfQty(1);
-    setTrfReason('Warehouse stock rebalance');
-    setTransferModalOpen(true);
-  };
-
-  const handleApplyTransfer = async (e) => {
-    e.preventDefault();
-    if (!activeItem) return;
-    if (trfQty <= 0) { alert('Enter a valid transfer quantity.'); return; }
-    if (trfQty > activeItem.available) { alert(`Only ${activeItem.available} units available at source warehouse.`); return; }
-    if (!trfTo || trfTo === activeItem.w.id) { alert('Select a different destination warehouse.'); return; }
-
-    try {
-      await api.post('/api/admin/inventory/transfer', {
-        variantId: activeItem.v.id,
-        fromWarehouseId: activeItem.w.id,
-        toWarehouseId: trfTo,
-        qty: trfQty,
-        reason: trfReason
-      });
-      showToast(`Transferred ${trfQty} units to destination warehouse.`);
-      setTransferModalOpen(false);
-      refreshData();
-    } catch (err) {
-      alert('Failed to execute transfer: ' + (err.message || 'Error'));
-    }
-  };
-
-  // 9. Toggle Publish Status
-  const handleTogglePublish = async (row) => {
-    setOpenMenuRowId(null);
-    const newStatus = !row.published;
-    try {
-      await api.post(`/api/admin/inventory/variants/${row.v.id}/publish`, {
-        published: newStatus
-      });
-      showToast(`Variant ${newStatus ? 'Published to Storefront' : 'Unpublished'}`);
-      refreshData();
-    } catch (err) {
-      alert('Failed to update published status: ' + (err.message || 'Error'));
-    }
-  };
-
-  // 10. Archive Variant (Preserves all history; no permanent delete)
-  const handleArchiveVariant = async (row) => {
-    setOpenMenuRowId(null);
+  // 10. Archive Variant (Preserves all history; no deletion)
+  const handleArchiveVariant = async (variantItem) => {
+    setOpenMenuKey(null);
     const confirmed = confirm(
-      `Archive variant "${row.m.name} - ${getVariantLabel(row.v)}" (${row.sku})?\n\n` +
+      `Archive variant "${variantItem.m.name} — Size: ${variantItem.size}, Colour: ${variantItem.color}" (${variantItem.sku})?\n\n` +
       `• The variant will be hidden from the active storefront.\n` +
-      `• All historical records (sales, purchases, returns, stock ledger) will be permanently preserved.`
+      `• All historical sales, purchases, returns, and stock ledger entries will remain preserved.`
     );
     if (!confirmed) return;
 
     try {
-      await api.post(`/api/admin/inventory/variants/${row.v.id}/archive`);
+      await api.post(`/api/admin/inventory/variants/${variantItem.v.id}/archive`);
       showToast(`Variant archived successfully. Historical ledger preserved.`);
       refreshData();
     } catch (err) {
@@ -459,31 +505,31 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // CSV Export
+  // Export CSV
   const exportCsv = () => {
-    const headers = ['Product', 'Size', 'Colour', 'Variant Label', 'SKU', 'Barcode', 'Warehouse', 'Price (NPR)', 'Available', 'Reserved', 'Incoming', 'Damaged', 'Returned', 'Status', 'Published'];
-    const rows = filtered.map(r => [
-      `"${r.m.name}"`,
-      `"${r.size}"`,
-      `"${r.color}"`,
-      `"${getVariantLabel(r.v)}"`,
-      r.sku,
-      r.barcode,
-      `"${r.w.name}"`,
-      r.price,
-      r.available,
-      r.reserved,
-      r.incoming,
-      r.damaged,
-      r.returned,
-      r.state,
-      r.published ? 'Published' : 'Unpublished'
-    ]);
+    const headers = ['Product', 'Size', 'Colour', 'SKU', 'Available Stock', 'Price (NPR)', 'Status'];
+    const rows = [];
+    groupedProducts.forEach(p => {
+      p.sizeGroups.forEach(sg => {
+        sg.colours.forEach(c => {
+          rows.push([
+            `"${p.name}"`,
+            `"${c.size}"`,
+            `"${c.color}"`,
+            c.sku,
+            c.available,
+            c.price,
+            c.published ? 'Published' : 'Unpublished'
+          ]);
+        });
+      });
+    });
+
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'zylo-inventory-published-stock.csv');
+    link.setAttribute('download', 'ramroxa-inventory.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -509,32 +555,31 @@ export default function AdminInventoryPage() {
         </div>
       )}
 
-      <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2>Operational Inventory & Published Stock</h2>
-          <p suppressHydrationWarning>
-            Unified inventory control: manage variant stock, selling price, availability, storefront publishing, and stock ledger.
-          </p>
-        </div>
+      <div className="page-head">
+        <h2>Inventory</h2>
+        <p>
+          Master inventory management: click any product to expand and manage its exact <strong>Size → Colour → Quantity</strong> breakdown.
+        </p>
       </div>
 
-      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: '20px' }}>
-        <div className="metric">
-          <div className="label">Active Variants</div>
-          <div className="value" suppressHydrationWarning>{filtered.length}</div>
+      {/* Metrics Bar */}
+      <div className="stats-grid" style={{ marginBottom: '16px' }}>
+        <div className="stat-card">
+          <div className="stat-label">Total Stock Balance</div>
+          <div className="stat-value">{totalStockUnits.toLocaleString()} units</div>
         </div>
-        <div className="metric">
-          <div className="label">Total Units Available</div>
-          <div className="value" suppressHydrationWarning>{totalUnits.toLocaleString('en-IN')}</div>
+        <div className="stat-card">
+          <div className="stat-label">Total Variants / SKUs</div>
+          <div className="stat-value">{totalVariantsCount}</div>
         </div>
-        <div className="metric">
-          <div className="label">Published On Store</div>
-          <div className="value" suppressHydrationWarning>{publishedCount}</div>
+        <div className="stat-card">
+          <div className="stat-label">Master Products</div>
+          <div className="stat-value">{groupedProducts.length}</div>
         </div>
-        <div className="metric">
-          <div className="label">Stock Alerts</div>
-          <div className="value" style={{ color: outOfStockCount > 0 ? 'var(--danger)' : 'inherit' }} suppressHydrationWarning>
-            {outOfStockCount} out &middot; {lowStockCount} low
+        <div className="stat-card">
+          <div className="stat-label">Out of Stock</div>
+          <div className="stat-value" style={{ color: outOfStockCount > 0 ? 'var(--danger)' : 'inherit' }}>
+            {outOfStockCount}
           </div>
         </div>
       </div>
@@ -547,23 +592,15 @@ export default function AdminInventoryPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: '280px' }}
         />
-        <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)}>
-          <option value="">All warehouses</option>
-          {warehouses.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">All stock states</option>
-          <option value="ok">In stock</option>
-          <option value="low">Low stock</option>
-          <option value="out">Out of stock</option>
+          <option value="">All availability</option>
+          <option value="ok">In stock products</option>
+          <option value="out">Out of stock products</option>
         </select>
-        <select value={publishFilter} onChange={(e) => setPublishFilter(e.target.value)}>
-          <option value="">All publishing status</option>
-          <option value="published">Published</option>
-          <option value="unpublished">Unpublished</option>
-        </select>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button className="btn btn-sm" onClick={expandAll}>Expand All</button>
+          <button className="btn btn-sm" onClick={collapseAll}>Collapse All</button>
+        </div>
         <div className="spacer" />
         <button className="btn" onClick={exportCsv}>Export CSV</button>
       </div>
@@ -572,187 +609,304 @@ export default function AdminInventoryPage() {
         <table>
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Size</th>
-              <th>Colour</th>
+              <th style={{ width: '40px' }}></th>
+              <th>Master Product</th>
               <th>SKU</th>
-              <th>Warehouse</th>
+              <th>Sizes Available</th>
+              <th>Colours</th>
               <th className="num">Price</th>
-              <th className="num">Stock</th>
-              <th className="num">Reserved</th>
-              <th>Availability</th>
-              <th>Publishing</th>
-              <th style={{ width: '60px', textAlign: 'center' }}>Actions</th>
+              <th className="num">Total Stock</th>
+              <th>Status</th>
+              <th style={{ width: '100px', textAlign: 'center' }}>Details</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="11"><div className="empty-state">Loading operational inventory...</div></td>
+                <td colSpan="9"><div className="empty-state">Loading inventory hierarchy...</div></td>
               </tr>
-            ) : filtered.length > 0 ? (
-              filtered.map((row, idx) => {
-                const isMenuOpen = openMenuRowId === row.id;
+            ) : filteredProducts.length > 0 ? (
+              filteredProducts.map((p) => {
+                const isExpanded = expandedProductIds.has(p.id);
 
                 return (
-                  <tr key={row.id}>
-                    <td style={{ fontWeight: 500 }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span>{row.m.name}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>
-                          {getVariantLabel(row.v)}
+                  <React.Fragment key={p.id}>
+                    {/* MASTER PRODUCT ROW */}
+                    <tr
+                      style={{
+                        background: isExpanded ? 'var(--muted)' : 'inherit',
+                        cursor: 'pointer',
+                        fontWeight: 500
+                      }}
+                      onClick={() => toggleExpand(p.id)}
+                    >
+                      <td style={{ textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                        <span style={{ fontSize: '12px', display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
+                          ▶
                         </span>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 500 }}>{row.size}</span>
-                    </td>
-                    <td>
-                      <span>{row.color}</span>
-                    </td>
-                    <td>
-                      <code style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{row.sku}</code>
-                    </td>
-                    <td>{row.w.name}</td>
-                    <td className="num" style={{ fontWeight: 600 }}>
-                      {money(row.price)}
-                    </td>
-                    <td className="num" style={{ fontWeight: 600, color: row.available <= 0 ? 'var(--danger)' : 'inherit' }}>
-                      {row.available}
-                    </td>
-                    <td className="num" style={{ color: 'var(--muted-foreground)' }}>
-                      {row.reserved || 0}
-                    </td>
-                    <td>{STOCK_BADGES[row.state]}</td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePublish(row)}
-                        title="Click to toggle storefront publishing"
-                        className={row.published ? 'stock-badge-published' : 'stock-badge-unpublished'}
-                        style={{ border: 'none', cursor: 'pointer' }}
-                      >
-                        {row.published ? '✓ Published' : '○ Unpublished'}
-                      </button>
-                    </td>
-                    <td style={{ textAlign: 'center', position: 'relative' }}>
-                      <div className="action-menu-wrap" ref={isMenuOpen ? menuRef : null}>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.name}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--muted-foreground)', background: 'var(--canvas)', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                            {p.variantsCount} variants
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <code style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{p.sku}</code>
+                      </td>
+                      <td style={{ fontSize: '12.5px' }}>
+                        {p.sizesListSummary}
+                      </td>
+                      <td style={{ fontSize: '12.5px', color: 'var(--muted-foreground)' }}>
+                        {p.coloursListSummary}
+                      </td>
+                      <td className="num" style={{ fontWeight: 600 }}>
+                        {money(p.price)}
+                      </td>
+                      <td className="num" style={{ fontWeight: 700, color: p.totalStock <= 0 ? 'var(--danger)' : 'var(--primary)' }}>
+                        {p.totalStock} units
+                      </td>
+                      <td>{stockBadge(p.totalStock)}</td>
+                      <td style={{ textAlign: 'center' }}>
                         <button
                           type="button"
-                          className="icon-btn"
-                          title="Variant Actions"
-                          onClick={() => setOpenMenuRowId(isMenuOpen ? null : row.id)}
-                          style={{ background: isMenuOpen ? 'var(--muted)' : 'none' }}
+                          className="btn btn-sm"
+                          onClick={(e) => { e.stopPropagation(); toggleExpand(p.id); }}
+                          style={{ fontSize: '11.5px', padding: '2px 8px' }}
                         >
-                          <Icon name="more" size={16} />
+                          {isExpanded ? 'Hide Sizes' : 'View Sizes'}
                         </button>
+                      </td>
+                    </tr>
 
-                        {isMenuOpen && (
-                          <div className="action-menu-dropdown">
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenAdjust(row)}
-                            >
-                              <Icon name="edit" size={14} />
-                              <span>Edit Stock</span>
-                            </button>
+                    {/* EXPANDED HIERARCHICAL SIZE → COLOUR → QUANTITY VIEW */}
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan="9" style={{ padding: '0', background: 'var(--canvas)', borderBottom: '2px solid var(--border)' }}>
+                          <div style={{ padding: '14px 18px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-foreground)', marginBottom: '10px' }}>
+                              Variant Breakdown for {p.name} (Size → Colour → Quantity)
+                            </div>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenPrice(row)}
-                            >
-                              <Icon name="finance" size={14} />
-                              <span>Edit Price</span>
-                            </button>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+                              {p.sizeGroups.map((sg, sIdx) => (
+                                <div
+                                  key={sIdx}
+                                  style={{
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: '8px',
+                                    padding: '12px 14px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                  }}
+                                >
+                                  {/* SIZE HEADER */}
+                                  <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    borderBottom: '1px solid var(--border)',
+                                    paddingBottom: '8px',
+                                    marginBottom: '10px'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--muted-foreground)', fontWeight: 600 }}>Size:</span>
+                                      <strong style={{ fontSize: '14px', color: 'var(--primary)' }}>{sg.size}</strong>
+                                    </div>
+                                    <div style={{ fontSize: '12px', fontWeight: 600, color: sg.totalStock <= 0 ? 'var(--danger)' : 'var(--muted-foreground)' }}>
+                                      Subtotal: {sg.totalStock} units
+                                    </div>
+                                  </div>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenTransfer(row)}
-                            >
-                              <Icon name="arrowDown" size={14} />
-                              <span>Transfer Warehouse</span>
-                            </button>
+                                  {/* COLOURS UNDER THIS EXACT SIZE */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {sg.colours.map((item, cIdx) => {
+                                      const menuKey = `${item.v.id}_${item.warehouse.id}`;
+                                      const isMenuOpen = openMenuKey === menuKey;
 
-                            <div className="action-menu-divider" />
+                                      return (
+                                        <div
+                                          key={cIdx}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            background: 'var(--canvas)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '6px',
+                                            padding: '8px 10px',
+                                            gap: '8px'
+                                          }}
+                                        >
+                                          {/* Colour & SKU */}
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                              <span style={{
+                                                width: '10px',
+                                                height: '10px',
+                                                borderRadius: '50%',
+                                                background: item.color.toLowerCase().includes('white') ? '#eee' : (item.color.toLowerCase().includes('black') || item.color.toLowerCase().includes('charcoal') ? '#222' : 'var(--accent)'),
+                                                border: '1px solid var(--border)',
+                                                display: 'inline-block'
+                                              }} />
+                                              <strong style={{ fontSize: '13px' }}>{item.color}</strong>
+                                            </div>
+                                            <div style={{ fontSize: '11px', color: 'var(--muted-foreground)', marginTop: '2px', fontFamily: 'monospace' }}>
+                                              {item.sku}
+                                            </div>
+                                          </div>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenHistory(row)}
-                            >
-                              <Icon name="reports" size={14} />
-                              <span>Stock History & Ledger</span>
-                            </button>
+                                          {/* Stock Quantity Input (Editable) */}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>Qty:</span>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              defaultValue={item.available}
+                                              key={`qty_${item.v.id}_${item.available}`}
+                                              onBlur={(e) => handleInlineStockChange(item, e.target.value)}
+                                              style={{
+                                                width: '56px',
+                                                height: '28px',
+                                                textAlign: 'center',
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                padding: '0 4px',
+                                                background: item.available <= 0 ? 'var(--danger-soft)' : 'var(--surface)',
+                                                color: item.available <= 0 ? 'var(--danger)' : 'var(--primary)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: '5px',
+                                                outline: 'none'
+                                              }}
+                                              title="Edit quantity for this exact Size + Colour"
+                                            />
+                                          </div>
 
-                            <Link
-                              href={`/admin/products?q=${encodeURIComponent(row.m.name)}`}
-                              className="action-menu-item"
-                            >
-                              <Icon name="products" size={14} />
-                              <span>View Product</span>
-                            </Link>
+                                          {/* Price */}
+                                          <div style={{ fontSize: '12px', fontWeight: 600, minWidth: '60px', textAlign: 'right' }}>
+                                            {money(item.price)}
+                                          </div>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenBarcode(row)}
-                            >
-                              <Icon name="products" size={14} />
-                              <span>View Barcode</span>
-                            </button>
+                                          {/* Action Menu */}
+                                          <div className="action-menu-wrap" ref={isMenuOpen ? menuRef : null}>
+                                            <button
+                                              type="button"
+                                              className="icon-btn"
+                                              title="Variant actions"
+                                              onClick={() => setOpenMenuKey(isMenuOpen ? null : menuKey)}
+                                              style={{ width: '26px', height: '26px', background: isMenuOpen ? 'var(--muted)' : 'none' }}
+                                            >
+                                              <Icon name="more" size={14} />
+                                            </button>
 
-                            <div className="action-menu-divider" />
+                                            {isMenuOpen && (
+                                              <div className="action-menu-dropdown" style={{ right: 0 }}>
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenAdjust(item)}
+                                                >
+                                                  <Icon name="edit" size={13} />
+                                                  <span>Edit Stock (+ / -)</span>
+                                                </button>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenSales(row)}
-                            >
-                              <Icon name="orders" size={14} />
-                              <span>View Sales</span>
-                            </button>
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenPrice(item)}
+                                                >
+                                                  <Icon name="finance" size={13} />
+                                                  <span>Edit Price</span>
+                                                </button>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenPurchases(row)}
-                            >
-                              <Icon name="purchases" size={14} />
-                              <span>View Purchases</span>
-                            </button>
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleTogglePublish(item)}
+                                                >
+                                                  <Icon name="products" size={13} />
+                                                  <span>{item.published ? 'Unpublish' : 'Publish to Store'}</span>
+                                                </button>
 
-                            <button
-                              type="button"
-                              className="action-menu-item"
-                              onClick={() => handleOpenReturns(row)}
-                            >
-                              <Icon name="arrowDown" size={14} />
-                              <span>View Returns</span>
-                            </button>
+                                                <div className="action-menu-divider" />
 
-                            <div className="action-menu-divider" />
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenHistory(item)}
+                                                >
+                                                  <Icon name="reports" size={13} />
+                                                  <span>Stock History & Ledger</span>
+                                                </button>
 
-                            <button
-                              type="button"
-                              className="action-menu-item danger"
-                              onClick={() => handleArchiveVariant(row)}
-                            >
-                              <Icon name="trash" size={14} />
-                              <span>Archive Variant</span>
-                            </button>
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenBarcode(item)}
+                                                >
+                                                  <Icon name="products" size={13} />
+                                                  <span>View Barcode</span>
+                                                </button>
+
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenSales(item)}
+                                                >
+                                                  <Icon name="orders" size={13} />
+                                                  <span>View Sales</span>
+                                                </button>
+
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenPurchases(item)}
+                                                >
+                                                  <Icon name="purchases" size={13} />
+                                                  <span>View Purchases</span>
+                                                </button>
+
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item"
+                                                  onClick={() => handleOpenReturns(item)}
+                                                >
+                                                  <Icon name="arrowDown" size={13} />
+                                                  <span>View Returns</span>
+                                                </button>
+
+                                                <div className="action-menu-divider" />
+
+                                                <button
+                                                  type="button"
+                                                  className="action-menu-item danger"
+                                                  onClick={() => handleArchiveVariant(item)}
+                                                >
+                                                  <Icon name="trash" size={13} />
+                                                  <span>Archive Variant</span>
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="11"><div className="empty-state">No inventory or published stock records match the filter.</div></td>
+                <td colSpan="9"><div className="empty-state">No products match the filter.</div></td>
               </tr>
             )}
           </tbody>
@@ -781,7 +935,7 @@ export default function AdminInventoryPage() {
                 <div>Size: <strong style={{ color: 'var(--primary)' }}>{activeItem.size}</strong></div>
                 <div>Colour: <strong style={{ color: 'var(--primary)' }}>{activeItem.color}</strong></div>
                 <div>SKU: <code style={{ color: 'var(--primary)' }}>{activeItem.sku}</code></div>
-                <div>Warehouse: <strong style={{ color: 'var(--primary)' }}>{activeItem.w.name}</strong></div>
+                <div>Warehouse: <strong style={{ color: 'var(--primary)' }}>{activeItem.warehouse.name}</strong></div>
               </div>
             </div>
 
@@ -899,7 +1053,7 @@ export default function AdminInventoryPage() {
           <div className="modal" style={{ maxWidth: '440px' }}>
             <h2>Edit Selling Price</h2>
             <p style={{ fontSize: '13px', color: 'var(--muted-foreground)', marginBottom: '14px' }}>
-              {activeItem.m.name} &middot; {getVariantLabel(activeItem.v)} ({activeItem.sku})
+              {activeItem.m.name} &middot; Size: <strong>{activeItem.size}</strong>, Colour: <strong>{activeItem.color}</strong> ({activeItem.sku})
             </p>
 
             <form onSubmit={handleSavePrice}>
@@ -922,7 +1076,7 @@ export default function AdminInventoryPage() {
               </div>
 
               <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: '8px' }}>
-                ✓ The updated selling price will synchronize immediately with the storefront catalog and future checkout orders.
+                ✓ The updated price synchronizes everywhere (storefront catalog, variant price, orders).
               </p>
 
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
@@ -952,7 +1106,7 @@ export default function AdminInventoryPage() {
               alignItems: 'center'
             }}>
               <div>
-                <strong>{activeItem.m.name}</strong> &middot; {getVariantLabel(activeItem.v)}
+                <strong>{activeItem.m.name}</strong> &middot; Size: {activeItem.size} / Colour: {activeItem.color}
                 <span style={{ marginLeft: '8px', color: 'var(--muted-foreground)', fontSize: '12px' }}>
                   SKU: <code>{activeItem.sku}</code>
                 </span>
@@ -1052,7 +1206,7 @@ export default function AdminInventoryPage() {
                 |||| | ||||| || |||
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: '13px', letterSpacing: '1px', fontWeight: 600 }}>
-                {activeItem.barcode || activeItem.sku}
+                {activeItem.sku}
               </div>
               <div style={{ fontSize: '16px', fontWeight: 700, marginTop: '10px', color: '#111827' }}>
                 {money(activeItem.price)}
@@ -1074,7 +1228,7 @@ export default function AdminInventoryPage() {
           <div className="modal" style={{ maxWidth: '680px' }}>
             <h2>Variant Sales & Customer Orders</h2>
             <p style={{ fontSize: '13px', color: 'var(--muted-foreground)', marginBottom: '14px' }}>
-              Sales orders containing SKU <code>{activeItem.sku}</code> ({activeItem.m.name} - {getVariantLabel(activeItem.v)})
+              Sales orders containing SKU <code>{activeItem.sku}</code> ({activeItem.m.name} — {activeItem.size} / {activeItem.color})
             </p>
 
             <div className="table-wrap" style={{ maxHeight: '340px', overflowY: 'auto' }}>
@@ -1230,53 +1384,6 @@ export default function AdminInventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button type="button" className="btn" onClick={() => setReturnsModalOpen(false)}>Close</button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------------------- */}
-      {/* 8. TRANSFER STOCK MODAL */}
-      {/* ---------------------------------------------------------------- */}
-      {transferModalOpen && activeItem && (
-        <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setTransferModalOpen(false); }}>
-          <div className="modal" style={{ maxWidth: '460px' }}>
-            <h2>Warehouse Stock Transfer</h2>
-            <p style={{ fontSize: '13px', color: 'var(--muted-foreground)', marginBottom: '14px' }}>
-              {activeItem.m.name} &middot; {getVariantLabel(activeItem.v)} &mdash; {activeItem.available} available at {activeItem.w.name}.
-            </p>
-            <form onSubmit={handleApplyTransfer}>
-              <div className="field">
-                <label>Destination Warehouse</label>
-                <select value={trfTo} onChange={(e) => setTrfTo(e.target.value)} required>
-                  {warehouses.filter(w => w.id !== activeItem.w.id).map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label>Quantity to Transfer</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={activeItem.available}
-                  value={trfQty}
-                  onChange={(e) => setTrfQty(Number(e.target.value))}
-                  required
-                />
-              </div>
-              <div className="field">
-                <label>Transfer Reason / Note</label>
-                <input
-                  value={trfReason}
-                  onChange={(e) => setTrfReason(e.target.value)}
-                  placeholder="e.g. Store replenishment"
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" className="btn" onClick={() => setTransferModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Execute Transfer</button>
-              </div>
-            </form>
           </div>
         </div>
       )}

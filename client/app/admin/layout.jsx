@@ -156,7 +156,6 @@ export default function AdminLayout({ children }) {
     { label: 'Orders', route: '/admin/orders', icon: 'orders' },
     { label: 'Customers', route: '/admin/customers', icon: 'customers' },
     { label: 'Inventory', route: '/admin/inventory', icon: 'inventory' },
-    { label: 'Published stock', route: '/admin/published', icon: 'products' },
     { section: 'Accounts' },
     { label: 'Sales', route: '/admin/sales', icon: 'sales' },
     { label: 'Sales returns', route: '/admin/returns', icon: 'arrowDown' },
