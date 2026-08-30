@@ -402,7 +402,7 @@ export default function AdminInventoryPage() {
     setAdjReason('Stock correction');
     setAdjNotes('');
     setAdjRef('');
-    setAdjWarehouse(variantItem.warehouse.id || 'w1');
+    setAdjWarehouse(variantItem.warehouse?.id || 'w1');
     setAdjustModalOpen(true);
   };
 
@@ -410,28 +410,36 @@ export default function AdminInventoryPage() {
     e.preventDefault();
     if (!activeItem) return;
 
-    const currentStock = activeItem.available;
-    let delta = adjQty;
-    if (adjMode === 'decrease') delta = -adjQty;
-    else if (adjMode === 'replace') delta = adjQty - currentStock;
+    const currentStock = Number(activeItem.available) || 0;
+    const vId = activeItem.v?.id || String(activeItem.v?._id || '');
+    let delta = Number(adjQty) || 0;
+    let targetMode = 'increase';
 
-    if (currentStock + delta < 0) {
+    if (adjMode === 'decrease') {
+      targetMode = 'decrease';
+    } else if (adjMode === 'replace') {
+      targetMode = 'set';
+      delta = Number(adjQty) || 0;
+    }
+
+    if (adjMode === 'decrease' && currentStock - delta < 0) {
       alert(`Adjustment cannot result in negative stock balance. Current stock for ${activeItem.size} / ${activeItem.color} is ${currentStock}.`);
       return;
     }
 
     try {
       await api.post('/api/admin/inventory/adjust', {
-        variantId: activeItem.v.id,
-        warehouseId: adjWarehouse,
+        variantId: vId,
+        warehouseId: adjWarehouse || 'w1',
         change: delta,
-        reason: adjReason,
-        note: adjNotes,
+        mode: targetMode,
+        reason: adjReason || 'Stock correction',
+        note: adjNotes || '',
         reference: adjRef || `ADJ-${Date.now().toString().slice(-4)}`
       });
-      showToast(`Stock updated for ${activeItem.size} / ${activeItem.color} (${delta >= 0 ? '+' : ''}${delta})`);
+      showToast(`Stock updated for ${activeItem.size} / ${activeItem.color}`);
       setAdjustModalOpen(false);
-      refreshData();
+      await refreshData();
     } catch (err) {
       alert('Failed to adjust stock: ' + (err.message || 'Error'));
     }
@@ -441,21 +449,55 @@ export default function AdminInventoryPage() {
   const handleInlineStockChange = (variantItem, value) => {
     const rawNum = value === '' ? 0 : Number(value);
     if (isNaN(rawNum) || rawNum < 0) return;
-    const itemKey = `${variantItem.v.id}_${variantItem.warehouse.id}`;
+    const vId = variantItem.v?.id || String(variantItem.v?._id || '');
+    const wId = variantItem.warehouse?.id || 'w1';
+    const itemKey = `${vId}_${wId}`;
 
     setPendingStockChanges(prev => {
       const next = { ...prev };
-      if (rawNum === variantItem.available) {
+      if (rawNum === Number(variantItem.available)) {
         delete next[itemKey];
       } else {
         next[itemKey] = {
           variantItem,
           newStock: rawNum,
-          originalStock: variantItem.available
+          originalStock: Number(variantItem.available) || 0
         };
       }
       return next;
     });
+  };
+
+  // Save a single variant's modified stock immediately
+  const handleSaveSingleStockChange = async (variantItem) => {
+    const vId = variantItem.v?.id || String(variantItem.v?._id || '');
+    const wId = variantItem.warehouse?.id || 'w1';
+    const itemKey = `${vId}_${wId}`;
+    const change = pendingStockChanges[itemKey];
+    if (!change) return;
+
+    setSavingPending(true);
+    try {
+      await api.post('/api/admin/inventory/adjust', {
+        variantId: vId,
+        warehouseId: wId,
+        mode: 'set',
+        change: change.newStock,
+        reason: 'Stock correction',
+        note: `Manual inline update: ${variantItem.size} / ${variantItem.color}`
+      });
+      showToast(`✓ Stock updated to ${change.newStock} for ${variantItem.size} / ${variantItem.color}`);
+      setPendingStockChanges(prev => {
+        const next = { ...prev };
+        delete next[itemKey];
+        return next;
+      });
+      await refreshData();
+    } catch (err) {
+      alert('Failed to save stock change: ' + (err.message || 'Error'));
+    } finally {
+      setSavingPending(false);
+    }
   };
 
   // Reset all pending changes back to saved values
@@ -472,18 +514,20 @@ export default function AdminInventoryPage() {
     setSavingPending(true);
     try {
       for (const change of changesList) {
-        const delta = change.newStock - change.originalStock;
+        const vId = change.variantItem.v?.id || String(change.variantItem.v?._id || '');
+        const wId = change.variantItem.warehouse?.id || 'w1';
         await api.post('/api/admin/inventory/adjust', {
-          variantId: change.variantItem.v.id,
-          warehouseId: change.variantItem.warehouse.id,
-          change: delta,
+          variantId: vId,
+          warehouseId: wId,
+          mode: 'set',
+          change: change.newStock,
           reason: 'Stock correction',
           note: `Manual inline update: ${change.variantItem.size} / ${change.variantItem.color}`
         });
       }
-      showToast(`Successfully saved stock adjustments across ${changesList.length} variant(s).`);
+      showToast(`✓ Successfully saved stock adjustments across ${changesList.length} variant(s).`);
       setPendingStockChanges({});
-      refreshData();
+      await refreshData();
     } catch (err) {
       alert('Failed to save some stock changes: ' + (err.message || 'Error'));
     } finally {
@@ -881,7 +925,9 @@ export default function AdminInventoryPage() {
 
                                           {/* Stock Quantity Input (Editable with pending state) */}
                                           {(() => {
-                                            const itemKey = `${item.v.id}_${item.warehouse.id}`;
+                                            const vId = item.v?.id || String(item.v?._id || '');
+                                            const wId = item.warehouse?.id || 'w1';
+                                            const itemKey = `${vId}_${wId}`;
                                             const isModified = pendingStockChanges[itemKey] !== undefined;
                                             const currentQtyVal = isModified ? pendingStockChanges[itemKey].newStock : item.available;
 
@@ -893,6 +939,18 @@ export default function AdminInventoryPage() {
                                                   min="0"
                                                   value={currentQtyVal}
                                                   onChange={(e) => handleInlineStockChange(item, e.target.value)}
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                      e.preventDefault();
+                                                      handleSaveSingleStockChange(item);
+                                                    } else if (e.key === 'Escape') {
+                                                      setPendingStockChanges(prev => {
+                                                        const next = { ...prev };
+                                                        delete next[itemKey];
+                                                        return next;
+                                                      });
+                                                    }
+                                                  }}
                                                   style={{
                                                     width: '58px',
                                                     height: '28px',
@@ -907,8 +965,34 @@ export default function AdminInventoryPage() {
                                                     outline: 'none',
                                                     boxShadow: isModified ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none'
                                                   }}
-                                                  title={isModified ? `Unsaved change: was ${item.available}, now ${currentQtyVal}` : "Edit quantity for this exact Size + Colour"}
+                                                  title={isModified ? `Unsaved change: was ${item.available}, now ${currentQtyVal}. Press Enter or click ✓ to save.` : "Edit quantity for this exact Size + Colour"}
                                                 />
+                                                {isModified && (
+                                                  <button
+                                                    type="button"
+                                                    className="icon-btn"
+                                                    title="Save this stock change (Enter)"
+                                                    onClick={() => handleSaveSingleStockChange(item)}
+                                                    disabled={savingPending}
+                                                    style={{
+                                                      width: '24px',
+                                                      height: '24px',
+                                                      background: 'var(--success-soft, #eaf7ee)',
+                                                      color: 'var(--success, #16a34a)',
+                                                      border: '1px solid var(--success, #16a34a)',
+                                                      borderRadius: '4px',
+                                                      cursor: 'pointer',
+                                                      display: 'inline-flex',
+                                                      alignItems: 'center',
+                                                      justifyContent: 'center',
+                                                      padding: 0
+                                                    }}
+                                                  >
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                  </button>
+                                                )}
                                               </div>
                                             );
                                           })()}

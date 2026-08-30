@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Inventory, StockMove, Variant, Product, Warehouse } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 
@@ -140,18 +141,29 @@ export async function adjustStock({ variantId, warehouseId = 'w1', change, adjus
   if (change !== undefined) delta = parseInt(change, 10);
   else if (adjustment !== undefined) delta = parseInt(adjustment, 10);
 
-  let inv = await Inventory.findOne({ variantId, warehouseId });
+  const rawVarId = String(variantId || '').trim();
+  const varQuery = mongoose.Types.ObjectId.isValid(rawVarId)
+    ? { $or: [{ id: rawVarId }, { _id: rawVarId }, { sku: rawVarId }] }
+    : { $or: [{ id: rawVarId }, { sku: rawVarId }] };
+  const varDoc = await Variant.findOne(varQuery);
+  const resolvedVarId = varDoc ? (varDoc.id || varDoc._id.toString()) : rawVarId;
+
+  let inv = await Inventory.findOne({
+    $or: [{ variantId: resolvedVarId }, { variantId: rawVarId }],
+    warehouseId
+  });
+
   if (!inv) {
     inv = await Inventory.create({
-      id: `inv_${variantId}_${warehouseId}`,
-      variantId,
+      id: `inv_${resolvedVarId}_${warehouseId}`,
+      variantId: resolvedVarId,
       warehouseId,
       available: 0,
       reserved: 0
     });
   }
 
-  const before = inv.available || 0;
+  const before = Number(inv.available) || 0;
   let after = before;
 
   if (mode === 'replace' || mode === 'set') {
@@ -164,13 +176,13 @@ export async function adjustStock({ variantId, warehouseId = 'w1', change, adjus
     after = before + delta;
   }
 
-  if (isNaN(delta)) {
+  if (isNaN(delta) || isNaN(after)) {
     throw ApiError.badRequest('A valid stock adjustment quantity is required.');
   }
 
   if (after < 0) {
     throw ApiError.badRequest(
-      `Cannot adjust stock to negative. Current available is ${before}, change is ${delta}.`
+      `Cannot adjust stock to negative. Current available is ${before}, requested stock is ${after}.`
     );
   }
 
@@ -190,7 +202,7 @@ export async function adjustStock({ variantId, warehouseId = 'w1', change, adjus
   else type = 'adjustment';
 
   const move = await StockMove.create({
-    variantId,
+    variantId: resolvedVarId,
     warehouseId,
     type,
     change: delta,
