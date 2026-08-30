@@ -4,17 +4,37 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '../../services/apiClient';
 
+function EyeIcon({ show }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+      {show ? (
+        <>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      ) : (
+        <>
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+          <line x1="1" y1="1" x2="23" y2="23" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    permanentAddress: '',
-    temporaryAddress: '',
+    address: '',
     password: '',
     retypePassword: ''
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRetypePassword, setShowRetypePassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,8 +57,8 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.permanentAddress.trim() || !formData.temporaryAddress.trim()) {
-      setError('Please fill in all required fields (Name, Email, Permanent Address, Temporary Address).');
+    if (!formData.name.trim() || !formData.email.trim() || !formData.address.trim()) {
+      setError('Please fill in all required fields (Name, Email, Address).');
       return;
     }
 
@@ -60,8 +80,9 @@ export default function SignupPage() {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim(),
-        permanentAddress: formData.permanentAddress.trim(),
-        temporaryAddress: formData.temporaryAddress.trim(),
+        address: formData.address.trim(),
+        permanentAddress: formData.address.trim(),
+        temporaryAddress: formData.address.trim(),
         password: formData.password
       });
 
@@ -98,6 +119,12 @@ export default function SignupPage() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       color: '#111'
     }}>
+      <style>{`
+        .customer-pwd-input::placeholder {
+          opacity: 0.5 !important;
+          color: rgba(0, 0, 0, 0.5) !important;
+        }
+      `}</style>
       {/* Brand Header */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
         <Link href="/shop" style={{ textDecoration: 'none', color: '#000' }}>
@@ -222,66 +249,17 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Addresses Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                  PERMANENT ADDRESS <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Pokhara-8, Kaski"
-                  value={formData.permanentAddress}
-                  onChange={(e) => handleChange('permanentAddress', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 42,
-                    padding: '0 14px',
-                    borderRadius: 8,
-                    border: '1px solid #d4d4d4',
-                    fontSize: 14,
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                  TEMPORARY ADDRESS <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Thamel, Kathmandu"
-                  value={formData.temporaryAddress}
-                  onChange={(e) => handleChange('temporaryAddress', e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: 42,
-                    padding: '0 14px',
-                    borderRadius: 8,
-                    border: '1px solid #d4d4d4',
-                    fontSize: 14,
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Password */}
+            {/* Address */}
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                PASSWORD <span style={{ color: '#dc2626' }}>*</span>
+                ADDRESS <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
-                type="password"
+                type="text"
                 required
-                placeholder="••••••••••••"
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
+                placeholder="e.g. Thamel, Kathmandu"
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
                 style={{
                   width: '100%',
                   height: 42,
@@ -293,6 +271,55 @@ export default function SignupPage() {
                   boxSizing: 'border-box'
                 }}
               />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                PASSWORD <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••••••"
+                  className="customer-pwd-input"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 40px 0 14px',
+                    borderRadius: 8,
+                    border: '1px solid #d4d4d4',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    height: 42,
+                    width: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    color: '#666'
+                  }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <EyeIcon show={showPassword} />
+                </button>
+              </div>
 
               {/* Password Requirement Chips */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -348,23 +375,48 @@ export default function SignupPage() {
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
                 RETYPE PASSWORD <span style={{ color: '#dc2626' }}>*</span>
               </label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••••••"
-                value={formData.retypePassword}
-                onChange={(e) => handleChange('retypePassword', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 42,
-                  padding: '0 14px',
-                  borderRadius: 8,
-                  border: `1px solid ${formData.retypePassword ? (passwordsMatch ? '#22c55e' : '#ef4444') : '#d4d4d4'}`,
-                  fontSize: 14,
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type={showRetypePassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••••••"
+                  className="customer-pwd-input"
+                  value={formData.retypePassword}
+                  onChange={(e) => handleChange('retypePassword', e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: 42,
+                    padding: '0 40px 0 14px',
+                    borderRadius: 8,
+                    border: `1px solid ${formData.retypePassword ? (passwordsMatch ? '#22c55e' : '#ef4444') : '#d4d4d4'}`,
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRetypePassword(!showRetypePassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    height: 42,
+                    width: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    color: '#666'
+                  }}
+                  aria-label={showRetypePassword ? 'Hide password' : 'Show password'}
+                >
+                  <EyeIcon show={showRetypePassword} />
+                </button>
+              </div>
               {formData.retypePassword && (
                 <div style={{
                   fontSize: 11,

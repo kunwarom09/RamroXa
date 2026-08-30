@@ -1417,11 +1417,13 @@ export default class StoreApp extends React.Component {
     if (e) e.preventDefault();
     this.setState({ savingProfile: true });
     try {
+      const userAddr = this.state.profilePermanentAddress || this.state.profileTemporaryAddress || '';
       const res = await api.put('/api/auth/me', {
         name: this.state.profileName,
         phone: this.state.profilePhone,
-        permanentAddress: this.state.profilePermanentAddress,
-        temporaryAddress: this.state.profileTemporaryAddress
+        address: userAddr,
+        permanentAddress: userAddr,
+        temporaryAddress: userAddr
       });
       if (res?.data?.user) {
         if (typeof window !== 'undefined') {
@@ -3579,14 +3581,9 @@ export default class StoreApp extends React.Component {
                   />
                 </div>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', fontWeight: 600 }}>ADDRESS *</label>
-                    {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
-                      <span style={{ fontSize: 11, color: '#666' }}>Saved address:</span>
-                    )}
-                  </div>
+                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>ADDRESS *</label>
                   {(() => {
-                    const defaultSavedAddr = profileTemporaryAddress || profilePermanentAddress || currentUser?.temporaryAddress || currentUser?.permanentAddress || '';
+                    const defaultSavedAddr = profilePermanentAddress || profileTemporaryAddress || currentUser?.address || currentUser?.permanentAddress || currentUser?.temporaryAddress || '';
                     const activeAddress = (currentUser && defaultSavedAddr && cAddress === 'Singadurbar') ? defaultSavedAddr : (cAddress || defaultSavedAddr || '');
                     return (
                       <input
@@ -3597,58 +3594,6 @@ export default class StoreApp extends React.Component {
                       />
                     );
                   })()}
-
-                  {/* If user is logged in and has saved addresses, display quick selection pills */}
-                  {currentUser && (profileTemporaryAddress || profilePermanentAddress) && (
-                    <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {profileTemporaryAddress && (
-                        <button
-                          type="button"
-                          onClick={() => this.setState({ cAddress: profileTemporaryAddress })}
-                          style={{
-                            background: cAddress === profileTemporaryAddress ? '#000' : '#f5f5f5',
-                            color: cAddress === profileTemporaryAddress ? '#fff' : '#111',
-                            border: '1px solid ' + (cAddress === profileTemporaryAddress ? '#000' : '#e0e0e0'),
-                            borderRadius: 6,
-                            padding: '6px 12px',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5
-                          }}
-                        >
-                          <span style={{ fontWeight: 700 }}>Delivery:</span>
-                          <span>{profileTemporaryAddress}</span>
-                        </button>
-                      )}
-                      {profilePermanentAddress && (
-                        <button
-                          type="button"
-                          onClick={() => this.setState({ cAddress: profilePermanentAddress })}
-                          style={{
-                            background: cAddress === profilePermanentAddress ? '#000' : '#f5f5f5',
-                            color: cAddress === profilePermanentAddress ? '#fff' : '#111',
-                            border: '1px solid ' + (cAddress === profilePermanentAddress ? '#000' : '#e0e0e0'),
-                            borderRadius: 6,
-                            padding: '6px 12px',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s ease',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5
-                          }}
-                        >
-                          <span style={{ fontWeight: 700 }}>Permanent:</span>
-                          <span>{profilePermanentAddress}</span>
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -4688,42 +4633,20 @@ export default class StoreApp extends React.Component {
         {activeTab === 'addresses' && (
           <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
             <div style={{ marginBottom: 24, borderBottom: '1px solid #f0f0f0', paddingBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111' }}>Saved Delivery Addresses</h2>
-              <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>Keep your shipping addresses up to date for rapid checkout.</p>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#111' }}>Saved Delivery Address</h2>
+              <p style={{ fontSize: 13, color: '#666', margin: '4px 0 0' }}>Keep your shipping address up to date for rapid checkout.</p>
             </div>
 
             <form onSubmit={this.handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 540 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                  PERMANENT ADDRESS
+                  ADDRESS
                 </label>
                 <input
                   type="text"
                   placeholder="e.g. Ward 4, Baluwatar, Kathmandu"
-                  value={profilePermanentAddress}
-                  onChange={(e) => this.setState({ profilePermanentAddress: e.target.value })}
-                  style={{
-                    width: '100%',
-                    height: 42,
-                    padding: '0 14px',
-                    borderRadius: 8,
-                    border: '1px solid #d4d4d4',
-                    fontSize: 14,
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                  TEMPORARY / CURRENT DELIVERY ADDRESS
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Pulchowk, Lalitpur (Opposite Labim Mall)"
-                  value={profileTemporaryAddress}
-                  onChange={(e) => this.setState({ profileTemporaryAddress: e.target.value })}
+                  value={profilePermanentAddress || profileTemporaryAddress || ''}
+                  onChange={(e) => this.setState({ profilePermanentAddress: e.target.value, profileTemporaryAddress: e.target.value })}
                   style={{
                     width: '100%',
                     height: 42,
