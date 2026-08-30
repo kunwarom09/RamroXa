@@ -15,6 +15,7 @@ import {
 } from '../../../services/homepageCms';
 import { ImagePickerField, VideoPickerField, MediaPickerModal } from '../../../components/admin/MediaPickerModal';
 import { uploadMediaFile } from '../../../services/mediaLibrary';
+import RamroxaHomepage from '../../../components/RamroxaHomepage';
 
 export default function AdminCmsPage() {
   // Static content pages
@@ -29,6 +30,10 @@ export default function AdminCmsPage() {
   const [sections, setSections] = useState([]);
   const [expandedSectionId, setExpandedSectionId] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
+
+  // Live Storefront Preview State
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState('desktop');
 
   // Page modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -424,8 +429,28 @@ export default function AdminCmsPage() {
             >
               + Add Hero Banner Section ({heroSectionsCount}/{MAX_HERO_SECTIONS})
             </button>
-            <button type="button" className="btn btn-sm" onClick={() => window.open('/', '_blank')}>
-              ↗ Preview Storefront
+            <button
+              type="button"
+              className="btn btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'var(--surface)', fontWeight: 600 }}
+              onClick={() => {
+                saveHomepageConfig({ sections });
+                setPreviewModalOpen(true);
+              }}
+            >
+              👁️ Live Preview
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              onClick={() => {
+                saveHomepageConfig({ sections });
+                window.open('/', '_blank');
+              }}
+              title="Open current storefront draft in a new browser tab"
+            >
+              ↗ Open in Tab
             </button>
             <button type="button" className="btn btn-sm btn-danger" onClick={handleResetHomepage}>
               Reset to Defaults
@@ -1323,6 +1348,168 @@ export default function AdminCmsPage() {
         }}
         title="Select Community Gallery Photo"
       />
+
+      {/* ─── LIVE STOREFRONT PREVIEW MODAL ─── */}
+      {previewModalOpen && (
+        <div
+          className="modal-backdrop show"
+          style={{
+            zIndex: 99999,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'fixed',
+            inset: 0,
+            padding: '16px'
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPreviewModalOpen(false); }}
+        >
+          <div
+            className="modal"
+            style={{
+              width: '96vw',
+              maxWidth: '1440px',
+              height: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 0,
+              overflow: 'hidden',
+              background: 'var(--canvas, #0e1015)',
+              borderRadius: '12px',
+              boxShadow: '0 25px 70px rgba(0,0,0,0.6)',
+              border: '1px solid var(--border)'
+            }}
+          >
+            {/* Preview Modal Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 18px',
+              borderBottom: '1px solid var(--border)',
+              background: 'var(--surface, #14171f)',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--primary)' }}>
+                  👁️ Storefront Live Preview
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontWeight: 600
+                }}>
+                  ● Real-time Draft Synced
+                </span>
+              </div>
+
+              {/* Device Viewport Switcher */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--canvas, #090a0f)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-primary' : ''}`}
+                  onClick={() => setPreviewDevice('desktop')}
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+                >
+                  🖥️ Desktop (100%)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${previewDevice === 'tablet' ? 'btn-primary' : ''}`}
+                  onClick={() => setPreviewDevice('tablet')}
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+                >
+                  📱 Tablet (768px)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-primary' : ''}`}
+                  onClick={() => setPreviewDevice('mobile')}
+                  style={{ fontSize: '12px', padding: '4px 10px', height: '28px' }}
+                >
+                  📲 Mobile (375px)
+                </button>
+              </div>
+
+              {/* Header Right Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => {
+                    saveHomepageConfig({ sections });
+                    window.open('/', '_blank');
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                >
+                  ↗ Open Full Tab
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary"
+                  onClick={() => {
+                    saveHomepageConfig({ sections });
+                    showToast('Homepage layout published successfully.');
+                    setPreviewModalOpen(false);
+                  }}
+                >
+                  💾 Publish & Close
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setPreviewModalOpen(false)}
+                  style={{ padding: '6px' }}
+                  title="Close preview"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Frame Container */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              background: '#090a0f',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              padding: previewDevice === 'desktop' ? '0' : '24px 16px'
+            }}>
+              <div
+                style={{
+                  width: previewDevice === 'desktop' ? '100%' : (previewDevice === 'tablet' ? '768px' : '375px'),
+                  minHeight: '100%',
+                  background: '#ffffff',
+                  color: '#111827',
+                  borderRadius: previewDevice === 'desktop' ? '0' : '16px',
+                  overflow: 'hidden',
+                  boxShadow: previewDevice === 'desktop' ? 'none' : '0 20px 50px rgba(0,0,0,0.6)',
+                  border: previewDevice === 'desktop' ? 'none' : '4px solid #2a2e39',
+                  transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                <RamroxaHomepage
+                  cmsConfig={{ sections }}
+                  catalog={[]}
+                  onOpenProduct={() => {}}
+                  onNav={() => {}}
+                  wishlist={[]}
+                  onToggleWishlist={() => {}}
+                  isWishlisted={() => false}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

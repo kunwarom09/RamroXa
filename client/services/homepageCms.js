@@ -153,7 +153,7 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
       enabled: true,
       widgetType: 'video_bg',
       config: {
-        videoUrl: '/videos/ramroxa-brand-video.mp4',
+        videoUrl: '',
         posterImage: '/assets/59a3737ee018272f.q.jpg',
         autoplay: true,
         muted: true,
@@ -315,23 +315,7 @@ export function loadHomepageConfig() {
     if (!raw) return DEFAULT_HOMEPAGE_CONFIG;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-      // Ensure video sections have valid videoUrl fallback
-      const sections = parsed.sections.map((sec) => {
-        if (sec.type === 'video' && sec.config && (!sec.config.videoUrl || sec.config.videoUrl.includes('mixkit.co'))) {
-          return {
-            ...sec,
-            config: {
-              ...sec.config,
-              videoUrl: '/videos/ramroxa-brand-video.mp4',
-              autoplay: sec.config.autoplay !== false,
-              muted: sec.config.muted !== false,
-              loop: sec.config.loop !== false
-            }
-          };
-        }
-        return sec;
-      });
-      return { sections };
+      return { sections: parsed.sections };
     }
     return DEFAULT_HOMEPAGE_CONFIG;
   } catch (e) {

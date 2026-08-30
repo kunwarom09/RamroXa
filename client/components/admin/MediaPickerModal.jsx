@@ -29,7 +29,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
 
   if (!isOpen) return null;
 
-  const categories = ['all', 'Hero', 'Men', 'Women', 'Kids', 'Products', 'Uploads'];
+  const categories = ['all', 'Videos', 'Hero', 'Men', 'Women', 'Kids', 'Products', 'Uploads'];
 
   const filteredItems = items.filter(item => {
     const matchCat = filterCategory === 'all' || item.category?.toLowerCase() === filterCategory.toLowerCase();
@@ -42,7 +42,8 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
     if (!file) return;
     setUploading(true);
     try {
-      const newItem = await uploadMediaFile(file, 'Uploads');
+      const isVideo = file.type?.startsWith('video/') || /\.(mp4|webm|mov|ogg|m4v)$/i.test(file.name);
+      const newItem = await uploadMediaFile(file, isVideo ? 'Videos' : 'Uploads');
       setItems(getMediaLibrary());
       setSelectedItem(newItem);
       onSelect(newItem.url);
@@ -98,23 +99,24 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
             className={`btn btn-sm ${activeTab === 'upload' ? 'btn-primary' : ''}`}
             onClick={() => setActiveTab('upload')}
           >
-            ⬆ Upload New
+            Upload File
           </button>
           <button
             type="button"
             className={`btn btn-sm ${activeTab === 'url' ? 'btn-primary' : ''}`}
             onClick={() => setActiveTab('url')}
           >
-            Direct URL
+            External URL
           </button>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Contents */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 0' }}>
-          {/* TAB 1: Media Library */}
+          {/* TAB 1: Library */}
           {activeTab === 'library' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div>
+              {/* Search & Filter bar */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <input
                   type="text"
                   placeholder="Search assets..."
@@ -149,6 +151,7 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
                 }}>
                   {filteredItems.map(item => {
                     const isSelected = selectedItem?.id === item.id;
+                    const isVid = item.type?.startsWith('video') || item.category === 'Videos' || /\.(mp4|webm|mov|ogg)$/i.test(item.url);
                     return (
                       <div
                         key={item.id}
@@ -166,9 +169,27 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
                         <div style={{
                           width: '100%',
                           aspectRatio: '1/1',
-                          background: `url('${item.url}') center / cover no-repeat`,
-                          backgroundColor: '#222'
-                        }} />
+                          background: `url('${item.posterUrl || item.url}') center / cover no-repeat`,
+                          backgroundColor: '#1a1a1a',
+                          position: 'relative'
+                        }}>
+                          {isVid && (
+                            <span style={{
+                              position: 'absolute',
+                              bottom: '4px',
+                              left: '4px',
+                              background: 'rgba(0,0,0,0.75)',
+                              color: '#fff',
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              padding: '2px 5px',
+                              borderRadius: '3px',
+                              letterSpacing: '0.02em'
+                            }}>
+                              🎬 VIDEO
+                            </span>
+                          )}
+                        </div>
                         <div style={{ padding: '6px 8px' }}>
                           <span style={{
                             fontSize: '11px',
@@ -393,7 +414,7 @@ export function VideoPickerField({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -414,6 +435,7 @@ export function VideoPickerField({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setLoadError(null);
     try {
       const newItem = await uploadMediaFile(file, 'Videos');
       onChange(newItem.url);
@@ -426,23 +448,18 @@ export function VideoPickerField({
     }
   };
 
-  const togglePreview = () => {
-    if (!videoRef.current) return;
-    if (previewPlaying) {
-      videoRef.current.pause();
-      setPreviewPlaying(false);
-    } else {
-      videoRef.current.play();
-      setPreviewPlaying(true);
-    }
-  };
-
   return (
     <div className="field" style={{ gridColumn: '1 / -1' }}>
-      {label && <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span>{label}</span>
-        {value && <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>✓ Video Connected</span>}
-      </label>}
+      {label && (
+        <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{label}</span>
+          {value ? (
+            <span style={{ fontSize: '11px', color: 'var(--success, #10b981)', fontWeight: 600 }}>✓ Video Connected</span>
+          ) : (
+            <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>No Video Configured</span>
+          )}
+        </label>
+      )}
 
       <div style={{
         background: 'var(--surface)',
@@ -458,7 +475,10 @@ export function VideoPickerField({
           <input
             type="text"
             value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              setLoadError(null);
+              onChange(e.target.value);
+            }}
             placeholder={placeholder}
             style={{
               flex: 1,
@@ -489,7 +509,10 @@ export function VideoPickerField({
             <button
               type="button"
               className="btn btn-sm btn-danger"
-              onClick={() => onChange('')}
+              onClick={() => {
+                setLoadError(null);
+                onChange('');
+              }}
               title="Clear video URL"
             >
               Clear
@@ -519,6 +542,7 @@ export function VideoPickerField({
                 borderColor: value === pr.url ? 'var(--accent)' : 'var(--border)'
               }}
               onClick={() => {
+                setLoadError(null);
                 onChange(pr.url);
                 if (onPosterChange && pr.poster) onPosterChange(pr.poster);
               }}
@@ -529,65 +553,61 @@ export function VideoPickerField({
         </div>
 
         {/* Live Video Preview Box */}
-        {value && (
+        {value ? (
           <div style={{
             position: 'relative',
             borderRadius: '6px',
             overflow: 'hidden',
             background: '#0a0a0a',
             border: '1px solid var(--border)',
-            maxHeight: '220px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            flexDirection: 'column'
           }}>
-            <video
-              ref={videoRef}
-              src={value}
-              poster={posterValue || undefined}
-              loop
-              muted
-              playsInline
-              style={{ width: '100%', maxHeight: '220px', objectFit: 'cover' }}
-              onPlay={() => setPreviewPlaying(true)}
-              onPause={() => setPreviewPlaying(false)}
-            />
-            <button
-              type="button"
-              onClick={togglePreview}
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: 'rgba(0,0,0,0.65)',
-                color: '#ffffff',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '50%',
-                width: '44px',
-                height: '44px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '14px',
-                backdropFilter: 'blur(4px)'
-              }}
-              title={previewPlaying ? 'Pause video' : 'Play video'}
-            >
-              {previewPlaying ? '⏸' : '▶'}
-            </button>
+            <div style={{ position: 'relative', width: '100%', maxHeight: '240px', background: '#000' }}>
+              <video
+                key={value}
+                ref={videoRef}
+                src={value}
+                poster={posterValue || undefined}
+                controls
+                playsInline
+                preload="metadata"
+                style={{ width: '100%', maxHeight: '240px', display: 'block', margin: '0 auto', objectFit: 'contain' }}
+                onError={() => setLoadError('Could not load or decode video from this source.')}
+                onLoadedData={() => setLoadError(null)}
+              />
+            </div>
             <div style={{
-              position: 'absolute',
-              bottom: '8px',
-              left: '10px',
-              fontSize: '10px',
-              color: 'rgba(255,255,255,0.85)',
-              background: 'rgba(0,0,0,0.6)',
-              padding: '2px 8px',
-              borderRadius: '4px'
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '6px 10px',
+              background: 'rgba(0,0,0,0.85)',
+              borderTop: '1px solid var(--border)',
+              fontSize: '11px',
+              color: 'var(--muted-foreground)'
             }}>
-              Live Preview &middot; {previewPlaying ? 'Playing' : 'Paused'}
+              <span>🎬 Preview Source: <code style={{ color: '#fff' }}>{value.length > 50 ? value.slice(0, 47) + '...' : value}</code></span>
+              {loadError ? (
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ {loadError}</span>
+              ) : (
+                <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Video Preview Ready</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            padding: '20px',
+            border: '1px dashed var(--border)',
+            borderRadius: '6px',
+            textAlign: 'center',
+            background: 'var(--canvas)',
+            color: 'var(--muted-foreground)'
+          }}>
+            <div style={{ fontSize: '22px', marginBottom: '4px' }}>🎬</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)' }}>No Video Uploaded</div>
+            <div style={{ fontSize: '12px', marginTop: '2px' }}>
+              Upload a .mp4 file, select from Media Library, or click a Preset above to preview here.
             </div>
           </div>
         )}
@@ -596,7 +616,10 @@ export function VideoPickerField({
       <MediaPickerModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSelect={(selectedUrl) => onChange(selectedUrl)}
+        onSelect={(selectedUrl) => {
+          setLoadError(null);
+          onChange(selectedUrl);
+        }}
         title="Select Video from Library"
       />
     </div>

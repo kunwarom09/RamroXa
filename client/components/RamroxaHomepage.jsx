@@ -162,7 +162,7 @@ const formatBannerImg = (url, idx = 0) => {
 
 function HeroSection({ section, onNav }) {
   const { widgetType = 'hero_overlay', config = {} } = section;
-  
+
   const defaultSlides = [
     {
       id: 'slide-1',
@@ -750,27 +750,26 @@ function VideoSection({ section, onNav }) {
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(config.muted !== false);
 
-  const fallbackUrl = '/videos/ramroxa-brand-video.mp4';
-  const activeVideoUrl = config.videoUrl && !config.videoUrl.includes('mixkit.co') ? config.videoUrl : fallbackUrl;
+  // ONLY play video if explicitly uploaded or configured in the Brand video narrative
+  const hasUploadedVideo = !!(config.videoUrl && config.videoUrl.trim());
+  const activeVideoUrl = hasUploadedVideo ? config.videoUrl.trim() : '';
   const activePoster = config.posterImage || '/assets/59a3737ee018272f.q.jpg';
 
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && hasUploadedVideo && config.autoplay !== false) {
       videoRef.current.defaultMuted = true;
       videoRef.current.muted = true;
-      if (config.autoplay !== false) {
-        const p = videoRef.current.play();
-        if (p !== undefined) {
-          p.then(() => setPlaying(true)).catch(() => {
-            if (videoRef.current) {
-              videoRef.current.muted = true;
-              videoRef.current.play().catch(() => {});
-            }
-          });
-        }
+      const p = videoRef.current.play();
+      if (p !== undefined) {
+        p.then(() => setPlaying(true)).catch(() => {
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(() => {});
+          }
+        });
       }
     }
-  }, [activeVideoUrl, config.autoplay]);
+  }, [activeVideoUrl, hasUploadedVideo, config.autoplay]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -795,35 +794,34 @@ function VideoSection({ section, onNav }) {
     else if (url.startsWith('http')) window.open(url, '_blank');
   };
 
-  const handleVideoError = (e) => {
-    if (e.target.src !== window.location.origin + fallbackUrl && !e.target.src.endsWith(fallbackUrl)) {
-      e.target.src = fallbackUrl;
-      e.target.play().catch(() => {});
-    }
-  };
-
   if (widgetType === 'video_split') {
     return (
       <section className="rmx-section">
         <div className="rmx-section-inner">
           <div className="rmx-video-split-grid">
             <div className="rmx-video-split-media">
-              <video
-                ref={videoRef}
-                key={activeVideoUrl}
-                src={activeVideoUrl}
-                poster={activePoster}
-                autoPlay={config.autoplay !== false}
-                muted={muted}
-                loop={config.loop !== false}
-                playsInline
-                preload="auto"
-                controls
-                onError={handleVideoError}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                className="rmx-video-el"
-              />
+              {hasUploadedVideo ? (
+                <video
+                  ref={videoRef}
+                  key={activeVideoUrl}
+                  src={activeVideoUrl}
+                  poster={activePoster}
+                  autoPlay={config.autoplay !== false}
+                  muted={muted}
+                  loop={config.loop !== false}
+                  playsInline
+                  preload="auto"
+                  controls
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  className="rmx-video-el"
+                />
+              ) : (
+                <div
+                  className="rmx-video-placeholder"
+                  style={{ backgroundImage: `url('${activePoster}')` }}
+                />
+              )}
             </div>
             <div className="rmx-video-split-text">
               {config.eyebrow && <span className="rmx-hero-eyebrow">{config.eyebrow}</span>}
@@ -833,9 +831,11 @@ function VideoSection({ section, onNav }) {
                 <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
                   {config.cta || 'Explore Collection'}
                 </button>
-                <button className="rmx-btn-outline" onClick={togglePlay}>
-                  {playing ? 'Pause' : 'Play'}
-                </button>
+                {hasUploadedVideo && (
+                  <button className="rmx-btn-outline" onClick={togglePlay}>
+                    {playing ? 'Pause' : 'Play'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -848,21 +848,27 @@ function VideoSection({ section, onNav }) {
   return (
     <section className="rmx-video-section">
       <div className="rmx-video-wrap">
-        <video
-          ref={videoRef}
-          key={activeVideoUrl}
-          src={activeVideoUrl}
-          poster={activePoster}
-          autoPlay={config.autoplay !== false}
-          muted={muted}
-          loop={config.loop !== false}
-          playsInline
-          preload="auto"
-          onError={handleVideoError}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          className="rmx-video-el"
-        />
+        {hasUploadedVideo ? (
+          <video
+            ref={videoRef}
+            key={activeVideoUrl}
+            src={activeVideoUrl}
+            poster={activePoster}
+            autoPlay={config.autoplay !== false}
+            muted={muted}
+            loop={config.loop !== false}
+            playsInline
+            preload="auto"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            className="rmx-video-el"
+          />
+        ) : (
+          <div
+            className="rmx-video-placeholder"
+            style={{ backgroundImage: `url('${activePoster}')` }}
+          />
+        )}
         <div className="rmx-video-overlay" />
         <div className="rmx-video-content">
           {config.eyebrow && <span className="rmx-hero-eyebrow">{config.eyebrow}</span>}
@@ -872,12 +878,16 @@ function VideoSection({ section, onNav }) {
             <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
               {config.cta || 'Explore Collection'}
             </button>
-            <button className="rmx-btn-outline" onClick={togglePlay} style={{ minWidth: '100px' }}>
-              {playing ? '⏸ Pause' : '▶ Play'}
-            </button>
-            <button className="rmx-btn-outline" onClick={toggleMute} style={{ minWidth: '100px' }}>
-              {muted ? '🔇 Unmute' : '🔊 Mute'}
-            </button>
+            {hasUploadedVideo && (
+              <>
+                <button className="rmx-btn-outline" onClick={togglePlay} style={{ minWidth: '100px' }}>
+                  {playing ? '⏸ Pause' : '▶ Play'}
+                </button>
+                <button className="rmx-btn-outline" onClick={toggleMute} style={{ minWidth: '100px' }}>
+                  {muted ? '🔇 Unmute' : '🔊 Mute'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1097,10 +1107,10 @@ function CommunityNewsletterSection({ section, onNav }) {
 // ─── MAIN HOMEPAGE COMPONENT ──────────────────────────────────────────────────
 export default function RamroxaHomepage({
   catalog = [],
-  onOpenProduct = () => {},
-  onNav = () => {},
+  onOpenProduct = () => { },
+  onNav = () => { },
   wishlist = [],
-  onToggleWishlist = () => {},
+  onToggleWishlist = () => { },
   isWishlisted = () => false
 }) {
   const [cmsConfig, setCmsConfig] = useState(() => {
@@ -1141,7 +1151,7 @@ export default function RamroxaHomepage({
         switch (section.type) {
           case 'hero':
             return <HeroSection key={section.id} section={section} onNav={onNav} />;
-          
+
           case 'bestsellers':
           case 'featured':
             return (
@@ -1178,4 +1188,3 @@ export default function RamroxaHomepage({
     </div>
   );
 }
-

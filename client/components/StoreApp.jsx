@@ -761,7 +761,7 @@ function getVariantStock(p, selectedSize, selectedColor) {
           if (parent) parentSize = getVarSize(parent);
         }
         const sizeMatches = (sSize && (sSize === targetSize || sSize.includes(targetSize) || targetSize.includes(sSize))) ||
-                            (parentSize && (parentSize === targetSize || parentSize.includes(targetSize) || targetSize.includes(parentSize)));
+          (parentSize && (parentSize === targetSize || parentSize.includes(targetSize) || targetSize.includes(parentSize)));
         const colMatches = sCol && (sCol === targetColor || sCol.includes(targetColor) || targetColor.includes(sCol));
         return sizeMatches && colMatches;
       });
@@ -1615,7 +1615,7 @@ export default class StoreApp extends React.Component {
         const apiCatalog = apiProds.map((prod, idx) => formatProductItem(prod, idx));
         this.setState({ catalog: apiCatalog });
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Clear cart in local storage and state
     saveStoredCart([]);
