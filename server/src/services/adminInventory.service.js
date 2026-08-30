@@ -86,8 +86,23 @@ export async function listAdminInventory(query = {}) {
       variantLabel = 'Default';
     }
 
-    const sizeVal = combinedOpts.Size || combinedOpts.size || '';
-    const colorVal = combinedOpts.Colour || combinedOpts.colour || combinedOpts.Color || combinedOpts.color || '';
+    let sizeVal = combinedOpts.Size || combinedOpts.size || '';
+    let colorVal = combinedOpts.Colour || combinedOpts.colour || combinedOpts.Color || combinedOpts.color || '';
+
+    // If parentVar is Size (e.g. UK 3) and child is Colour (e.g. Blue)
+    if (!sizeVal && parentVar && parentVar.name) {
+      sizeVal = parentVar.name;
+    }
+    if (!colorVal && v.parentVariantId && v.name && v.name !== 'Default') {
+      colorVal = v.name;
+    }
+    if (!sizeVal && v.name && v.name.includes('/')) {
+      const nameParts = v.name.split('/');
+      sizeVal = nameParts[0].trim();
+      if (!colorVal) colorVal = nameParts[1].trim();
+    }
+    if (!sizeVal) sizeVal = 'Standard';
+    if (!colorVal) colorVal = 'Default';
 
     enriched.push({
       id: inv.id || inv._id.toString(),

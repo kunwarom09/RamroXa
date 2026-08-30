@@ -149,23 +149,27 @@ export default function AdminInventoryPage() {
   };
 
   const getVariantSize = (v, r) => {
-    if (r?.size) return r.size;
+    if (r?.size && r.size !== 'Standard' && r.size !== '—') return r.size;
     if (v?.options?.Size || v?.options?.size) return v.options.Size || v.options.size;
     if (v?.parentVariant?.options?.Size || v?.parentVariant?.options?.size) {
       return v.parentVariant.options.Size || v.parentVariant.options.size;
     }
-    return '—';
+    if (v?.parentVariant?.name) return v.parentVariant.name;
+    if (v?.name && v.name.includes('/')) return v.name.split('/')[0].trim();
+    return r?.size || '—';
   };
 
   const getVariantColor = (v, r) => {
-    if (r?.color) return r.color;
+    if (r?.color && r.color !== 'Default' && r.color !== '—') return r.color;
     if (v?.options?.Colour || v?.options?.colour || v?.options?.Color || v?.options?.color) {
       return v.options.Colour || v.options.colour || v.options.Color || v.options.color;
     }
     if (v?.parentVariant?.options?.Colour || v?.parentVariant?.options?.colour) {
       return v.parentVariant.options.Colour || v.parentVariant.options.colour;
     }
-    return '—';
+    if (v?.parentVariantId && v?.name) return v.name;
+    if (v?.name && v.name.includes('/')) return v.name.split('/')[1].trim();
+    return r?.color || '—';
   };
 
   const getVariantPrice = (v, m) => {
