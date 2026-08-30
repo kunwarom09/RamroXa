@@ -252,8 +252,8 @@ export default function AdminInventoryPage() {
           reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
         } else {
           invDoc = invData?.byWarehouse['w1'] || (invData ? Object.values(invData.byWarehouse)[0] : null);
-          available = invData ? invData.totalAvailable : (invDoc ? Number(invDoc.available) || 0 : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0)));
-          reserved = invData ? invData.totalReserved : (invDoc ? Number(invDoc.reserved) || 0 : 0);
+          available = invDoc ? Number(invDoc.available) || 0 : (invData ? invData.totalAvailable : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0)));
+          reserved = invDoc ? Number(invDoc.reserved) || 0 : (invData ? invData.totalReserved : 0);
         }
 
         const price = getVariantPrice(v, prod);
