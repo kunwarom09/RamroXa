@@ -58,8 +58,18 @@ export default function AdminProductsListPage() {
 
       let extractedVars = [];
       apiProds.forEach((p) => {
-        if (p.variants && p.variants.length) {
-          extractedVars = [...extractedVars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
+        const pId = p.id || String(p._id);
+        if (p.allVariants && p.allVariants.length) {
+          extractedVars = [...extractedVars, ...p.allVariants.map(v => ({ ...v, productId: pId }))];
+        } else if (p.variants && p.variants.length) {
+          p.variants.forEach((v) => {
+            extractedVars.push({ ...v, productId: pId });
+            if (v.subVariants && v.subVariants.length) {
+              v.subVariants.forEach((sv) => {
+                extractedVars.push({ ...sv, productId: pId, parentVariant: v });
+              });
+            }
+          });
         }
       });
 

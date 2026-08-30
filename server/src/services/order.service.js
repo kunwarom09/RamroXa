@@ -58,61 +58,156 @@ export async function createOrder(data) {
     }
   }
 
-  // 2. Server Re-Pricing & Variant Validation
-  const lookupKeys = items.map((i) => i.variantId || i.productId || i.id).filter(Boolean);
-  const variants = await Variant.find({
-    $or: [
-      { id: { $in: lookupKeys } },
-      { sku: { $in: lookupKeys } },
-      { productId: { $in: lookupKeys } }
-    ]
-  }).lean();
+  // 2. Server Re-Pricing & Exact Variant/Sub-variant Resolution
+  const productLookupKeys = items.map((i) => i.productId || i.id || i.slug).filter(Boolean);
+  const variantLookupKeys = items.map((i) => i.variantId || i.sku).filter(Boolean);
 
-  const productIds = Array.from(new Set([...variants.map((v) => v.productId), ...items.map(i => i.productId).filter(Boolean)]));
-  const products = await Product.find({
-    $or: [{ id: { $in: productIds } }, { sku: { $in: productIds } }]
-  }).lean();
+  const [products, variants] = await Promise.all([
+    Product.find({
+      $or: [
+        { id: { $in: productLookupKeys } },
+        { sku: { $in: productLookupKeys } },
+        { slug: { $in: productLookupKeys } }
+      ]
+    }).lean(),
+    Variant.find({
+      $or: [
+        { id: { $in: variantLookupKeys } },
+        { sku: { $in: variantLookupKeys } },
+        { productId: { $in: productLookupKeys } }
+      ]
+    }).lean()
+  ]);
 
-  const prodsById = products.reduce((acc, p) => {
-    acc[p.id] = p;
-    if (p.sku) acc[p.sku] = p;
-    return acc;
-  }, {});
+  const prodsById = {};
+  for (const p of products) {
+    if (p.id) prodsById[p.id] = p;
+    if (p._id) prodsById[p._id.toString()] = p;
+    if (p.sku) prodsById[p.sku] = p;
+    if (p.slug) prodsById[p.slug] = p;
+  }
 
-  const variantsById = variants.reduce((acc, v) => {
-    acc[v.id] = v;
-    if (v.sku) acc[v.sku] = v;
-    if (v.productId && !acc[v.productId]) acc[v.productId] = v;
-    return acc;
-  }, {});
+  // Group variants by productId
+  const variantsByProdId = {};
+  for (const v of variants) {
+    if (!variantsByProdId[v.productId]) variantsByProdId[v.productId] = [];
+    variantsByProdId[v.productId].push(v);
+  }
 
   const orderLineItems = [];
 
   for (const item of items) {
-    let v = variantsById[item.variantId] || variantsById[item.productId] || variantsById[item.id];
-    let p = v ? prodsById[v.productId] : (prodsById[item.productId] || prodsById[item.id]);
-
-    if (!v && p) {
-      v = {
-        id: `v_${p.id}_0`,
-        productId: p.id,
-        sku: p.sku || `SKU-${p.id}`,
-        price: p.price || p.basePrice || 150000,
-        options: { Size: item.size || 'M' }
-      };
+    // 1. Resolve parent product
+    let p = prodsById[item.productId] || prodsById[item.id] || prodsById[item.slug];
+    if (!p && item.name) {
+      p = products.find((prod) => prod.name && prod.name.toLowerCase() === item.name.toLowerCase());
     }
 
     if (!p || p.status === 'archived' || p.deletedAt) {
       throw ApiError.badRequest(`Product '${item.name || item.productId}' is not available.`);
     }
 
-    // Server-enforced pricing: Strictly derive price from database records (prevent price tampering)
+    const pVariants = variantsByProdId[p.id] || variantsByProdId[p._id?.toString()] || [];
+    const targetSize = (item.size || '').trim().toLowerCase();
+    const targetColor = (item.color || item.colour || '').trim().toLowerCase();
+
+    let v = null;
+
+    // Direct ID match if variantId supplied
+    if (item.variantId) {
+      v = pVariants.find((varDoc) => varDoc.id === item.variantId || varDoc._id?.toString() === item.variantId);
+    }
+
+    // Match by Size (top variant) + Colour (sub-variant)
+    if (!v && pVariants.length > 0) {
+      const topVars = pVariants.filter((varDoc) => !varDoc.parentVariantId);
+      const subVars = pVariants.filter((varDoc) => !!varDoc.parentVariantId);
+
+      if (targetSize && targetColor) {
+        // Find matching top variant (size)
+        const matchedTop = topVars.find((tv) => {
+          const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
+          const nameMatch = (tv.name || '').toLowerCase();
+          return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
+                 (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
+        });
+
+        if (matchedTop) {
+          // Find matching sub-variant under this top variant
+          const matchedSub = subVars.find((sv) => {
+            if (sv.parentVariantId !== matchedTop.id) return false;
+            const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+            const nameMatch = (sv.name || '').toLowerCase();
+            return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+                   (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+          });
+          v = matchedSub || matchedTop;
+        } else {
+          // Check all subvariants or variants directly
+          v = subVars.find((sv) => {
+            const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+            const nameMatch = (sv.name || '').toLowerCase();
+            return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+                   (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+          }) || pVariants[0];
+        }
+      } else if (targetSize) {
+        v = topVars.find((tv) => {
+          const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
+          const nameMatch = (tv.name || '').toLowerCase();
+          return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
+                 (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
+        }) || pVariants[0];
+      } else if (targetColor) {
+        v = subVars.find((sv) => {
+          const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+          const nameMatch = (sv.name || '').toLowerCase();
+          return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+        }) || pVariants[0];
+      } else {
+        v = pVariants[0];
+      }
+    }
+
+    // Default variant if no variant document exists
+    if (!v) {
+      v = {
+        id: `v_${p.id}_0`,
+        productId: p.id,
+        sku: p.sku || `SKU-${p.id}`,
+        price: p.price || p.basePrice || 150000,
+        options: {
+          Size: item.size || 'M',
+          ...(item.color || item.colour ? { Colour: item.color || item.colour } : {})
+        }
+      };
+    }
+
+    // Server-enforced pricing: derive price from variant or product
     const unitPrice = v && v.price != null ? v.price : (p.basePrice != null ? p.basePrice : p.price || 0);
-    const variantLabel = v && v.options ? Object.values(v.options).join(' / ') : (item.size || 'Default');
+
+    let variantLabel = '';
+    if (v && v.options) {
+      const optsObj = v.options instanceof Map ? Object.fromEntries(v.options) : v.options;
+      const optParts = Object.values(optsObj).filter(Boolean);
+      if (optParts.length > 0) {
+        variantLabel = optParts.join(' / ');
+      }
+    }
+    if (!variantLabel && v && v.name && v.name !== 'Default') {
+      variantLabel = v.name.replace(/^Variant:\s*/i, '');
+    }
+    if (!variantLabel) {
+      const parts = [];
+      if (item.size) parts.push(`Size: ${item.size}`);
+      if (item.color || item.colour) parts.push(`Colour: ${item.color || item.colour}`);
+      variantLabel = parts.join(' / ') || 'Default';
+    }
 
     orderLineItems.push({
       product: p._id,
-      variant: v ? v._id : undefined,
+      variant: v ? (v._id || undefined) : undefined,
       productId: p.id,
       variantId: v ? v.id : `v_${p.id}_0`,
       name: p.name,
@@ -331,25 +426,54 @@ export async function updateFulfillmentStatus({ orderId, newStatus, user, note =
   // If order was cancelled, release reserved stock back to available
   if (newStatus === 'cancelled') {
     for (const item of order.items) {
-      await Inventory.findOneAndUpdate(
+      if (!item.variantId) continue;
+      const inv = await Inventory.findOneAndUpdate(
         { variantId: item.variantId },
         {
           $inc: {
             available: item.qty,
             reserved: -item.qty
           }
-        }
+        },
+        { new: true }
       );
       await StockMove.create({
         variantId: item.variantId,
-        warehouseId: 'w1',
+        warehouseId: inv?.warehouseId || 'w1',
         type: 'correction',
         change: item.qty,
         reason: `Order ${order.orderNo} cancelled - stock release`,
         reference: order.orderNo,
-        before: 0,
-        after: item.qty,
-        user: user ? user.name : 'System'
+        before: inv ? (inv.available - item.qty) : 0,
+        after: inv ? inv.available : item.qty,
+        user: user ? (user.name || user.email) : 'System'
+      });
+    }
+  }
+
+  // If order was returned, restore available stock
+  if (newStatus === 'returned') {
+    for (const item of order.items) {
+      if (!item.variantId) continue;
+      const inv = await Inventory.findOneAndUpdate(
+        { variantId: item.variantId },
+        {
+          $inc: {
+            available: item.qty
+          }
+        },
+        { new: true }
+      );
+      await StockMove.create({
+        variantId: item.variantId,
+        warehouseId: inv?.warehouseId || 'w1',
+        type: 'return',
+        change: item.qty,
+        reason: `Order ${order.orderNo} returned - restock`,
+        reference: order.orderNo,
+        before: inv ? (inv.available - item.qty) : 0,
+        after: inv ? inv.available : item.qty,
+        user: user ? (user.name || user.email) : 'System'
       });
     }
   }

@@ -8,7 +8,11 @@ const stockMoveSchema = new mongoose.Schema(
     warehouseId: { type: String, required: true, index: true },
     type: {
       type: String,
-      enum: ['opening', 'sale', 'return', 'adjustment', 'transfer', 'transfer_in', 'transfer_out', 'restock', 'purchase', 'correction', 'deleted'],
+      enum: [
+        'opening', 'sale', 'return', 'customer_return', 'adjustment', 'transfer',
+        'transfer_in', 'transfer_out', 'restock', 'purchase', 'purchase_received',
+        'correction', 'stock_correction', 'damaged', 'lost', 'manual', 'manual_adjustment', 'deleted'
+      ],
       required: true
     },
     change: { type: Number, required: true },

@@ -64,3 +64,54 @@ export async function deleteProduct(productId) {
   const res = await api.delete(`/api/admin/products/${productId}`);
   return res.data;
 }
+
+// ── Review Services ──
+export async function fetchProductReviews(productIdOrSlug, params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `/api/products/${productIdOrSlug}/reviews${query ? `?${query}` : ''}`;
+    const res = await api.get(url);
+    return res;
+  } catch (err) {
+    console.error('Failed to fetch product reviews:', err.message);
+    return { data: [], summary: { ratingAvg: 0, ratingCount: 0, distribution: {}, percentages: {} } };
+  }
+}
+
+export async function submitProductReview(productIdOrSlug, reviewData) {
+  const url = `/api/products/${productIdOrSlug}/reviews`;
+  const res = await api.post(url, reviewData);
+  return res;
+}
+
+export async function deleteMyReview(productIdOrSlug) {
+  const url = `/api/products/${productIdOrSlug}/reviews/mine`;
+  const res = await api.delete(url);
+  return res;
+}
+
+// ── Admin Review Moderation ──
+export async function fetchAdminReviews(params = {}) {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const url = `/api/admin/reviews${query ? `?${query}` : ''}`;
+    const res = await api.get(url);
+    return res;
+  } catch (err) {
+    console.error('Failed to fetch admin reviews:', err.message);
+    return { data: [], pagination: { total: 0 } };
+  }
+}
+
+export async function updateAdminReviewStatus(reviewId, status) {
+  const url = `/api/admin/reviews/${reviewId}/status`;
+  const res = await api.patch(url, { status });
+  return res;
+}
+
+export async function deleteAdminReview(reviewId) {
+  const url = `/api/admin/reviews/${reviewId}`;
+  const res = await api.delete(url);
+  return res;
+}
+

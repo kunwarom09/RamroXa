@@ -543,6 +543,8 @@ function formatProductItem(p, i) {
     options: p.options || {},
     variantGroups: p.variantGroups || [],
     variants: p.variants || [],
+    allVariants: p.allVariants || p.variants || [],
+    totalStock: p.totalStock !== undefined ? p.totalStock : (p.availableStock !== undefined ? p.availableStock : 10),
     colors: (Array.isArray(p.colors) && p.colors.length > 0)
       ? p.colors
       : (Array.isArray(p.options?.Colour || p.options?.Color || p.options?.colours || p.options?.colors)
@@ -702,6 +704,109 @@ function getProductCardVariants(p) {
 
   const colours = Array.from(colourMap.values());
   return { sizes, colours };
+}
+
+function getVariantStock(p, selectedSize, selectedColor) {
+  if (!p) return { stock: 0, variant: null, isOutOfStock: true };
+
+  const targetSize = (selectedSize || '').trim().toLowerCase();
+  const targetColor = (selectedColor || '').trim().toLowerCase();
+
+  const variants = Array.isArray(p.variants) ? p.variants : [];
+  const allVariants = Array.isArray(p.allVariants) && p.allVariants.length ? p.allVariants : variants;
+
+  if (variants.length > 0 || allVariants.length > 0) {
+    const topVars = variants.filter(v => !v.parentVariantId);
+    const subVars = allVariants.filter(v => !!v.parentVariantId).concat(variants.flatMap(v => Array.isArray(v.subVariants) ? v.subVariants : []));
+
+    // Case 1: Both Size and Colour are selected
+    if (targetSize && targetColor) {
+      // Find top variant matching targetSize
+      const matchedTop = topVars.find(tv => {
+        const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
+        const nameMatch = (tv.name || '').toLowerCase();
+        return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
+               (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
+      });
+
+      if (matchedTop) {
+        // Find matching sub-variant under this top variant
+        const matchedSub = (matchedTop.subVariants || []).find(sv => {
+          const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+          const nameMatch = (sv.name || '').toLowerCase();
+          return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+        }) || subVars.find(sv => {
+          if (sv.parentVariantId !== matchedTop.id) return false;
+          const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+          const nameMatch = (sv.name || '').toLowerCase();
+          return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+        });
+
+        if (matchedSub) {
+          const stock = matchedSub.availableStock !== undefined ? Number(matchedSub.availableStock) : (matchedSub.stock !== undefined ? Number(matchedSub.stock) : 0);
+          return { stock: Math.max(0, stock), variant: matchedSub, isOutOfStock: stock <= 0 };
+        }
+
+        const topStock = matchedTop.availableStock !== undefined ? Number(matchedTop.availableStock) : (matchedTop.stock !== undefined ? Number(matchedTop.stock) : 0);
+        return { stock: Math.max(0, topStock), variant: matchedTop, isOutOfStock: topStock <= 0 };
+      }
+
+      // Check subVars directly matching color and size
+      const directSub = subVars.find(sv => {
+        const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+        const optSize = (sv.options?.get ? (sv.options.get('Size') || sv.options.get('size')) : (sv.options?.Size || sv.options?.size || ''))?.toLowerCase();
+        const nameMatch = (sv.name || '').toLowerCase();
+        const colMatch = (optCol && (optCol === targetColor || optCol.includes(targetColor))) || (nameMatch && nameMatch.includes(targetColor));
+        const sizeMatch = (optSize && (optSize === targetSize || optSize.includes(targetSize))) || (nameMatch && nameMatch.includes(targetSize));
+        return colMatch && sizeMatch;
+      });
+
+      if (directSub) {
+        const stock = directSub.availableStock !== undefined ? Number(directSub.availableStock) : (directSub.stock !== undefined ? Number(directSub.stock) : 0);
+        return { stock: Math.max(0, stock), variant: directSub, isOutOfStock: stock <= 0 };
+      }
+    }
+
+    // Case 2: Only Size is selected
+    if (targetSize) {
+      const matchedTop = topVars.find(tv => {
+        const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
+        const nameMatch = (tv.name || '').toLowerCase();
+        return (optSize && (optSize === targetSize || optSize.includes(targetSize))) ||
+               (nameMatch && (nameMatch === targetSize || nameMatch.includes(targetSize)));
+      }) || variants[0];
+
+      if (matchedTop) {
+        const stock = matchedTop.availableStock !== undefined ? Number(matchedTop.availableStock) : (matchedTop.stock !== undefined ? Number(matchedTop.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
+        return { stock: Math.max(0, stock), variant: matchedTop, isOutOfStock: stock <= 0 };
+      }
+    }
+
+    // Case 3: Only Colour is selected
+    if (targetColor) {
+      const matchedSub = subVars.find(sv => {
+        const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
+        const nameMatch = (sv.name || '').toLowerCase();
+        return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
+               (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+      }) || variants[0];
+
+      if (matchedSub) {
+        const stock = matchedSub.availableStock !== undefined ? Number(matchedSub.availableStock) : (matchedSub.stock !== undefined ? Number(matchedSub.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
+        return { stock: Math.max(0, stock), variant: matchedSub, isOutOfStock: stock <= 0 };
+      }
+    }
+
+    // Fallback: first variant
+    const firstVar = variants[0];
+    const stock = firstVar.availableStock !== undefined ? Number(firstVar.availableStock) : (firstVar.stock !== undefined ? Number(firstVar.stock) : (p.totalStock !== undefined ? p.totalStock : 10));
+    return { stock: Math.max(0, stock), variant: firstVar, isOutOfStock: stock <= 0 };
+  }
+
+  const defaultStock = p.totalStock !== undefined ? Number(p.totalStock) : (p.availableStock !== undefined ? Number(p.availableStock) : 10);
+  return { stock: Math.max(0, defaultStock), variant: null, isOutOfStock: defaultStock <= 0 };
 }
 
 const FREE_OVER = 5000;
@@ -928,7 +1033,19 @@ export default class StoreApp extends React.Component {
   };
 
   openProduct = (i) => {
-    this.goToView('detail', { sel: i, selImg: 0, selSize: 'M', selQty: 1 });
+    const cat = this.getCatalog();
+    const p = cat[i];
+    const { sizes = [], colours = [] } = p ? getProductCardVariants(p) : {};
+    const defaultSize = (sizes && sizes[0]) || 'M';
+    const defaultColour = (colours && colours[0]?.name) || '';
+    const { stock, isOutOfStock } = getVariantStock(p, defaultSize, defaultColour);
+    this.goToView('detail', {
+      sel: i,
+      selImg: 0,
+      selSize: defaultSize,
+      selColor: defaultColour,
+      selQty: isOutOfStock || stock <= 0 ? 1 : 1
+    });
   };
 
   toggleMobileMenu = () => this.setState(s => ({ mobileMenuOpen: !s.mobileMenuOpen }));
@@ -1193,26 +1310,61 @@ export default class StoreApp extends React.Component {
   addLine(goCheckout) {
     const cat = this.getCatalog();
     const p = cat[this.state.sel] || cat[0];
+    const { sizes = [], colours = [] } = p ? getProductCardVariants(p) : {};
     const selIdx = this.state.sel;
-    const selSize = this.state.selSize;
-    const selQty = this.state.selQty;
+    const selSize = this.state.selSize || (sizes && sizes[0]) || 'M';
+    const rawColours = colours && colours.length ? colours : (p.colors || []).map(c => typeof c === 'string' ? { name: c } : c);
+    const selColor = this.state.selColor || (rawColours && rawColours[0]?.name) || '';
+    const selQty = Math.max(1, this.state.selQty || 1);
+
+    // Check available stock
+    const { stock: availableStock, isOutOfStock } = getVariantStock(p, selSize, selColor);
+    if (isOutOfStock || availableStock <= 0) {
+      this.showToast(`"${p?.name || 'This item'}" (${selSize}${selColor ? ' / ' + selColor : ''}) is currently out of stock.`);
+      return;
+    }
 
     const cart = [...this.state.cart];
-    const i = cart.findIndex(l => l.idx === selIdx && l.size === selSize);
-    if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + selQty };
-    else cart.push({ idx: selIdx, size: selSize, qty: selQty });
+    const i = cart.findIndex(l => l.idx === selIdx && l.size === selSize && (l.color || '') === (selColor || ''));
+    const currentInCart = i >= 0 ? cart[i].qty : 0;
+
+    if (currentInCart + selQty > availableStock) {
+      const remainingAddable = availableStock - currentInCart;
+      if (remainingAddable <= 0) {
+        this.showToast(`Cannot add more. You already have all ${availableStock} available in your cart.`);
+        return;
+      }
+      this.showToast(`Only ${availableStock} available. Adding ${remainingAddable} to cart.`);
+      if (i >= 0) cart[i] = { ...cart[i], qty: availableStock };
+      else cart.push({ idx: selIdx, size: selSize, color: selColor, qty: remainingAddable });
+    } else {
+      if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + selQty };
+      else cart.push({ idx: selIdx, size: selSize, color: selColor, qty: selQty });
+      if (!goCheckout) {
+        this.showToast('Added ' + (p ? p.name : 'product') + ' to cart');
+      }
+    }
 
     saveStoredCart(cart);
     this.setState({ cart }, () => {
       if (goCheckout) {
         this.goToView('checkout');
-      } else {
-        this.showToast('Added ' + (p ? p.name : 'product') + ' to cart');
       }
     });
   }
 
   bump(i, d) {
+    const item = this.state.cart[i];
+    if (!item) return;
+    const cat = this.getCatalog();
+    const p = cat[item.idx];
+    const { stock: availableStock } = getVariantStock(p, item.size, item.color);
+
+    if (d > 0 && item.qty + d > availableStock) {
+      this.showToast(`Only ${availableStock} available for "${p?.name || 'this item'}" (${item.size}${item.color ? ' / ' + item.color : ''}).`);
+      return;
+    }
+
     const newCart = this.state.cart.map((l, j) => j === i ? { ...l, qty: l.qty + d } : l).filter(l => l.qty > 0);
     saveStoredCart(newCart);
     this.setState({ cart: newCart });
@@ -1305,12 +1457,26 @@ export default class StoreApp extends React.Component {
       p.slug === item.slug || p.id === item.id || p.name === item.name
     ));
     const targetIdx = foundIdx >= 0 ? foundIdx : 0;
+    const p = cat[targetIdx];
     const targetSize = item.size || 'M';
+    const targetColor = item.color || '';
+
+    const { stock: availableStock, isOutOfStock } = getVariantStock(p, targetSize, targetColor);
+    if (isOutOfStock || availableStock <= 0) {
+      this.showToast(`"${item.name || 'This product'}" is currently out of stock.`);
+      return;
+    }
 
     const cart = [...this.state.cart];
-    const i = cart.findIndex(l => l.idx === targetIdx && l.size === targetSize);
+    const i = cart.findIndex(l => l.idx === targetIdx && l.size === targetSize && (l.color || '') === targetColor);
+    const currentInCart = i >= 0 ? cart[i].qty : 0;
+    if (currentInCart + 1 > availableStock) {
+      this.showToast(`Only ${availableStock} available for "${item.name || 'this item'}".`);
+      return;
+    }
+
     if (i >= 0) cart[i] = { ...cart[i], qty: cart[i].qty + 1 };
-    else cart.push({ idx: targetIdx, size: targetSize, qty: 1 });
+    else cart.push({ idx: targetIdx, size: targetSize, color: targetColor, qty: 1 });
 
     saveStoredCart(cart);
     this.setState({ cart }, () => {
@@ -1363,13 +1529,31 @@ export default class StoreApp extends React.Component {
 
     const id = 'ZY-' + Math.floor(100000 + Math.random() * 900000);
     const cat = this.getCatalog();
+
+    // Verify stock availability for all cart items before placing order
+    for (const l of this.state.cart) {
+      const p = cat[l.idx] || {};
+      const { stock: availableStock, isOutOfStock } = getVariantStock(p, l.size, l.color);
+      if (isOutOfStock || availableStock <= 0) {
+        this.showToast(`Sorry, "${p.name || 'Item'}" (${l.size}${l.color ? ' / ' + l.color : ''}) is out of stock.`);
+        return;
+      }
+      if (l.qty > availableStock) {
+        this.showToast(`Sorry, only ${availableStock} available for "${p.name || 'Item'}" (${l.size}${l.color ? ' / ' + l.color : ''}). Please adjust your cart.`);
+        return;
+      }
+    }
+
     const cartItems = this.state.cart.map(l => {
       const p = cat[l.idx] || {};
+      const { variant: matchedVar } = getVariantStock(p, l.size, l.color);
       return {
         productId: p.id || ('prod_' + l.idx),
-        variantId: p.variants?.[0]?.id || p.id || ('v_' + l.idx),
+        variantId: matchedVar?.id || p.variants?.[0]?.id || p.id || ('v_' + l.idx),
         name: p.name || 'Product',
         size: l.size || 'M',
+        color: l.color || '',
+        colour: l.color || '',
         qty: l.qty || 1,
         unitPrice: (p.price || 0) * 100
       };
@@ -1389,7 +1573,20 @@ export default class StoreApp extends React.Component {
       });
     } catch (e) {
       console.warn('Order dispatch notice:', e);
+      const errMsg = e.response?.data?.message || e.message || 'Failed to place order';
+      if (e.response?.status === 409 || e.response?.status === 400) {
+        this.showToast(errMsg);
+        return;
+      }
     }
+
+    // Refresh dynamic catalog in background to reflect deducted stock
+    fetchProducts({ limit: 100 }).then(apiProds => {
+      if (Array.isArray(apiProds) && apiProds.length > 0) {
+        const apiCatalog = apiProds.map((prod, idx) => formatProductItem(prod, idx));
+        this.setState({ catalog: apiCatalog });
+      }
+    }).catch(() => {});
 
     // Clear cart in local storage and state
     saveStoredCart([]);
@@ -3145,79 +3342,278 @@ export default class StoreApp extends React.Component {
               dangerouslySetInnerHTML={{ __html: p.desc }}
             />
 
-            {/* Size Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>SIZE</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['S', 'M', 'L', 'XL'].map(sz => (
-                  <button
-                    key={sz}
-                    onClick={() => this.setState({ selSize: sz })}
-                    style={{
-                      ...font,
-                      fontSize: 14,
-                      width: 44,
-                      height: 44,
+            {/* Size & Colour Selector and Inventory Stock Display */}
+            {(() => {
+              const { sizes: pSizes, colours: pColours } = getProductCardVariants(p);
+              const availableSizes = pSizes && pSizes.length ? pSizes : ['S', 'M', 'L', 'XL'];
+              const currentSize = selSize || availableSizes[0] || 'M';
+              const rawColours = pColours && pColours.length ? pColours : (p.colors || []).map(c => typeof c === 'string' ? { name: c, hex: COLOR_HEX_MAP[c.toLowerCase()] || '#cccccc' } : c);
+              const availableColours = rawColours.filter(Boolean);
+              const currentColor = this.state.selColor || (availableColours[0]?.name || '');
+
+              const { stock: availableStock, isOutOfStock } = getVariantStock(p, currentSize, currentColor);
+              const effectiveQty = isOutOfStock ? 0 : Math.min(selQty || 1, availableStock);
+
+              return (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>SIZE</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {availableSizes.map(sz => {
+                        const szStockInfo = getVariantStock(p, sz, currentColor);
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => {
+                              const newStock = getVariantStock(p, sz, currentColor);
+                              this.setState(st => ({
+                                selSize: sz,
+                                selQty: newStock.isOutOfStock ? 1 : Math.min(st.selQty, Math.max(1, newStock.stock))
+                              }));
+                            }}
+                            style={{
+                              ...font,
+                              fontSize: 14,
+                              minWidth: 44,
+                              height: 44,
+                              padding: '0 12px',
+                              borderRadius: 999,
+                              cursor: 'pointer',
+                              border: sz === currentSize ? '1.5px solid #000' : '1px solid #ccc',
+                              background: sz === currentSize ? '#000' : '#fff',
+                              color: sz === currentSize ? '#fff' : '#000',
+                              transition: 'all 0.15s ease',
+                              opacity: szStockInfo.isOutOfStock ? 0.45 : 1
+                            }}
+                          >
+                            {sz}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {availableColours.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ fontSize: 12, letterSpacing: 2, color: '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>COLOUR</span>
+                        {currentColor && <strong style={{ color: '#111', fontSize: 12, letterSpacing: 0.5 }}>({currentColor})</strong>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        {availableColours.map(col => {
+                          const isSel = (currentColor || '').toLowerCase() === (col.name || '').toLowerCase();
+                          const hex = col.hex || COLOR_HEX_MAP[(col.name || '').toLowerCase()] || '#cccccc';
+                          const colStockInfo = getVariantStock(p, currentSize, col.name);
+                          return (
+                            <button
+                              key={col.name}
+                              type="button"
+                              onClick={() => {
+                                const newStock = getVariantStock(p, currentSize, col.name);
+                                this.setState(st => ({
+                                  selColor: col.name,
+                                  selQty: newStock.isOutOfStock ? 1 : Math.min(st.selQty, Math.max(1, newStock.stock))
+                                }));
+                              }}
+                              title={`${col.name} (${colStockInfo.isOutOfStock ? 'Out of stock' : colStockInfo.stock + ' in stock'})`}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                backgroundColor: hex,
+                                border: isSel ? '2.5px solid #000' : (hex.toLowerCase() === '#ffffff' || hex.toLowerCase() === '#fff' ? '1px solid #ccc' : '1px solid rgba(0,0,0,0.15)'),
+                                outline: isSel ? '2px solid #000' : 'none',
+                                outlineOffset: 2,
+                                cursor: 'pointer',
+                                padding: 0,
+                                transition: 'all 0.15s ease',
+                                opacity: colStockInfo.isOutOfStock ? 0.4 : 1
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Real-time Available Stock Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '2px 0 6px' }}>
+                    {isOutOfStock ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 12px',
+                        borderRadius: 6,
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        color: '#dc2626',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        letterSpacing: 0.5
+                      }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#dc2626' }} />
+                        Out of Stock
+                      </span>
+                    ) : availableStock <= 5 ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 12px',
+                        borderRadius: 6,
+                        background: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        color: '#b45309',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        letterSpacing: 0.5
+                      }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#d97706' }} />
+                        Only {availableStock} available in stock!
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 12px',
+                        borderRadius: 6,
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        color: '#15803d',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        letterSpacing: 0.5
+                      }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16a34a' }} />
+                        In Stock ({availableStock} available)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Quantity Stepper */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>QUANTITY</div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      border: isOutOfStock ? '1.5px solid #ccc' : '1.5px solid #000',
                       borderRadius: 999,
-                      cursor: 'pointer',
-                      border: sz === selSize ? '1px solid #000' : '1px solid #ccc',
-                      background: sz === selSize ? '#000' : '#fff',
-                      color: sz === selSize ? '#fff' : '#000',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
-            </div>
+                      width: 'fit-content',
+                      opacity: isOutOfStock ? 0.5 : 1
+                    }}>
+                      <button
+                        type="button"
+                        disabled={isOutOfStock || selQty <= 1}
+                        onClick={() => this.setState(st => ({ selQty: Math.max(1, st.selQty - 1) }))}
+                        style={{
+                          ...font,
+                          fontSize: 18,
+                          width: 40,
+                          height: 40,
+                          background: 'none',
+                          border: 'none',
+                          cursor: (isOutOfStock || selQty <= 1) ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: (isOutOfStock || selQty <= 1) ? '#bbb' : '#000'
+                        }}
+                      >
+                        −
+                      </button>
+                      <span style={{ minWidth: 28, textAlign: 'center', fontSize: 15, fontWeight: 500 }}>
+                        {isOutOfStock ? 0 : (selQty > availableStock ? availableStock : selQty)}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isOutOfStock || selQty >= availableStock}
+                        onClick={() => {
+                          if (isOutOfStock || availableStock <= 0) {
+                            this.showToast('This item is currently out of stock.');
+                            return;
+                          }
+                          if (selQty >= availableStock) {
+                            this.showToast(`Only ${availableStock} available.`);
+                            return;
+                          }
+                          this.setState(st => ({ selQty: Math.min(availableStock, st.selQty + 1) }));
+                        }}
+                        style={{
+                          ...font,
+                          fontSize: 18,
+                          width: 40,
+                          height: 40,
+                          background: 'none',
+                          border: 'none',
+                          cursor: (isOutOfStock || selQty >= availableStock) ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: (isOutOfStock || selQty >= availableStock) ? '#bbb' : '#000'
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
 
-            {/* Quantity Stepper */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>QUANTITY</div>
-              <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #000', borderRadius: 999, width: 'fit-content' }}>
-                <button
-                  onClick={() => this.setState(st => ({ selQty: Math.max(1, st.selQty - 1) }))}
-                  style={{ ...font, fontSize: 18, width: 40, height: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  −
-                </button>
-                <span style={{ minWidth: 28, textAlign: 'center', fontSize: 15, fontWeight: 500 }}>{selQty}</span>
-                <button
-                  onClick={() => this.setState(st => ({ selQty: st.selQty + 1 }))}
-                  style={{ ...font, fontSize: 18, width: 40, height: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="zylo-detail-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button
-                onClick={() => this.addLine(false)}
-                style={{ ...pillBtn(true), flex: 2, minWidth: 160, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
-              >
-                Add to cart — {rs(p.price * selQty)}
-              </button>
-              <button
-                onClick={() => this.addLine(true)}
-                style={{ ...pillBtn(false), flex: 1, minWidth: 100, padding: '14px 16px', fontSize: 14, textAlign: 'center' }}
-              >
-                Buy now
-              </button>
-              <button
-                type="button"
-                onClick={() => this.toggleWishlist(p)}
-                className={`zylo-detail-wishlist-btn ${this.isWishlisted(p) ? 'active' : ''}`}
-                title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
-              >
-                <svg className="rmx-heart-svg" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-                <span>{this.isWishlisted(p) ? 'In Wishlist' : 'Wishlist'}</span>
-              </button>
-            </div>
+                  {/* Action Buttons */}
+                  <div className="zylo-detail-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      disabled={isOutOfStock || availableStock <= 0}
+                      onClick={() => this.addLine(false)}
+                      style={{
+                        ...pillBtn(true),
+                        flex: 2,
+                        minWidth: 160,
+                        padding: '14px 16px',
+                        fontSize: 14,
+                        textAlign: 'center',
+                        background: isOutOfStock ? '#e5e7eb' : '#000',
+                        color: isOutOfStock ? '#9ca3af' : '#fff',
+                        borderColor: isOutOfStock ? '#e5e7eb' : '#000',
+                        cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {isOutOfStock ? 'Out of Stock' : `Add to cart — ${rs(p.price * Math.max(1, effectiveQty))}`}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isOutOfStock || availableStock <= 0}
+                      onClick={() => this.addLine(true)}
+                      style={{
+                        ...pillBtn(false),
+                        flex: 1,
+                        minWidth: 100,
+                        padding: '14px 16px',
+                        fontSize: 14,
+                        textAlign: 'center',
+                        background: isOutOfStock ? '#f3f4f6' : '#fff',
+                        color: isOutOfStock ? '#9ca3af' : '#000',
+                        borderColor: isOutOfStock ? '#e5e7eb' : '#000',
+                        cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {isOutOfStock ? 'Unavailable' : 'Buy now'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => this.toggleWishlist(p)}
+                      className={`zylo-detail-wishlist-btn ${this.isWishlisted(p) ? 'active' : ''}`}
+                      title={this.isWishlisted(p) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    >
+                      <svg className="rmx-heart-svg" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Feature bullets */}
             <div style={{ borderTop: '1px solid #eee', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#6e6e6e' }}>
@@ -3442,7 +3838,7 @@ export default class StoreApp extends React.Component {
                       {p.name}
                     </a>
                     <div className="zylo-cart-item-meta">
-                      <span className="zylo-cart-item-size-badge">Size: {l.size}</span>
+                      <span className="zylo-cart-item-size-badge">Size: {l.size}{l.color ? ` / Colour: ${l.color}` : ''}</span>
                       <span className="zylo-cart-item-price">{rs(p.price)}</span>
                       {l.qty > 1 && (
                         <span style={{ fontSize: 12, color: '#888' }}>
@@ -3645,7 +4041,7 @@ export default class StoreApp extends React.Component {
                     <div style={{ width: 44, height: 56, background: img(p.img1), borderRadius: 4, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: '#666' }}>Size: {l.size} &times; {l.qty}</div>
+                      <div style={{ fontSize: 11, color: '#666' }}>Size: {l.size}{l.color ? ` / Colour: ${l.color}` : ''} &times; {l.qty}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{rs(p.price * l.qty)}</div>

@@ -76,22 +76,55 @@ export async function listAdminProducts(query = {}) {
     return acc;
   }, {});
 
-  const variantsByProdId = variants.reduce((acc, v) => {
-    if (!acc[v.productId]) acc[v.productId] = [];
-    acc[v.productId].push({
-      ...v,
-      availableStock: invByVariantId[v.id] || 0
+  const subVariants = variants.filter((v) => !!v.parentVariantId);
+
+  const subVariantsByParent = subVariants.reduce((acc, sv) => {
+    if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+    acc[sv.parentVariantId].push({
+      ...sv,
+      availableStock: invByVariantId[sv.id] || 0,
+      stock: invByVariantId[sv.id] || 0
     });
     return acc;
   }, {});
 
+  const variantsByProdId = variants.reduce((acc, v) => {
+    if (!acc[v.productId]) acc[v.productId] = [];
+    acc[v.productId].push(v);
+    return acc;
+  }, {});
+
   const enrichedProducts = products.map((p) => {
-    const prodVariants = variantsByProdId[p.id] || [];
-    const totalStock = prodVariants.reduce((sum, v) => sum + (v.availableStock || 0), 0);
+    const prodAllVars = variantsByProdId[p.id] || [];
+    const prodTopVars = prodAllVars.filter((v) => !v.parentVariantId);
+    const prodSubVars = prodAllVars.filter((v) => !!v.parentVariantId);
+
+    const structuredVariants = (prodTopVars.length ? prodTopVars : prodAllVars).map((v) => {
+      const subs = subVariantsByParent[v.id] || [];
+      const directStock = invByVariantId[v.id] || 0;
+      const subStock = subs.reduce((sum, s) => sum + (s.availableStock || 0), 0);
+      const stock = subs.length > 0 ? subStock : directStock;
+      return {
+        ...v,
+        subVariants: subs,
+        availableStock: stock,
+        stock
+      };
+    });
+
+    const totalStock = prodSubVars.length > 0
+      ? prodSubVars.reduce((sum, sv) => sum + (invByVariantId[sv.id] || 0), 0)
+      : prodTopVars.reduce((sum, tv) => sum + (invByVariantId[tv.id] || 0), 0);
+
     return {
       ...p,
-      variants: prodVariants,
-      variantCount: prodVariants.length,
+      variants: structuredVariants,
+      allVariants: prodAllVars.map((v) => ({
+        ...v,
+        availableStock: invByVariantId[v.id] || 0,
+        stock: invByVariantId[v.id] || 0
+      })),
+      variantCount: structuredVariants.length,
       totalStock
     };
   });
@@ -118,12 +151,6 @@ export async function getAdminProductById(productId) {
   const topVariants = allVariants.filter((v) => !v.parentVariantId);
   const subVariants = allVariants.filter((v) => !!v.parentVariantId);
 
-  const subVariantsByParent = subVariants.reduce((acc, sv) => {
-    if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
-    acc[sv.parentVariantId].push(sv);
-    return acc;
-  }, {});
-
   const variantIds = allVariants.map((v) => v.id);
   const inventories = await Inventory.find({ variantId: { $in: variantIds }, archived: false }).lean();
 
@@ -133,13 +160,33 @@ export async function getAdminProductById(productId) {
     return acc;
   }, {});
 
-  const enrichedVariants = (topVariants.length ? topVariants : allVariants).map((v) => ({
-    ...v,
-    subVariants: subVariantsByParent[v.id] || [],
-    inventory: invByVariantId[v.id] || [],
-    availableStock: (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.available, 0),
-    reservedStock: (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.reserved, 0)
+  const enrichedSubvariants = (subVariants || []).map((sv) => ({
+    ...sv,
+    inventory: invByVariantId[sv.id] || [],
+    availableStock: (invByVariantId[sv.id] || []).reduce((sum, i) => sum + i.available, 0),
+    reservedStock: (invByVariantId[sv.id] || []).reduce((sum, i) => sum + i.reserved, 0)
   }));
+
+  const subVariantsByParent = enrichedSubvariants.reduce((acc, sv) => {
+    if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+    acc[sv.parentVariantId].push(sv);
+    return acc;
+  }, {});
+
+  const enrichedVariants = (topVariants.length ? topVariants : allVariants).map((v) => {
+    const subs = subVariantsByParent[v.id] || [];
+    const directAvailable = (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.available, 0);
+    const directReserved = (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.reserved, 0);
+    const subsAvailable = subs.reduce((sum, s) => sum + (s.availableStock || 0), 0);
+    const subsReserved = subs.reduce((sum, s) => sum + (s.reservedStock || 0), 0);
+    return {
+      ...v,
+      subVariants: subs,
+      inventory: invByVariantId[v.id] || [],
+      availableStock: subs.length > 0 ? subsAvailable : directAvailable,
+      reservedStock: subs.length > 0 ? subsReserved : directReserved
+    };
+  });
 
   return {
     ...(product.toObject ? product.toObject() : product),
@@ -325,6 +372,29 @@ export async function createAdminProduct(data, user) {
           published: isSubPublished,
           status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
         });
+
+        const svStock = sv.stock !== undefined ? sv.stock : stockQty;
+        await Inventory.create({
+          id: `inv_${svId}_w1`,
+          variantId: svId,
+          warehouseId: 'w1',
+          available: svStock,
+          reserved: 0
+        });
+
+        if (svStock > 0) {
+          await StockMove.create({
+            variantId: svId,
+            warehouseId: 'w1',
+            type: 'purchase',
+            change: svStock,
+            reason: 'Initial Subvariant Stock',
+            reference: product.id,
+            before: 0,
+            after: svStock,
+            user: user ? user.name : 'Admin'
+          });
+        }
       }
 
       createdVariants.push(newVariant);
@@ -464,6 +534,37 @@ export async function updateAdminProduct(productId, updates, user) {
             status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
           }
         );
+
+        if (v.stock !== undefined) {
+          const vStock = Number(v.stock);
+          const existingInv = await Inventory.findOne({ variantId: vId });
+          if (existingInv) {
+            if (existingInv.available !== vStock) {
+              const diff = vStock - existingInv.available;
+              existingInv.available = vStock;
+              await existingInv.save();
+              await StockMove.create({
+                variantId: vId,
+                warehouseId: existingInv.warehouseId || 'w1',
+                type: diff > 0 ? 'purchase' : 'correction',
+                change: diff,
+                reason: 'Master Product Stock Update',
+                reference: product.id,
+                before: vStock - diff,
+                after: vStock,
+                user: user ? user.name : 'Admin'
+              });
+            }
+          } else {
+            await Inventory.create({
+              id: `inv_${vId}_w1`,
+              variantId: vId,
+              warehouseId: 'w1',
+              available: vStock,
+              reserved: 0
+            });
+          }
+        }
       } else {
         await Variant.create({
           id: vId,
@@ -478,11 +579,12 @@ export async function updateAdminProduct(productId, updates, user) {
           status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
         });
 
+        const vStock = v.stock !== undefined ? Number(v.stock) : 10;
         await Inventory.create({
           id: `inv_${vId}_w1`,
           variantId: vId,
           warehouseId: 'w1',
-          available: v.stock !== undefined ? v.stock : 10,
+          available: vStock,
           reserved: 0
         });
       }
@@ -502,6 +604,7 @@ export async function updateAdminProduct(productId, updates, user) {
         const isHidden = sv.hidden === true || sv.status === 'hidden';
         const isSubPublished = product.status === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
 
+        const svStock = sv.stock !== undefined ? Number(sv.stock) : (v.stock !== undefined ? Number(v.stock) : 25);
         if (existingMap.has(svId)) {
           await Variant.updateOne(
             { id: svId },
@@ -516,6 +619,33 @@ export async function updateAdminProduct(productId, updates, user) {
               status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
             }
           );
+          const existingInv = await Inventory.findOne({ variantId: svId });
+          if (existingInv) {
+            if (sv.stock !== undefined && existingInv.available !== svStock) {
+              const diff = svStock - existingInv.available;
+              existingInv.available = svStock;
+              await existingInv.save();
+              await StockMove.create({
+                variantId: svId,
+                warehouseId: existingInv.warehouseId || 'w1',
+                type: diff > 0 ? 'purchase' : 'correction',
+                change: diff,
+                reason: 'Master Product Subvariant Stock Update',
+                reference: product.id,
+                before: svStock - diff,
+                after: svStock,
+                user: user ? user.name : 'Admin'
+              });
+            }
+          } else {
+            await Inventory.create({
+              id: `inv_${svId}_w1`,
+              variantId: svId,
+              warehouseId: 'w1',
+              available: svStock,
+              reserved: 0
+            });
+          }
         } else {
           await Variant.create({
             id: svId,
@@ -528,6 +658,13 @@ export async function updateAdminProduct(productId, updates, user) {
             hidden: isHidden,
             published: isSubPublished,
             status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
+          });
+          await Inventory.create({
+            id: `inv_${svId}_w1`,
+            variantId: svId,
+            warehouseId: 'w1',
+            available: svStock,
+            reserved: 0
           });
         }
       }

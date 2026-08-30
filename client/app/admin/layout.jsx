@@ -20,7 +20,7 @@ export default function AdminLayout({ children }) {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('zylo-db');
-      } catch (e) { }
+      } catch (e) {}
     }
 
     // Auth verification guard for admin
@@ -120,7 +120,7 @@ export default function AdminLayout({ children }) {
         }
 
         setSearchResults(results);
-      } catch (err) { }
+      } catch (err) {}
     }
 
     const t = setTimeout(doSearch, 200);
@@ -166,6 +166,7 @@ export default function AdminLayout({ children }) {
     { label: 'IRD / VAT', route: '/admin/ird', icon: 'ird' },
     { section: 'Content' },
     { label: 'CMS', route: '/admin/cms', icon: 'cms' },
+    { label: 'Reviews', route: '/admin/reviews', icon: 'message' },
     { label: 'Library', route: '/admin/library', icon: 'image' },
     { label: 'Settings', route: '/admin/settings', icon: 'settings' }
   ];

@@ -127,12 +127,28 @@ export async function listProducts(params = {}) {
 
   const enriched = products.map((p) => {
     const pId = p.id || p._id.toString();
-    const pVariants = variantsByProductId[pId] || [];
-    const totalStock = pVariants.reduce((sum, v) => sum + (v.availableStock || 0), 0);
+    const allProdVars = variantsByProductId[pId] || [];
+    const topVars = allProdVars.filter((v) => !v.parentVariantId);
+    const subVars = allProdVars.filter((v) => !!v.parentVariantId);
+
+    const subVarsByParent = subVars.reduce((acc, sv) => {
+      if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+      acc[sv.parentVariantId].push(sv);
+      return acc;
+    }, {});
+
+    const enrichedTopVars = (topVars.length ? topVars : allProdVars).map((v) => ({
+      ...v,
+      subVariants: subVarsByParent[v.id] || []
+    }));
+
+    const effectiveStockVars = subVars.length > 0 ? subVars : allProdVars;
+    const totalStock = effectiveStockVars.reduce((sum, v) => sum + (v.availableStock || 0), 0);
 
     return {
       ...p,
-      variants: pVariants,
+      variants: enrichedTopVars,
+      allVariants: allProdVars,
       totalStock
     };
   });
@@ -183,11 +199,28 @@ export async function getProductBySlug(slug) {
     };
   });
 
+  const topVars = enrichedVariants.filter((v) => !v.parentVariantId);
+  const subVars = enrichedVariants.filter((v) => !!v.parentVariantId);
+
+  const subVarsByParent = subVars.reduce((acc, sv) => {
+    if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
+    acc[sv.parentVariantId].push(sv);
+    return acc;
+  }, {});
+
+  const structuredTopVars = (topVars.length ? topVars : enrichedVariants).map((v) => ({
+    ...v,
+    subVariants: subVarsByParent[v.id] || []
+  }));
+
+  const effectiveStockVars = subVars.length > 0 ? subVars : enrichedVariants;
+
   return {
     ...product,
     category,
-    variants: enrichedVariants,
-    totalStock: enrichedVariants.reduce((sum, v) => sum + v.availableStock, 0)
+    variants: structuredTopVars,
+    allVariants: enrichedVariants,
+    totalStock: effectiveStockVars.reduce((sum, v) => sum + (v.availableStock || 0), 0)
   };
 }
 

@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { Product, Variant, Inventory, StockMove, Warehouse, Category, Order, User } from '../models/index.js';
+import { Product, Variant, Inventory, StockMove, Warehouse, Category, Order, User, Review } from '../models/index.js';
 import logger from '../config/logger.js';
+import { recalculateProductRating } from './review.service.js';
 
 export const sampleProducts20 = [
   {
@@ -759,15 +760,93 @@ export async function populate20ProductsWithVariantsAndOrders() {
 
   await Order.deleteMany({});
   await Order.insertMany(sampleOrders);
-
   logger.info(`✅ Created ${sampleOrders.length} customer orders.`);
+
+  // Seed Authentic Sample Customer Reviews
+  const sampleReviews = [
+    {
+      productId: 'prod_nomad_tee',
+      user: createdCustomers[0]._id,
+      userName: createdCustomers[0].name,
+      userEmail: createdCustomers[0].email,
+      rating: 5,
+      title: 'Best heavyweight tee in Nepal',
+      comment: 'The 280 GSM fabric has substantial weight and zero shrinkage after cold wash. Collar holds its shape perfectly.',
+      color: 'Charcoal',
+      size: 'L',
+      variantLabel: 'L / Charcoal',
+      verifiedPurchase: true,
+      status: 'published',
+      createdAt: new Date(Date.now() - 3 * 24 * 3600 * 1000)
+    },
+    {
+      productId: 'prod_nomad_tee',
+      user: createdCustomers[1]._id,
+      userName: createdCustomers[1].name,
+      userEmail: createdCustomers[1].email,
+      rating: 5,
+      title: 'Flawless boxy cut',
+      comment: 'Dropped shoulders drape very nicely. Vintage white colorway is clean and versatile.',
+      color: 'Vintage White',
+      size: 'M',
+      variantLabel: 'M / Vintage White',
+      verifiedPurchase: true,
+      status: 'published',
+      createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000)
+    },
+    {
+      productId: 'prod_selvedge_denim',
+      user: createdCustomers[3]._id,
+      userName: createdCustomers[3].name,
+      userEmail: createdCustomers[3].email,
+      rating: 5,
+      title: 'Exceptional selvedge quality',
+      comment: 'Rigid 14oz denim that breaks in wonderfully. The stitching and hardware details match high-end Japanese brands.',
+      color: 'Raw Indigo',
+      size: 'XL',
+      variantLabel: 'XL / Raw Indigo',
+      verifiedPurchase: true,
+      status: 'published',
+      createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000)
+    },
+    {
+      productId: 'prod_french_terry_sweats',
+      user: createdCustomers[2]._id,
+      userName: createdCustomers[2].name,
+      userEmail: createdCustomers[2].email,
+      rating: 4,
+      title: 'Super soft and comfortable',
+      comment: 'Very cozy loopback interior. Elastic cuffs stay in place and waistband is comfortable all day.',
+      color: 'Heather Gray',
+      size: 'S',
+      variantLabel: 'S / Heather Gray',
+      verifiedPurchase: true,
+      status: 'published',
+      createdAt: new Date(Date.now() - 4 * 24 * 3600 * 1000)
+    }
+  ];
+
+  await Review.deleteMany({});
+  for (const sr of sampleReviews) {
+    const pDoc = await Product.findOne({ id: sr.productId });
+    if (pDoc) {
+      await Review.create({
+        ...sr,
+        product: pDoc._id
+      });
+      await recalculateProductRating(pDoc.id);
+    }
+  }
+
+  logger.info(`✅ Created ${sampleReviews.length} customer reviews and updated ratings.`);
 
   return {
     productsCount: sampleProducts20.length,
     variantsCount: allVariantsToInsert.length,
     inventoryCount: allInventoryToInsert.length,
     customersCount: createdCustomers.length,
-    ordersCount: sampleOrders.length
+    ordersCount: sampleOrders.length,
+    reviewsCount: sampleReviews.length
   };
 }
 

@@ -74,17 +74,63 @@ export const listInventory = asyncHandler(async (req, res) => {
   res.status(200).json({ data: { inventory } });
 });
 
+export const rebuildInventory = asyncHandler(async (req, res) => {
+  const result = await adminInventoryService.rebuildInventoryFromMasterProducts();
+  res.status(200).json({ message: result.message, data: result });
+});
+
 export const adjustStock = asyncHandler(async (req, res) => {
-  const { variantId, warehouseId, change, reason, note } = req.body;
+  const { variantId, warehouseId, change, adjustment, mode, reason, note, reference } = req.body;
   const result = await adminInventoryService.adjustStock({
     variantId,
     warehouseId,
     change,
+    adjustment,
+    mode,
     reason,
     note,
+    reference,
     user: req.user
   });
   res.status(200).json({ message: 'Stock adjusted successfully.', data: result });
+});
+
+export const updateVariantPrice = asyncHandler(async (req, res) => {
+  const variantId = req.params.variantId || req.body.variantId;
+  const { price } = req.body;
+  const result = await adminInventoryService.updateVariantPrice({
+    variantId,
+    price,
+    user: req.user
+  });
+  res.status(200).json({ message: 'Variant price updated successfully.', data: { variant: result } });
+});
+
+export const archiveVariant = asyncHandler(async (req, res) => {
+  const variantId = req.params.variantId || req.body.variantId;
+  const result = await adminInventoryService.archiveVariant({
+    variantId,
+    user: req.user
+  });
+  res.status(200).json({ message: result.message, data: result });
+});
+
+export const toggleVariantPublish = asyncHandler(async (req, res) => {
+  const variantId = req.params.variantId || req.body.variantId;
+  const { published } = req.body;
+  const result = await adminInventoryService.toggleVariantPublish({
+    variantId,
+    published,
+    user: req.user
+  });
+  res.status(200).json({ message: result.message, data: result });
+});
+
+export const getVariantTransactions = asyncHandler(async (req, res) => {
+  const variantId = req.params.variantId || req.query.variantId;
+  const sku = req.query.sku;
+  const result = await adminInventoryService.getVariantTransactions({ variantId, sku });
+  res.status(200).json({ data: result });
 });
 
 export const transferStock = asyncHandler(async (req, res) => {

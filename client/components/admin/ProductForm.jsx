@@ -196,7 +196,7 @@ export default function ProductForm({ productId = null }) {
                       name: v.name || '',
                       amount: v.price != null ? Math.round(v.price / 100) : '',
                       image: v.image || '',
-                      stock: v.stock || 0,
+                      stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
                       sku: v.sku || '',
                       status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
                       subsets: (subsByParent[v.id] || []).map(sv => ({
@@ -204,7 +204,7 @@ export default function ProductForm({ productId = null }) {
                         name: sv.name || '',
                         amount: sv.price != null ? Math.round(sv.price / 100) : '',
                         image: sv.image || '',
-                        stock: sv.stock || 0,
+                        stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
                         sku: sv.sku || '',
                         status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft'))
                       }))

@@ -14,7 +14,12 @@ import {
   purgeProducts,
   populateProducts,
   listInventory,
+  rebuildInventory,
   adjustStock,
+  updateVariantPrice,
+  archiveVariant,
+  toggleVariantPublish,
+  getVariantTransactions,
   transferStock,
   listStockMoves,
   listOrders,
@@ -80,7 +85,15 @@ router.delete('/products/:id', deleteProduct);
 
 // Inventory & Stock Moves
 router.get('/inventory', listInventory);
+router.post('/inventory/rebuild', rebuildInventory);
 router.post('/inventory/adjust', adjustStock);
+router.post('/inventory/price', updateVariantPrice);
+router.put('/inventory/variants/:variantId/price', updateVariantPrice);
+router.patch('/inventory/variants/:variantId/price', updateVariantPrice);
+router.post('/inventory/variants/:variantId/archive', archiveVariant);
+router.post('/inventory/variants/:variantId/publish', toggleVariantPublish);
+router.get('/inventory/variants/:variantId/transactions', getVariantTransactions);
+router.get('/inventory/transactions', getVariantTransactions);
 router.post('/inventory/transfer', transferStock);
 router.get('/inventory/moves', listStockMoves);
 

@@ -86,18 +86,34 @@ export async function listProductReviews(productIdOrSlug, query = {}) {
   ]);
 
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const percentages = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   breakdown.forEach((b) => {
     if (b._id >= 1 && b._id <= 5) {
       distribution[b._id] = b.count;
     }
   });
 
+  const totalReviews = total || Object.values(distribution).reduce((a, b) => a + b, 0);
+  if (totalReviews > 0) {
+    for (let r = 1; r <= 5; r++) {
+      percentages[r] = Math.round((distribution[r] / totalReviews) * 100);
+    }
+  }
+
+  // Calculate live average if product.ratingAvg is not yet synced
+  let liveAvg = product.ratingAvg || 0;
+  if (totalReviews > 0) {
+    const totalScore = (distribution[1] * 1) + (distribution[2] * 2) + (distribution[3] * 3) + (distribution[4] * 4) + (distribution[5] * 5);
+    liveAvg = Math.round((totalScore / totalReviews) * 10) / 10;
+  }
+
   return {
     reviews,
     summary: {
-      ratingAvg: product.ratingAvg || 0,
-      ratingCount: product.ratingCount || total,
-      distribution
+      ratingAvg: liveAvg,
+      ratingCount: totalReviews,
+      distribution,
+      percentages
     },
     pagination: {
       total,
@@ -114,7 +130,7 @@ export async function createProductReview(productIdOrSlug, user, data) {
     throw ApiError.notFound('Product not found.');
   }
 
-  const { rating, title = '', comment } = data;
+  const { rating, title = '', comment, color = '', size = '', variantLabel = '', images = [] } = data;
   const numRating = Number(rating);
 
   if (!numRating || numRating < 1 || numRating > 5) {
@@ -125,32 +141,63 @@ export async function createProductReview(productIdOrSlug, user, data) {
     throw ApiError.badRequest('Review comment is required.');
   }
 
+  const userId = user._id || user.id;
+
   // Check if user already reviewed this product
   const existing = await Review.findOne({
     productId: product.id,
-    user: user._id || user.id
+    user: userId
   });
 
   if (existing) {
     throw ApiError.conflict('You have already submitted a review for this product.');
   }
 
-  // Check verified purchase (user has an order with this product that is paid/delivered)
+  // Check verified purchase (user has an order with this product that is paid/confirmed/delivered)
+  const userMatch = [{ user: userId }];
+  if (user.email) {
+    userMatch.push({ guestEmail: user.email.toLowerCase().trim() });
+  }
+
   const verifiedOrder = await Order.findOne({
-    user: user._id || user.id,
-    $or: [{ 'items.productId': product.id }, { 'items.product': product._id }],
-    paymentStatus: 'paid'
+    $or: userMatch,
+    $and: [
+      { $or: [{ 'items.productId': product.id }, { 'items.product': product._id }, { 'items.productId': product.slug }] },
+      { $or: [{ paymentStatus: 'paid' }, { fulfillmentStatus: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] } }] }
+    ]
   });
+
+  // Extract purchased variant details from order if not provided
+  let finalColor = color;
+  let finalSize = size;
+  let finalVariantLabel = variantLabel;
+
+  if (verifiedOrder) {
+    const matchingItem = (verifiedOrder.items || []).find(it =>
+      it.productId === product.id || String(it.product) === String(product._id) || it.productId === product.slug
+    );
+    if (matchingItem) {
+      if (!finalVariantLabel && matchingItem.variantLabel) {
+        finalVariantLabel = matchingItem.variantLabel;
+      }
+      if (!finalSize && matchingItem.size) finalSize = matchingItem.size;
+      if (!finalColor && matchingItem.color) finalColor = matchingItem.color;
+    }
+  }
 
   const review = await Review.create({
     product: product._id,
     productId: product.id,
-    user: user._id || user.id,
-    userName: user.name || 'Anonymous Customer',
+    user: userId,
+    userName: user.name || 'Verified Customer',
     userEmail: user.email || '',
     rating: numRating,
     title: title.trim(),
     comment: comment.trim(),
+    color: finalColor ? String(finalColor).trim() : '',
+    size: finalSize ? String(finalSize).trim() : '',
+    variantLabel: finalVariantLabel ? String(finalVariantLabel).trim() : (finalColor && finalSize ? `${finalColor} / ${finalSize}` : (finalColor || finalSize || '')),
+    images: Array.isArray(images) ? images.filter(Boolean) : [],
     status: 'published',
     verifiedPurchase: !!verifiedOrder
   });

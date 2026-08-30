@@ -9,17 +9,15 @@ let server = null;
 
 async function startServer() {
   try {
-    // Attempt DB connection (non-blocking for app creation, but connected before listening)
-    try {
-      await connectDB();
-    } catch (dbErr) {
-      logger.warn({ err: dbErr.message }, 'Starting server without initial MongoDB connection (will retry or handle via /ready)');
-    }
-
     server = app.listen(env.PORT, () => {
       logger.info(`🚀 Zylo Backend API server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
       logger.info(`Health check: http://localhost:${env.PORT}/health`);
       logger.info(`Readiness check: http://localhost:${env.PORT}/ready`);
+    });
+
+    // Attempt DB connection in background
+    connectDB().catch(dbErr => {
+      logger.warn({ err: dbErr.message }, 'MongoDB connection pending/failed (will retry or handle via /ready)');
     });
   } catch (err) {
     logger.fatal({ err: err.message }, 'Failed to start server');

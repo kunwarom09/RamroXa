@@ -8,13 +8,13 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTarget = searchParams ? searchParams.get('redirect') || '/admin/dashboard' : '/admin/dashboard';
 
-  const [email, setEmail] = useState('admin@zylo.com.np');
-  const [password, setPassword] = useState('AdminPassword123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     try {
@@ -66,11 +66,11 @@ function LoginForm() {
           </div>
         )}
         <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in to Dashboard'}
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
       <p className="hint">
-        Default admin credentials have been pre-filled for immediate preview access.
+        Sign in to access the Zylo admin management dashboard.
       </p>
     </div>
   );

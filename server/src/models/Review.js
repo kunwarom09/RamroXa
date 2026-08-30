@@ -45,6 +45,25 @@ const reviewSchema = new mongoose.Schema(
       required: [true, 'Review comment is required'],
       trim: true
     },
+    color: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    size: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    variantLabel: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    images: [{
+      type: String,
+      trim: true
+    }],
     status: {
       type: String,
       enum: ['published', 'hidden'],
