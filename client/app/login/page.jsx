@@ -1,11 +1,15 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../services/apiClient';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/shop';
+  const isFromCheckout = redirect.includes('checkout');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +39,7 @@ export default function LoginPage() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/shop');
+        router.push(redirect);
       }, 800);
     } catch (err) {
       setError(err.message || 'Invalid email or password. Please try again.');
@@ -105,7 +109,9 @@ export default function LoginPage() {
               ✓
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 600, margin: '0 0 6px' }}>Signed in successfully</h2>
-            <p style={{ color: '#666', fontSize: 13, margin: 0 }}>Redirecting you to the store...</p>
+            <p style={{ color: '#666', fontSize: 13, margin: 0 }}>
+              {isFromCheckout ? 'Redirecting you to checkout...' : 'Redirecting you to the store...'}
+            </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -186,11 +192,23 @@ export default function LoginPage() {
         {/* Footer Link */}
         <div style={{ marginTop: 24, textAlign: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 18, fontSize: 13, color: '#666' }}>
           Don't have an account?{' '}
-          <Link href="/signup" style={{ color: '#000', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href={`/signup?redirect=${encodeURIComponent(redirect)}`} style={{ color: '#000', fontWeight: 600, textDecoration: 'none' }}>
             Create an Account &rarr;
           </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        Loading...
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -20,7 +20,14 @@ const envSchema = z.object({
   FONEPAY_MERCHANT_CODE: z.string().optional(),
   FONEPAY_SECRET: z.string().optional(),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
-  RATE_LIMIT_MAX: z.coerce.number().default(1000)
+  RATE_LIMIT_MAX: z.coerce.number().default(1000),
+  SMTP_SERVICE: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_SECURE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
+  SMTP_FROM: z.string().default('"Ramroxa" <noreply@ramroxa.com>')
 });
 
 const parseEnv = () => {

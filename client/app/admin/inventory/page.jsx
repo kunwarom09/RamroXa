@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { money } from '../../../services/formatters';
+import { money, fromPaisa } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
@@ -178,9 +178,9 @@ export default function AdminInventoryPage() {
   };
 
   const getVariantPrice = (v, m) => {
-    if (v && v.price != null && v.price !== '') return Number(v.price);
-    if (m && m.price != null && m.price !== '') return Number(m.price);
-    if (m && m.basePrice != null && m.basePrice !== '') return Math.round(Number(m.basePrice) / 100);
+    if (v && v.price != null && v.price !== '') return fromPaisa(v.price);
+    if (m && m.basePrice != null && m.basePrice !== '') return fromPaisa(m.basePrice);
+    if (m && m.price != null && m.price !== '') return fromPaisa(m.price);
     return 0;
   };
 
@@ -302,7 +302,7 @@ export default function AdminInventoryPage() {
         name: prod.name,
         sku: prod.sku,
         brand: prod.brand || 'Ramroxa',
-        price: prod.price || prod.basePrice || (activeVars[0] ? activeVars[0].price : 0),
+        price: prod.basePrice ? fromPaisa(prod.basePrice) : (prod.price ? fromPaisa(prod.price) : (activeVars[0] ? getVariantPrice(activeVars[0], prod) : 0)),
         totalStock: totalProdStock,
         totalReserved: totalProdReserved,
         isOutOfStock,
@@ -580,7 +580,7 @@ export default function AdminInventoryPage() {
     try {
       await api.post('/api/admin/inventory/price', {
         variantId: activeItem.v.id,
-        price: p
+        price: Math.round(p * 100)
       });
       showToast(`Selling price updated to ${money(p)} for ${activeItem.size} / ${activeItem.color}`);
       setPriceModalOpen(false);

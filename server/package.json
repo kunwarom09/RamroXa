@@ -28,6 +28,7 @@
     "jsonwebtoken": "^9.0.2",
     "migrate-mongo": "^11.0.0",
     "mongoose": "^8.13.0",
+    "nodemailer": "^9.0.6",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "pino-pretty": "^13.0.0",

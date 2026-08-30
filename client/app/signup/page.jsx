@@ -1,7 +1,7 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../services/apiClient';
 
 function EyeIcon({ show }) {
@@ -22,8 +22,12 @@ function EyeIcon({ show }) {
   );
 }
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/checkout';
+  const isFromCheckout = redirect.includes('checkout');
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -38,7 +42,11 @@ export default function SignupPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
+
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   // Live password validation rules
   const hasMinLen = formData.password.length >= 8;
@@ -75,35 +83,42 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // 1. Register account
+      // 1. Register account with verification email
+      const targetEmail = formData.email.trim().toLowerCase();
       await api.post('/api/auth/register', {
         name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: targetEmail,
         phone: formData.phone.trim(),
         address: formData.address.trim(),
         permanentAddress: formData.address.trim(),
         temporaryAddress: formData.address.trim(),
-        password: formData.password
+        password: formData.password,
+        redirect
       });
 
-      // 2. Auto-login on success
-      const loginRes = await api.post('/api/auth/login', {
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password
-      });
-
-      if (loginRes?.data?.user) {
-        localStorage.setItem('zylo_user', JSON.stringify(loginRes.data.user));
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        router.push('/shop');
-      }, 1200);
+      setRegisteredEmail(targetEmail);
+      setVerificationSent(true);
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!registeredEmail) return;
+    setResendLoading(true);
+    setResendMessage('');
+    try {
+      const res = await api.post('/api/auth/resend-verification', {
+        email: registeredEmail,
+        redirect
+      });
+      setResendMessage(res.message || 'A fresh verification link has been sent to your email.');
+    } catch (err) {
+      setResendMessage(err.message || 'Could not resend email. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -126,7 +141,7 @@ export default function SignupPage() {
         }
       `}</style>
       {/* Brand Header */}
-      <div style={{ textAlign: 'center', marginBottom: 28 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <Link href="/shop" style={{ textDecoration: 'none', color: '#000' }}>
           <span style={{ fontSize: 28, letterSpacing: 6, fontWeight: 700 }}>RAMROXA</span>
         </Link>
@@ -157,24 +172,101 @@ export default function SignupPage() {
           </div>
         )}
 
-        {success ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px' }}>
+        {verificationSent ? (
+          /* Email Verification Sent View */
+          <div style={{ textAlign: 'center', padding: '16px 8px' }}>
             <div style={{
-              width: 56,
-              height: 56,
+              width: 64,
+              height: 64,
               borderRadius: '50%',
               background: '#000',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 26,
-              margin: '0 auto 16px'
+              fontSize: 28,
+              margin: '0 auto 20px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
             }}>
-              ✓
+              ✉️
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 600, margin: '0 0 8px' }}>Account Created!</h2>
-            <p style={{ color: '#666', fontSize: 14, margin: 0 }}>Signing you in and redirecting to the storefront...</p>
+            <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 10px', color: '#111' }}>
+              Verify Your Email
+            </h2>
+            <p style={{ color: '#555', fontSize: 14, lineHeight: 1.6, margin: '0 0 20px' }}>
+              We have sent a verification link to:
+              <br />
+              <strong style={{ color: '#000', fontSize: 15 }}>{registeredEmail}</strong>
+            </p>
+
+            <div style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 10,
+              padding: '16px 20px',
+              textAlign: 'left',
+              marginBottom: 24,
+              fontSize: 13,
+              color: '#475569',
+              lineHeight: 1.6
+            }}>
+              <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 6 }}>Next steps:</div>
+              1. Open your email inbox and click the verification button.
+              <br />
+              2. You will be automatically authenticated and returned to your <strong>checkout page</strong> with your cart intact.
+              <br />
+              <span style={{ fontSize: 12, color: '#888' }}>(Be sure to check your Spam / Junk folder if you don't see it within a minute.)</span>
+            </div>
+
+            {resendMessage && (
+              <div style={{
+                background: '#f0fdf4',
+                color: '#16a34a',
+                border: '1px solid #bbf7d0',
+                padding: '10px 14px',
+                borderRadius: 8,
+                fontSize: 12.5,
+                marginBottom: 16
+              }}>
+                {resendMessage}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendLoading}
+                style={{
+                  width: '100%',
+                  height: 42,
+                  background: resendLoading ? '#eaeaea' : '#f3f4f6',
+                  color: resendLoading ? '#999' : '#111',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: resendLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {resendLoading ? 'SENDING LINK...' : 'RESEND VERIFICATION EMAIL'}
+              </button>
+
+              <Link
+                href={`/login?redirect=${encodeURIComponent(redirect)}`}
+                style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '10px',
+                  color: '#666',
+                  fontSize: 13,
+                  textDecoration: 'none'
+                }}
+              >
+                Already verified? <strong style={{ color: '#000' }}>Sign In &rarr;</strong>
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -448,7 +540,7 @@ export default function SignupPage() {
                 transition: 'background 0.15s ease'
               }}
             >
-              {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT & SIGN IN'}
+              {loading ? 'CREATING ACCOUNT...' : (isFromCheckout ? 'CREATE ACCOUNT & VERIFY EMAIL' : 'CREATE ACCOUNT')}
             </button>
           </form>
         )}
@@ -456,11 +548,23 @@ export default function SignupPage() {
         {/* Footer Link */}
         <div style={{ marginTop: 24, textAlign: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 18, fontSize: 13, color: '#666' }}>
           Already have an account?{' '}
-          <Link href="/login" style={{ color: '#000', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href={`/login?redirect=${encodeURIComponent(redirect)}`} style={{ color: '#000', fontWeight: 600, textDecoration: 'none' }}>
             Sign In &rarr;
           </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        Loading...
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

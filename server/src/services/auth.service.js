@@ -1,5 +1,6 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { User, Session } from '../models/index.js';
+import { User, Session, VerificationToken } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import {
   generateAccessToken,
@@ -7,9 +8,10 @@ import {
   hashToken,
   REFRESH_TOKEN_EXPIRY_DAYS
 } from '../utils/token.js';
+import { sendVerificationEmail } from './email.service.js';
 
 export async function register(data) {
-  const { email, password, name, phone, permanentAddress, temporaryAddress } = data;
+  const { email, password, name, phone, permanentAddress, temporaryAddress, redirect } = data;
 
   if (!email || !password || !name) {
     throw ApiError.badRequest('Email, password, and name are required.');
@@ -45,7 +47,122 @@ export async function register(data) {
     isActive: true
   });
 
-  return user;
+  // Generate verification token (24h expiry)
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await VerificationToken.create({
+    user: user._id,
+    token: rawToken,
+    type: 'email_verification',
+    expiresAt
+  });
+
+  // Send verification email via nodemailer
+  await sendVerificationEmail({
+    user,
+    token: rawToken,
+    redirect: redirect || '/checkout'
+  });
+
+  return {
+    user,
+    emailVerificationSent: true
+  };
+}
+
+export async function verifyEmail({ token, userAgent = '', ip = '' }) {
+  if (!token || typeof token !== 'string') {
+    throw ApiError.badRequest('Verification token is required.');
+  }
+
+  const tokenDoc = await VerificationToken.findOne({
+    token: token.trim(),
+    type: 'email_verification'
+  });
+
+  if (!tokenDoc) {
+    throw ApiError.badRequest('Invalid or expired email verification link. Please request a new link.');
+  }
+
+  if (tokenDoc.expiresAt < new Date()) {
+    await VerificationToken.deleteOne({ _id: tokenDoc._id });
+    throw ApiError.badRequest('Email verification link has expired. Please request a new verification link.');
+  }
+
+  const user = await User.findById(tokenDoc.user);
+  if (!user || user.deletedAt) {
+    throw ApiError.notFound('User account associated with this verification link was not found.');
+  }
+
+  // Mark verified
+  user.isEmailVerified = true;
+  user.isActive = true;
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  // Delete all verification tokens for this user
+  await VerificationToken.deleteMany({ user: user._id });
+
+  // Create active login session
+  const rawRefreshToken = generateRefreshToken();
+  const refreshTokenHash = hashToken(rawRefreshToken);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+  const session = await Session.create({
+    user: user._id,
+    refreshTokenHash,
+    userAgent,
+    ip,
+    expiresAt
+  });
+
+  const accessToken = generateAccessToken(user, session._id);
+
+  return {
+    user,
+    accessToken,
+    refreshToken: rawRefreshToken,
+    sessionId: session._id
+  };
+}
+
+export async function resendVerificationEmail({ email, redirect = '/checkout' }) {
+  if (!email) {
+    throw ApiError.badRequest('Email address is required.');
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim(), deletedAt: null });
+  if (!user) {
+    // For security, do not confirm or deny account existence
+    return { message: 'If an account exists with that email, a verification link has been sent.' };
+  }
+
+  if (user.isEmailVerified) {
+    return { message: 'Your email address is already verified. You may sign in to continue.' };
+  }
+
+  // Remove existing tokens
+  await VerificationToken.deleteMany({ user: user._id, type: 'email_verification' });
+
+  // Create fresh token
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await VerificationToken.create({
+    user: user._id,
+    token: rawToken,
+    type: 'email_verification',
+    expiresAt
+  });
+
+  await sendVerificationEmail({
+    user,
+    token: rawToken,
+    redirect: redirect || '/checkout'
+  });
+
+  return { message: 'A new verification link has been sent to your email address.' };
 }
 
 export async function login({ email, password, userAgent = '', ip = '', requireAdminRole = false }) {
@@ -175,6 +292,8 @@ export async function updateProfile(userId, data) {
 export default { 
   register, 
   login, 
+  verifyEmail,
+  resendVerificationEmail,
   refreshTokens, 
   logout,
   updateProfile 

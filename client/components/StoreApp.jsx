@@ -1031,17 +1031,28 @@ export default class StoreApp extends React.Component {
       targetUrl = `/product/${slugForProduct(p, selIndex)}`;
     }
 
-    if (v === 'checkout' && this.state.currentUser) {
-      const u = this.state.currentUser;
-      const addr = this.state.profileTemporaryAddress || u.temporaryAddress || this.state.profilePermanentAddress || u.permanentAddress || u.address || '';
-      if (addr) {
-        extraState.cAddress = addr;
-      }
-      if (!this.state.cName && u.name) {
-        extraState.cName = u.name;
-      }
-      if (!this.state.cPhone && u.phone) {
-        extraState.cPhone = u.phone;
+    if (v === 'checkout') {
+      if (!this.state.currentUser) {
+        if (typeof window !== 'undefined') {
+          saveStoredCart(this.state.cart);
+          if (this.state.cName) localStorage.setItem('zylo-c-name', this.state.cName);
+          if (this.state.cPhone) localStorage.setItem('zylo-c-phone', this.state.cPhone);
+          if (this.state.cAddress) localStorage.setItem('zylo-c-address', this.state.cAddress);
+          window.location.href = '/signup?redirect=/checkout';
+          return;
+        }
+      } else {
+        const u = this.state.currentUser;
+        const addr = this.state.profileTemporaryAddress || u.temporaryAddress || this.state.profilePermanentAddress || u.permanentAddress || u.address || '';
+        if (addr) {
+          extraState.cAddress = addr;
+        }
+        if (!this.state.cName && u.name) {
+          extraState.cName = u.name;
+        }
+        if (!this.state.cPhone && u.phone) {
+          extraState.cPhone = u.phone;
+        }
       }
     }
 
@@ -1137,6 +1148,10 @@ export default class StoreApp extends React.Component {
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', this._cmsStorageHandler);
+      const storedCart = loadStoredCart();
+      if (Array.isArray(storedCart) && storedCart.length > 0) {
+        this.setState({ cart: storedCart });
+      }
     }
 
     // Collections Hero Carousel Auto-timer
@@ -1192,6 +1207,11 @@ export default class StoreApp extends React.Component {
         }
         if (user && (this.state.view === 'account' || this.props.initialView === 'account')) {
           this.loadUserOrders();
+        }
+        if (!user && (this.state.view === 'checkout' || this.props.initialView === 'checkout')) {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/signup?redirect=/checkout';
+          }
         }
       } catch (e) { }
     };
@@ -3984,79 +4004,129 @@ export default class StoreApp extends React.Component {
         <div className="zylo-checkout-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, alignItems: 'start' }}>
           {/* Left: Customer & Shipping Details */}
           <div className="zylo-checkout-form">
-            <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, letterSpacing: 0.5 }}>1. SHIPPING & CONTACT</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>FULL NAME *</label>
-                  <input
-                    value={cName}
-                    onChange={e => this.setState({ cName: e.target.value })}
-                    placeholder="e.g. Aarav Sharma"
-                    style={{ ...input, width: '100%' }}
-                  />
+            {!currentUser ? (
+              <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 16, padding: '36px 32px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', marginBottom: 24 }}>
+                <div style={{ width: 50, height: 50, borderRadius: '50%', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 18 }}>
+                  🔒
                 </div>
-                <div>
-                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>PHONE NUMBER *</label>
-                  <input
-                    value={cPhone}
-                    onChange={e => this.setState({ cPhone: e.target.value })}
-                    placeholder="e.g. 9801234567"
-                    style={{ ...input, width: '100%' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>ADDRESS *</label>
-                  {(() => {
-                    const defaultSavedAddr = profilePermanentAddress || profileTemporaryAddress || currentUser?.address || currentUser?.permanentAddress || currentUser?.temporaryAddress || '';
-                    const activeAddress = (currentUser && defaultSavedAddr && cAddress === 'Singadurbar') ? defaultSavedAddr : (cAddress || defaultSavedAddr || '');
-                    return (
-                      <input
-                        value={activeAddress}
-                        onChange={e => this.setState({ cAddress: e.target.value })}
-                        placeholder="e.g. Ward 4, Baluwatar, Kathmandu (Opposite Landmark)"
-                        style={{ ...input, width: '100%', height: 44 }}
-                      />
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, letterSpacing: 0.5 }}>2. PAYMENT METHOD</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {METHODS.map(m => (
-                  <label
-                    key={m.id}
+                <h3 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 10px', color: '#111' }}>Sign In or Sign Up to Complete Checkout</h3>
+                <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>
+                  Please create an account and verify your email to place this order securely. Your cart items are preserved and will be ready when you return!
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <a
+                    href="/signup?redirect=/checkout"
                     style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 12,
-                      padding: 14,
-                      border: pay === m.id ? '2px solid #000' : '1px solid #ddd',
+                      display: 'block',
+                      textAlign: 'center',
+                      background: '#000',
+                      color: '#fff',
+                      textDecoration: 'none',
+                      padding: '14px 20px',
                       borderRadius: 8,
-                      background: pay === m.id ? '#000' : '#fff',
-                      color: pay === m.id ? '#fff' : '#000',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      fontSize: 13,
+                      fontWeight: 600,
+                      letterSpacing: 1
                     }}
                   >
-                    <input
-                      type="radio"
-                      name="pay"
-                      checked={pay === m.id}
-                      onChange={() => this.setState({ pay: m.id })}
-                      style={{ marginTop: 3 }}
-                    />
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
-                      <div style={{ fontSize: 12, color: pay === m.id ? '#ccc' : '#666', marginTop: 2 }}>{m.desc}</div>
-                    </div>
-                  </label>
-                ))}
+                    CREATE ACCOUNT & VERIFY EMAIL &rarr;
+                  </a>
+                  <a
+                    href="/login?redirect=/checkout"
+                    style={{
+                      display: 'block',
+                      textAlign: 'center',
+                      background: '#f3f4f6',
+                      color: '#111',
+                      textDecoration: 'none',
+                      padding: '14px 20px',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      letterSpacing: 1
+                    }}
+                  >
+                    ALREADY HAVE AN ACCOUNT? SIGN IN &rarr;
+                  </a>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, letterSpacing: 0.5 }}>1. SHIPPING & CONTACT</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div>
+                      <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>FULL NAME *</label>
+                      <input
+                        value={cName}
+                        onChange={e => this.setState({ cName: e.target.value })}
+                        placeholder="e.g. Aarav Sharma"
+                        style={{ ...input, width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>PHONE NUMBER *</label>
+                      <input
+                        value={cPhone}
+                        onChange={e => this.setState({ cPhone: e.target.value })}
+                        placeholder="e.g. 9801234567"
+                        style={{ ...input, width: '100%' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, letterSpacing: 1.5, display: 'block', marginBottom: 6, fontWeight: 600 }}>ADDRESS *</label>
+                      {(() => {
+                        const defaultSavedAddr = profilePermanentAddress || profileTemporaryAddress || currentUser?.address || currentUser?.permanentAddress || currentUser?.temporaryAddress || '';
+                        const activeAddress = (currentUser && defaultSavedAddr && cAddress === 'Singadurbar') ? defaultSavedAddr : (cAddress || defaultSavedAddr || '');
+                        return (
+                          <input
+                            value={activeAddress}
+                            onChange={e => this.setState({ cAddress: e.target.value })}
+                            placeholder="e.g. Ward 4, Baluwatar, Kathmandu (Opposite Landmark)"
+                            style={{ ...input, width: '100%', height: 44 }}
+                          />
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ border: '1px solid #e0e0e0', borderRadius: 12, padding: 24 }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, letterSpacing: 0.5 }}>2. PAYMENT METHOD</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {METHODS.map(m => (
+                      <label
+                        key={m.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 12,
+                          padding: 14,
+                          border: pay === m.id ? '2px solid #000' : '1px solid #ddd',
+                          borderRadius: 8,
+                          background: pay === m.id ? '#000' : '#fff',
+                          color: pay === m.id ? '#fff' : '#000',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="pay"
+                          checked={pay === m.id}
+                          onChange={() => this.setState({ pay: m.id })}
+                          style={{ marginTop: 3 }}
+                        />
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
+                          <div style={{ fontSize: 12, color: pay === m.id ? '#ccc' : '#666', marginTop: 2 }}>{m.desc}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Right: Order Summary & Place Button */}
@@ -4115,7 +4185,7 @@ export default class StoreApp extends React.Component {
               <span>{rs(total)}</span>
             </div>
             <button
-              onClick={this.placeOrder}
+              onClick={!currentUser ? () => { window.location.href = '/signup?redirect=/checkout'; } : this.placeOrder}
               style={{
                 ...pillBtn(true),
                 width: '100%',
@@ -4126,7 +4196,7 @@ export default class StoreApp extends React.Component {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
               }}
             >
-              CONFIRM ORDER &rarr;
+              {!currentUser ? 'SIGN UP TO COMPLETE ORDER \u2192' : 'CONFIRM ORDER \u2192'}
             </button>
             <p style={{ textAlign: 'center', fontSize: 11, color: '#888', marginTop: 12 }}>
               Secure checkout &bull; Instant order confirmation
