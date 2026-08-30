@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const returnItemSchema = new mongoose.Schema(
   {
-    sku: { type: String, required: true },
+    sku: { type: String, default: '' },
     desc: { type: String, default: '' },
     rate: { type: Number, default: 0 },
     bought: { type: Number, default: 1 },
@@ -15,7 +15,7 @@ const returnItemSchema = new mongoose.Schema(
 
 const salesReturnSchema = new mongoose.Schema(
   {
-    id: { type: String, unique: true, index: true },
+    id: { type: String, unique: true, sparse: true, index: true },
     no: { type: String, required: true, unique: true, uppercase: true, index: true },
     saleId: { type: String, default: '' },
     orderNo: { type: String, default: '', index: true },
@@ -23,14 +23,23 @@ const salesReturnSchema = new mongoose.Schema(
     customer: { type: String, required: true },
     customerPhone: { type: String, default: '' },
     date: { type: String, default: () => new Date().toISOString().slice(0, 10) },
-    type: { type: String, enum: ['full', 'item', 'quantity', 'custom'], default: 'full' },
+    type: {
+      type: String,
+      enum: ['full', 'payment', 'item', 'quantity', 'custom'],
+      default: 'full'
+    },
     reason: { type: String, required: true },
-    restock: { type: String, enum: ['available', 'damaged', 'none'], default: 'available' },
+    restock: {
+      type: String,
+      enum: ['available', 'damaged', 'inspection', 'none'],
+      default: 'available'
+    },
     warehouseId: { type: String, default: 'w1' },
     items: [returnItemSchema],
     refundNet: { type: Number, default: 0 },
     refundVat: { type: Number, default: 0 },
     refundAmount: { type: Number, required: true },
+    alreadyRefunded: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ['pending', 'inspected', 'approved', 'refunded', 'rejected', 'completed'],
@@ -44,7 +53,8 @@ const salesReturnSchema = new mongoose.Schema(
         data: { type: String },
         type: { type: String }
       }
-    ]
+    ],
+    idempotencyKey: { type: String, unique: true, sparse: true, index: true }
   },
   {
     timestamps: true,
@@ -60,6 +70,7 @@ const salesReturnSchema = new mongoose.Schema(
 );
 
 salesReturnSchema.index({ createdAt: -1 });
+salesReturnSchema.index({ orderNo: 1, status: 1 });
 
 export const SalesReturn = mongoose.models.SalesReturn || mongoose.model('SalesReturn', salesReturnSchema);
 export default SalesReturn;
