@@ -153,9 +153,9 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
       enabled: true,
       widgetType: 'video_bg',
       config: {
-        videoUrl: '',
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
         posterImage: '/assets/59a3737ee018272f.q.jpg',
-        autoplay: false,
+        autoplay: true,
         muted: true,
         loop: true,
         eyebrow: 'THE RAMROXA WAY',
@@ -315,7 +315,23 @@ export function loadHomepageConfig() {
     if (!raw) return DEFAULT_HOMEPAGE_CONFIG;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-      return { sections: parsed.sections };
+      // Ensure video sections have valid videoUrl fallback
+      const sections = parsed.sections.map((sec) => {
+        if (sec.type === 'video' && sec.config && !sec.config.videoUrl) {
+          return {
+            ...sec,
+            config: {
+              ...sec.config,
+              videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+              autoplay: sec.config.autoplay !== false,
+              muted: sec.config.muted !== false,
+              loop: sec.config.loop !== false
+            }
+          };
+        }
+        return sec;
+      });
+      return { sections };
     }
     return DEFAULT_HOMEPAGE_CONFIG;
   } catch (e) {

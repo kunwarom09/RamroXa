@@ -747,7 +747,24 @@ function CategoriesSection({ section, onNav }) {
 function VideoSection({ section, onNav }) {
   const { widgetType = 'video_bg', config = {} } = section;
   const videoRef = useRef(null);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
+  const [muted, setMuted] = useState(config.muted !== false);
+
+  const activeVideoUrl = config.videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4';
+  const activePoster = config.posterImage || '/assets/59a3737ee018272f.q.jpg';
+
+  useEffect(() => {
+    if (videoRef.current && config.autoplay !== false) {
+      videoRef.current.play().catch(() => {
+        // Browser autoplay policy prevented audio playback; retain muted state
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          setMuted(true);
+          videoRef.current.play().catch(() => {});
+        }
+      });
+    }
+  }, [activeVideoUrl, config.autoplay]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -755,9 +772,14 @@ function VideoSection({ section, onNav }) {
       videoRef.current.pause();
       setPlaying(false);
     } else {
-      videoRef.current.play();
-      setPlaying(true);
+      videoRef.current.play().then(() => setPlaying(true)).catch(() => {});
     }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !muted;
+    setMuted(!muted);
   };
 
   const handleCta = (url) => {
@@ -773,19 +795,36 @@ function VideoSection({ section, onNav }) {
         <div className="rmx-section-inner">
           <div className="rmx-video-split-grid">
             <div className="rmx-video-split-media">
-              {config.videoUrl ? (
-                <video src={config.videoUrl} poster={config.posterImage} controls className="rmx-video-el" />
+              {activeVideoUrl ? (
+                <video
+                  ref={videoRef}
+                  src={activeVideoUrl}
+                  poster={activePoster}
+                  autoPlay={config.autoplay !== false}
+                  muted={muted}
+                  loop={config.loop !== false}
+                  playsInline
+                  controls
+                  className="rmx-video-el"
+                />
               ) : (
-                <div className="rmx-video-placeholder" style={{ backgroundImage: `url('${config.posterImage || '/assets/44312e50fe56c782.q.jpg'}')` }} />
+                <div className="rmx-video-placeholder" style={{ backgroundImage: `url('${activePoster}')` }} />
               )}
             </div>
             <div className="rmx-video-split-text">
               {config.eyebrow && <span className="rmx-hero-eyebrow">{config.eyebrow}</span>}
               <h2 className="rmx-section-title" style={{ fontSize: '32px', margin: '8px 0 16px' }}>{config.heading || 'Move with Ramroxa'}</h2>
-              <p className="rmx-hero-desc" style={{ color: '#555', marginBottom: '24px' }}>{config.description}</p>
-              <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
-                {config.cta || 'Explore Collection'}
-              </button>
+              <p className="rmx-hero-desc" style={{ color: '#555', marginBottom: '24px' }}>{config.description || 'Step into style that moves with you. Engineered for comfort, designed for everyday elevation.'}</p>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
+                  {config.cta || 'Explore Collection'}
+                </button>
+                {activeVideoUrl && (
+                  <button className="rmx-btn-outline" onClick={togglePlay}>
+                    {playing ? 'Pause' : 'Play'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -797,35 +836,40 @@ function VideoSection({ section, onNav }) {
   return (
     <section className="rmx-video-section">
       <div className="rmx-video-wrap">
-        {config.videoUrl ? (
+        {activeVideoUrl ? (
           <video
             ref={videoRef}
-            src={config.videoUrl}
-            poster={config.posterImage || undefined}
-            autoPlay={config.autoplay}
-            muted={config.muted !== false}
+            src={activeVideoUrl}
+            poster={activePoster}
+            autoPlay={config.autoplay !== false}
+            muted={muted}
             loop={config.loop !== false}
             playsInline
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             className="rmx-video-el"
           />
         ) : (
-          <div className="rmx-video-placeholder" style={{ backgroundImage: config.posterImage ? `url('${config.posterImage}')` : undefined }} />
+          <div className="rmx-video-placeholder" style={{ backgroundImage: `url('${activePoster}')` }} />
         )}
         <div className="rmx-video-overlay" />
         <div className="rmx-video-content">
           {config.eyebrow && <span className="rmx-hero-eyebrow">{config.eyebrow}</span>}
-          {config.heading && <h2 className="rmx-video-heading">{config.heading}</h2>}
-          {config.description && <p className="rmx-hero-desc">{config.description}</p>}
-          <div className="rmx-hero-actions" style={{ marginTop: '24px' }}>
-            {config.cta && (
-              <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
-                {config.cta}
-              </button>
-            )}
-            {config.videoUrl && (
-              <button className="rmx-btn-outline" onClick={togglePlay}>
-                {playing ? 'Pause' : 'Play Video'}
-              </button>
+          <h2 className="rmx-video-heading">{config.heading || 'Move with Ramroxa'}</h2>
+          <p className="rmx-hero-desc">{config.description || 'Step into style that moves with you. Engineered for comfort, designed for everyday elevation.'}</p>
+          <div className="rmx-hero-actions" style={{ marginTop: '24px', display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
+              {config.cta || 'Explore Collection'}
+            </button>
+            {activeVideoUrl && (
+              <>
+                <button className="rmx-btn-outline" onClick={togglePlay} style={{ minWidth: '100px' }}>
+                  {playing ? '⏸ Pause' : '▶ Play'}
+                </button>
+                <button className="rmx-btn-outline" onClick={toggleMute} style={{ minWidth: '100px' }}>
+                  {muted ? '🔇 Unmute' : '🔊 Mute'}
+                </button>
+              </>
             )}
           </div>
         </div>

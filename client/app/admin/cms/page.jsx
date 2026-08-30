@@ -13,7 +13,7 @@ import {
   saveHomepageConfig,
   resetHomepageConfig
 } from '../../../services/homepageCms';
-import { ImagePickerField, MediaPickerModal } from '../../../components/admin/MediaPickerModal';
+import { ImagePickerField, VideoPickerField, MediaPickerModal } from '../../../components/admin/MediaPickerModal';
 import { uploadMediaFile } from '../../../services/mediaLibrary';
 
 export default function AdminCmsPage() {
@@ -857,41 +857,94 @@ export default function AdminCmsPage() {
 
                     {/* ─── Video Narrative Config ─── */}
                     {sec.type === 'video' && (
-                      <div className="form-grid-2">
-                        <div className="field">
-                          <label>Video URL (.mp4 / stream)</label>
-                          <input
-                            value={sec.config?.videoUrl || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'videoUrl', e.target.value)}
-                            placeholder="https://..."
-                          />
-                        </div>
-                        <ImagePickerField
-                          label="Video Poster Image"
-                          value={sec.config?.posterImage || ''}
-                          onChange={(val) => handleConfigChange(sec.id, 'posterImage', val)}
-                          placeholder="Choose poster image..."
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <VideoPickerField
+                          label="Video URL (.mp4 / stream / upload)"
+                          value={sec.config?.videoUrl || ''}
+                          onChange={(val) => handleConfigChange(sec.id, 'videoUrl', val)}
+                          posterValue={sec.config?.posterImage || ''}
+                          onPosterChange={(posterVal) => handleConfigChange(sec.id, 'posterImage', posterVal)}
+                          placeholder="https://... or click Upload .mp4"
                         />
-                        <div className="field">
-                          <label>Heading</label>
-                          <input
-                            value={sec.config?.heading || ''}
-                            onChange={(e) => handleConfigChange(sec.id, 'heading', e.target.value)}
+
+                        <div className="form-grid-2">
+                          <ImagePickerField
+                            label="Video Fallback / Poster Image"
+                            value={sec.config?.posterImage || ''}
+                            onChange={(val) => handleConfigChange(sec.id, 'posterImage', val)}
+                            placeholder="Choose poster image..."
                           />
+                          <div className="field">
+                            <label>Eyebrow Badge Tag</label>
+                            <input
+                              value={sec.config?.eyebrow || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'eyebrow', e.target.value)}
+                              placeholder="THE RAMROXA WAY"
+                            />
+                          </div>
+                          <div className="field">
+                            <label>Main Heading</label>
+                            <input
+                              value={sec.config?.heading || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'heading', e.target.value)}
+                              placeholder="Move with Ramroxa"
+                            />
+                          </div>
+                          <div className="field">
+                            <label>Narrative Description</label>
+                            <input
+                              value={sec.config?.description || ''}
+                              onChange={(e) => handleConfigChange(sec.id, 'description', e.target.value)}
+                              placeholder="Step into style that moves with you..."
+                            />
+                          </div>
                         </div>
-                        <div className="field">
-                          <label>Button Label &amp; URL</label>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <input
-                              value={sec.config?.cta || ''}
-                              onChange={(e) => handleConfigChange(sec.id, 'cta', e.target.value)}
-                              placeholder="Explore Collection"
-                            />
-                            <input
-                              value={sec.config?.ctaUrl || ''}
-                              onChange={(e) => handleConfigChange(sec.id, 'ctaUrl', e.target.value)}
-                              placeholder="/shop"
-                            />
+
+                        <div className="form-grid-2">
+                          <div className="field">
+                            <label>CTA Button Label &amp; URL</label>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <input
+                                value={sec.config?.cta || ''}
+                                onChange={(e) => handleConfigChange(sec.id, 'cta', e.target.value)}
+                                placeholder="Explore Collection"
+                              />
+                              <input
+                                value={sec.config?.ctaUrl || ''}
+                                onChange={(e) => handleConfigChange(sec.id, 'ctaUrl', e.target.value)}
+                                placeholder="/shop"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="field">
+                            <label>Playback Options</label>
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={sec.config?.autoplay !== false}
+                                  onChange={(e) => handleConfigChange(sec.id, 'autoplay', e.target.checked)}
+                                />
+                                Autoplay Video
+                              </label>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={sec.config?.muted !== false}
+                                  onChange={(e) => handleConfigChange(sec.id, 'muted', e.target.checked)}
+                                />
+                                Muted (Recommended)
+                              </label>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={sec.config?.loop !== false}
+                                  onChange={(e) => handleConfigChange(sec.id, 'loop', e.target.checked)}
+                                />
+                                Loop
+                              </label>
+                            </div>
                           </div>
                         </div>
                       </div>

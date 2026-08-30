@@ -381,3 +381,229 @@ export function ImagePickerField({ label, value, onChange, placeholder = 'No ima
     </div>
   );
 }
+
+// ─── REUSABLE VIDEO PICKER FIELD COMPONENT ──────────────────────────────────
+export function VideoPickerField({
+  label = 'Video URL (.mp4 / stream)',
+  value,
+  onChange,
+  posterValue,
+  onPosterChange,
+  placeholder = 'https://... or upload .mp4'
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const presets = [
+    {
+      name: '🌆 Neon Streetwear Brand Film',
+      url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+      poster: '/assets/59a3737ee018272f.q.jpg'
+    },
+    {
+      name: '👟 Sneakers In Motion',
+      url: 'https://assets.mixkit.co/videos/preview/mixkit-feet-of-a-person-walking-in-sneakers-42930-large.mp4',
+      poster: '/assets/98eab38550301ca9.q.jpg'
+    },
+    {
+      name: '🧥 Tailoring & Artisan Workshop',
+      url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-cutting-fabric-in-a-tailoring-workshop-43759-large.mp4',
+      poster: '/assets/44312e50fe56c782.q.jpg'
+    }
+  ];
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const newItem = await uploadMediaFile(file, 'Videos');
+      onChange(newItem.url);
+    } catch (err) {
+      console.error('Video upload failed:', err);
+      alert('Failed to upload video: ' + (err.message || 'Unknown error'));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const togglePreview = () => {
+    if (!videoRef.current) return;
+    if (previewPlaying) {
+      videoRef.current.pause();
+      setPreviewPlaying(false);
+    } else {
+      videoRef.current.play();
+      setPreviewPlaying(true);
+    }
+  };
+
+  return (
+    <div className="field" style={{ gridColumn: '1 / -1' }}>
+      {label && <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{label}</span>
+        {value && <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>✓ Video Connected</span>}
+      </label>}
+
+      <div style={{
+        background: 'var(--surface)',
+        padding: '14px',
+        borderRadius: '8px',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        {/* Main Video Input & Actions */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            style={{
+              flex: 1,
+              fontSize: '13px',
+              padding: '8px 12px',
+              fontFamily: 'monospace'
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Icon name="upload" size={14} />
+            {uploading ? 'Uploading Video...' : '⬆ Upload .mp4'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            style={{ whiteSpace: 'nowrap' }}
+            onClick={() => setModalOpen(true)}
+          >
+            🎬 Media Library
+          </button>
+          {value && (
+            <button
+              type="button"
+              className="btn btn-sm btn-danger"
+              onClick={() => onChange('')}
+              title="Clear video URL"
+            >
+              Clear
+            </button>
+          )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="video/*"
+            style={{ display: 'none' }}
+            onChange={handleVideoUpload}
+          />
+        </div>
+
+        {/* Video Presets Row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', color: 'var(--muted-foreground)', fontWeight: 600 }}>⚡ Presets:</span>
+          {presets.map((pr, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="btn btn-sm"
+              style={{
+                fontSize: '11px',
+                padding: '3px 8px',
+                background: value === pr.url ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'var(--canvas)',
+                borderColor: value === pr.url ? 'var(--accent)' : 'var(--border)'
+              }}
+              onClick={() => {
+                onChange(pr.url);
+                if (onPosterChange && pr.poster) onPosterChange(pr.poster);
+              }}
+            >
+              {pr.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Live Video Preview Box */}
+        {value && (
+          <div style={{
+            position: 'relative',
+            borderRadius: '6px',
+            overflow: 'hidden',
+            background: '#0a0a0a',
+            border: '1px solid var(--border)',
+            maxHeight: '220px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <video
+              ref={videoRef}
+              src={value}
+              poster={posterValue || undefined}
+              loop
+              muted
+              playsInline
+              style={{ width: '100%', maxHeight: '220px', objectFit: 'cover' }}
+              onPlay={() => setPreviewPlaying(true)}
+              onPause={() => setPreviewPlaying(false)}
+            />
+            <button
+              type="button"
+              onClick={togglePreview}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'rgba(0,0,0,0.65)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                backdropFilter: 'blur(4px)'
+              }}
+              title={previewPlaying ? 'Pause video' : 'Play video'}
+            >
+              {previewPlaying ? '⏸' : '▶'}
+            </button>
+            <div style={{
+              position: 'absolute',
+              bottom: '8px',
+              left: '10px',
+              fontSize: '10px',
+              color: 'rgba(255,255,255,0.85)',
+              background: 'rgba(0,0,0,0.6)',
+              padding: '2px 8px',
+              borderRadius: '4px'
+            }}>
+              Live Preview &middot; {previewPlaying ? 'Playing' : 'Paused'}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <MediaPickerModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSelect={(selectedUrl) => onChange(selectedUrl)}
+        title="Select Video from Library"
+      />
+    </div>
+  );
+}

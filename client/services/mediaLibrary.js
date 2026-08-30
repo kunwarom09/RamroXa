@@ -111,6 +111,36 @@ export const DEFAULT_MEDIA_ASSETS = [
     size: '175 KB',
     date: '2026-08-27',
     type: 'image/jpeg'
+  },
+  {
+    id: 'med_vid_1',
+    name: 'Neon Streetwear & Urban Glow (Brand Film)',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
+    posterUrl: '/assets/59a3737ee018272f.q.jpg',
+    category: 'Videos',
+    size: '1.8 MB (Stream)',
+    date: '2026-08-30',
+    type: 'video/mp4'
+  },
+  {
+    id: 'med_vid_2',
+    name: 'Sneakers In Motion (Footwear Showcase)',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-feet-of-a-person-walking-in-sneakers-42930-large.mp4',
+    posterUrl: '/assets/98eab38550301ca9.q.jpg',
+    category: 'Videos',
+    size: '1.2 MB (Stream)',
+    date: '2026-08-30',
+    type: 'video/mp4'
+  },
+  {
+    id: 'med_vid_3',
+    name: 'Artisan Workshop & Fabric Crafting',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-cutting-fabric-in-a-tailoring-workshop-43759-large.mp4',
+    posterUrl: '/assets/44312e50fe56c782.q.jpg',
+    category: 'Videos',
+    size: '1.5 MB (Stream)',
+    date: '2026-08-30',
+    type: 'video/mp4'
   }
 ];
 
@@ -123,12 +153,9 @@ export function getMediaLibrary() {
       return DEFAULT_MEDIA_ASSETS;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
-    return DEFAULT_MEDIA_ASSETS;
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_MEDIA_ASSETS;
   } catch (e) {
-    console.error('Failed to get media library:', e);
+    console.error('Failed to load media library from localStorage:', e);
     return DEFAULT_MEDIA_ASSETS;
   }
 }
@@ -155,31 +182,44 @@ export function saveMediaLibrary(items) {
 export async function uploadMediaFile(file, category = 'Uploads') {
   let url = '';
   let sizeStr = `${Math.round(file.size / 1024)} KB`;
-  try {
-    // Process image to optimized WebP (<200KB)
-    const result = await convertToWebP(file, 200);
-    url = result.url || result;
-    if (result.sizeKB) {
-      sizeStr = `${result.sizeKB} KB`;
-    }
-  } catch (err) {
-    console.warn('WebP converter notice, using standard reader:', err);
+  const isVideo = file.type?.startsWith('video/') || /\.(mp4|webm|mov|ogg|m4v)$/i.test(file.name);
+  const mediaType = isVideo ? (file.type || 'video/mp4') : 'image/webp';
+
+  if (isVideo) {
+    // Read video directly as DataURL or Object URL
     url = await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  } else {
+    try {
+      // Process image to optimized WebP (<200KB)
+      const result = await convertToWebP(file, 200);
+      url = result.url || result;
+      if (result.sizeKB) {
+        sizeStr = `${result.sizeKB} KB`;
+      }
+    } catch (err) {
+      console.warn('WebP converter notice, using standard reader:', err);
+      url = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
   }
 
   const newItem = {
     id: 'med_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name: (file.name || 'Uploaded Asset').replace(/\.[^/.]+$/, ''),
+    name: (file.name || (isVideo ? 'Uploaded Video' : 'Uploaded Asset')).replace(/\.[^/.]+$/, ''),
     url,
-    category,
+    category: isVideo && category === 'Uploads' ? 'Videos' : category,
     size: sizeStr,
     date: new Date().toISOString().split('T')[0],
-    type: 'image/webp'
+    type: mediaType
   };
 
   const current = getMediaLibrary();
