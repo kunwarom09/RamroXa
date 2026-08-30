@@ -18,12 +18,16 @@ export async function listAdminInventory(query = {}) {
   ]);
 
   const variantsById = variants.reduce((acc, v) => {
-    acc[v.id] = v;
+    if (v.id) acc[v.id] = v;
+    if (v._id) acc[v._id.toString()] = v;
+    if (v.sku) acc[v.sku] = v;
     return acc;
   }, {});
 
   const prodsById = products.reduce((acc, p) => {
-    acc[p.id] = p;
+    if (p.id) acc[p.id] = p;
+    if (p._id) acc[p._id.toString()] = p;
+    if (p.sku) acc[p.sku] = p;
     return acc;
   }, {});
 
@@ -35,13 +39,14 @@ export async function listAdminInventory(query = {}) {
   // Auto-synchronize missing inventory documents for Master Products variants (starts as 0 stock)
   const existingInvVariantIds = new Set(inventories.map((i) => i.variantId));
   for (const v of variants) {
-    if (!existingInvVariantIds.has(v.id) && v.status !== 'archived') {
+    const vKey = v.id || v._id?.toString();
+    if (!existingInvVariantIds.has(vKey) && v.status !== 'archived') {
       const p = prodsById[v.productId];
       if (!p) continue;
       const initialStock = 0; // Master products source of truth - start stock as 0
       const createdInv = await Inventory.create({
-        id: `inv_${v.id}_w1`,
-        variantId: v.id,
+        id: `inv_${vKey}_w1`,
+        variantId: vKey,
         warehouseId: 'w1',
         available: initialStock,
         reserved: 0,
@@ -51,7 +56,7 @@ export async function listAdminInventory(query = {}) {
         reorderLevel: 5
       });
       inventories.push(createdInv.toObject ? createdInv.toObject() : createdInv);
-      existingInvVariantIds.add(v.id);
+      existingInvVariantIds.add(vKey);
     }
   }
 
@@ -107,8 +112,8 @@ export async function listAdminInventory(query = {}) {
 
     enriched.push({
       id: inv.id || inv._id.toString(),
-      variantId: v.id,
-      productId: p.id,
+      variantId: v.id || v._id?.toString() || inv.variantId,
+      productId: p.id || p._id?.toString(),
       name: p.name,
       variantLabel,
       size: sizeVal,
@@ -116,16 +121,16 @@ export async function listAdminInventory(query = {}) {
       sku: v.sku,
       barcode: v.barcode || v.sku,
       image: p.images?.[0]?.url || null,
-      warehouseId: inv.warehouseId,
-      warehouseName: warehouseById[inv.warehouseId] || inv.warehouseId,
-      available: inv.available,
-      reserved: inv.reserved || 0,
-      incoming: inv.incoming || 0,
-      damaged: inv.damaged || 0,
-      returned: inv.returned || 0,
-      reorderLevel: inv.reorderLevel || 5,
+      warehouseId: inv.warehouseId || 'w1',
+      warehouseName: warehouseById[inv.warehouseId] || inv.warehouseId || 'Kathmandu DC',
+      available: Number(inv.available) || 0,
+      reserved: Number(inv.reserved) || 0,
+      incoming: Number(inv.incoming) || 0,
+      damaged: Number(inv.damaged) || 0,
+      returned: Number(inv.returned) || 0,
+      reorderLevel: Number(inv.reorderLevel) || 5,
       safetyStock: inv.safetyStock,
-      total: (inv.available || 0) + (inv.reserved || 0),
+      total: (Number(inv.available) || 0) + (Number(inv.reserved) || 0),
       price: v.price != null ? v.price : (p.price != null ? p.price : p.basePrice),
       published: v.published !== false && v.status !== 'draft' && v.status !== 'archived',
       status: v.status || 'active',
@@ -148,8 +153,16 @@ export async function adjustStock({ variantId, warehouseId = 'w1', change, adjus
   const varDoc = await Variant.findOne(varQuery);
   const resolvedVarId = varDoc ? (varDoc.id || varDoc._id.toString()) : rawVarId;
 
+  const searchVariantIds = [
+    resolvedVarId,
+    rawVarId,
+    ...(varDoc?._id ? [varDoc._id.toString()] : []),
+    ...(varDoc?.id ? [varDoc.id] : []),
+    ...(varDoc?.sku ? [varDoc.sku] : [])
+  ].filter(Boolean);
+
   let inv = await Inventory.findOne({
-    $or: [{ variantId: resolvedVarId }, { variantId: rawVarId }],
+    variantId: { $in: searchVariantIds },
     warehouseId
   });
 
@@ -188,6 +201,16 @@ export async function adjustStock({ variantId, warehouseId = 'w1', change, adjus
 
   inv.available = after;
   await inv.save();
+
+  // Also sync any other inventory documents pointing to this variant
+  await Inventory.updateMany(
+    {
+      variantId: { $in: searchVariantIds },
+      warehouseId,
+      _id: { $ne: inv._id }
+    },
+    { available: after }
+  );
 
   // Map predefined reasons to clean type
   let type = 'adjustment';

@@ -90,17 +90,19 @@ export default function AdminInventoryPage() {
       let rawProds = [];
       let extractedVars = [];
       if (prodRes.status === 'fulfilled') {
-        rawProds = prodRes.value.data?.products || prodRes.value.data || [];
+        const prodVal = prodRes.value;
+        rawProds = prodVal?.data?.products || prodVal?.products || prodVal?.data || (Array.isArray(prodVal) ? prodVal : []);
         rawProds.forEach((p) => {
           const pId = p.id || String(p._id);
           if (p.allVariants && p.allVariants.length) {
-            extractedVars = [...extractedVars, ...p.allVariants.map(v => ({ ...v, productId: pId }))];
+            extractedVars = [...extractedVars, ...p.allVariants.map(v => ({ ...v, id: v.id || String(v._id), productId: pId }))];
           } else if (p.variants && p.variants.length) {
             p.variants.forEach(v => {
-              extractedVars.push({ ...v, productId: pId });
+              const vId = v.id || String(v._id);
+              extractedVars.push({ ...v, id: vId, productId: pId });
               if (v.subVariants && v.subVariants.length) {
                 v.subVariants.forEach(sv => {
-                  extractedVars.push({ ...sv, productId: pId, parentVariant: v });
+                  extractedVars.push({ ...sv, id: sv.id || String(sv._id), productId: pId, parentVariant: v });
                 });
               }
             });
@@ -110,12 +112,16 @@ export default function AdminInventoryPage() {
 
       let rawInv = [];
       if (invRes.status === 'fulfilled') {
-        rawInv = invRes.value.data?.inventory || invRes.value.data || [];
+        const val = invRes.value;
+        const payload = val?.data?.inventory || val?.inventory || val?.data;
+        rawInv = Array.isArray(payload) ? payload : (Array.isArray(val) ? val : []);
       }
 
       let rawMoves = [];
       if (moveRes.status === 'fulfilled') {
-        rawMoves = moveRes.value.data?.moves || moveRes.value.data || [];
+        const val = moveRes.value;
+        const payload = val?.data?.moves || val?.moves || val?.data;
+        rawMoves = Array.isArray(payload) ? payload : (Array.isArray(val) ? val : []);
       }
 
       setProducts(rawProds);
@@ -187,22 +193,27 @@ export default function AdminInventoryPage() {
   // Map inventories by variantId across warehouses
   const invByVariantId = useMemo(() => {
     const map = {};
-    inventoryList.forEach(inv => {
-      if (!inv.archived) {
-        if (!map[inv.variantId]) {
-          map[inv.variantId] = {
-            totalAvailable: 0,
-            totalReserved: 0,
-            byWarehouse: {}
-          };
+    if (Array.isArray(inventoryList)) {
+      inventoryList.forEach(inv => {
+        if (!inv.archived) {
+          const keys = [inv.variantId, inv.id, inv.sku].filter(Boolean);
+          keys.forEach(k => {
+            if (!map[k]) {
+              map[k] = {
+                totalAvailable: 0,
+                totalReserved: 0,
+                byWarehouse: {}
+              };
+            }
+            const avail = Number(inv.available) || 0;
+            const res = Number(inv.reserved) || 0;
+            map[k].totalAvailable += avail;
+            map[k].totalReserved += res;
+            map[k].byWarehouse[inv.warehouseId || 'w1'] = inv;
+          });
         }
-        const avail = Number(inv.available) || 0;
-        const res = Number(inv.reserved) || 0;
-        map[inv.variantId].totalAvailable += avail;
-        map[inv.variantId].totalReserved += res;
-        map[inv.variantId].byWarehouse[inv.warehouseId] = inv;
-      }
-    });
+      });
+    }
     return map;
   }, [inventoryList]);
 
@@ -229,18 +240,19 @@ export default function AdminInventoryPage() {
         sizeSet.add(size);
         colorSet.add(color);
 
-        const invData = invByVariantId[v.id];
+        const vKey = v.id || String(v._id || '');
+        const invData = invByVariantId[vKey] || (v._id ? invByVariantId[String(v._id)] : null) || (v.sku ? invByVariantId[v.sku] : null);
         let available = 0;
         let reserved = 0;
         let invDoc = null;
 
         if (warehouseFilter && warehouseFilter !== 'all') {
           invDoc = invData?.byWarehouse[warehouseFilter] || null;
-          available = invDoc ? Number(invDoc.available) || 0 : 0;
+          available = invDoc ? Number(invDoc.available) || 0 : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0));
           reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
         } else {
           invDoc = invData?.byWarehouse['w1'] || (invData ? Object.values(invData.byWarehouse)[0] : null);
-          available = invData ? invData.totalAvailable : (invDoc ? Number(invDoc.available) || 0 : 0);
+          available = invData ? invData.totalAvailable : (invDoc ? Number(invDoc.available) || 0 : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0)));
           reserved = invData ? invData.totalReserved : (invDoc ? Number(invDoc.reserved) || 0 : 0);
         }
 
