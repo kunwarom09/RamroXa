@@ -357,8 +357,19 @@ export async function createAdminProduct(data, user) {
         const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
           ? Number(sv.amount)
           : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
-        const isHidden = sv.hidden === true || sv.status === 'hidden';
-        const isSubPublished = normalizedStatus === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
+        let svOpts = sv.options ? (sv.options instanceof Map ? Object.fromEntries(sv.options) : { ...sv.options }) : {};
+        if (!svOpts.Size && !svOpts.size) {
+          const parentSize = (v.name || '').replace(/^(Size|Variant)\s*:\s*/i, '').trim();
+          if (parentSize) svOpts.Size = parentSize;
+        }
+        if (!svOpts.Colour && !svOpts.colour && !svOpts.Color && !svOpts.color) {
+          let subCol = (sv.name || '').replace(/^(Size|Variant)\s*:\s*/i, '').trim();
+          if (subCol.includes('/')) {
+            const parts = subCol.split('/');
+            subCol = parts[parts.length - 1].trim();
+          }
+          if (subCol) svOpts.Colour = subCol;
+        }
 
         await Variant.create({
           id: svId,
@@ -366,7 +377,7 @@ export async function createAdminProduct(data, user) {
           productId: product.id,
           parentVariantId: vId,
           sku: svSku,
-          options: sv.options || {},
+          options: svOpts,
           price: svPrice,
           hidden: isHidden,
           published: isSubPublished,
@@ -605,6 +616,20 @@ export async function updateAdminProduct(productId, updates, user) {
         const isSubPublished = product.status === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
 
         const svStock = sv.stock !== undefined ? Number(sv.stock) : (v.stock !== undefined ? Number(v.stock) : 25);
+        let svOpts = sv.options ? (sv.options instanceof Map ? Object.fromEntries(sv.options) : { ...sv.options }) : {};
+        if (!svOpts.Size && !svOpts.size) {
+          const parentSize = (v.name || '').replace(/^(Size|Variant)\s*:\s*/i, '').trim();
+          if (parentSize) svOpts.Size = parentSize;
+        }
+        if (!svOpts.Colour && !svOpts.colour && !svOpts.Color && !svOpts.color) {
+          let subCol = (sv.name || '').replace(/^(Size|Variant)\s*:\s*/i, '').trim();
+          if (subCol.includes('/')) {
+            const parts = subCol.split('/');
+            subCol = parts[parts.length - 1].trim();
+          }
+          if (subCol) svOpts.Colour = subCol;
+        }
+
         if (existingMap.has(svId)) {
           await Variant.updateOne(
             { id: svId },
@@ -612,7 +637,7 @@ export async function updateAdminProduct(productId, updates, user) {
               name: svName,
               sku: svSku,
               parentVariantId: vId,
-              options: sv.options || {},
+              options: svOpts,
               price: svPrice,
               hidden: isHidden,
               published: isSubPublished,
@@ -653,7 +678,7 @@ export async function updateAdminProduct(productId, updates, user) {
             productId: pId,
             parentVariantId: vId,
             sku: svSku,
-            options: sv.options || {},
+            options: svOpts,
             price: svPrice,
             hidden: isHidden,
             published: isSubPublished,
