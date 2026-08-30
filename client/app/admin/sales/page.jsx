@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { money, today, docSubtotal, docVat, docTotal } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
@@ -113,9 +114,11 @@ export default function AdminSalesPage() {
     });
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSave = async (e) => {
-    e.preventDefault();
-    const validItems = formData.items.filter(i => i.desc.trim() && i.qty > 0);
+    if (e) e.preventDefault();
+    const validItems = formData.items.filter(i => i.desc && i.desc.trim() && Number(i.qty) > 0);
     if (!validItems.length) {
       alert('Please add at least one item description');
       return;
@@ -124,22 +127,41 @@ export default function AdminSalesPage() {
     const vat = formData.vatable ? Math.round(sub * 0.13) : 0;
     const total = sub + vat;
 
-    const newSale = {
-      id: editingId || ('s_' + Date.now().toString(36)),
-      ...formData,
-      items: validItems,
-      subtotal: sub,
-      vat,
-      total
+    const payload = {
+      invoice: formData.invoice,
+      customer: formData.customer,
+      date: formData.date,
+      payment: formData.payment,
+      vatable: formData.vatable,
+      items: validItems.map((it, idx) => ({
+        desc: it.desc,
+        name: it.desc,
+        sku: it.sku || `SKU-${idx + 1}`,
+        qty: Number(it.qty) || 1,
+        rate: Number(it.rate) || 0
+      }))
     };
 
-    setSales(prev => editingId ? prev.map(s => s.id === editingId ? newSale : s) : [newSale, ...prev]);
-    setModalOpen(false);
+    setSubmitting(true);
+    try {
+      await api.post('/api/admin/orders', payload);
+      setModalOpen(false);
+      await refreshData();
+    } catch (err) {
+      alert('Failed to save sale: ' + (err.message || 'Error'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm('Delete this sale entry?')) return;
-    setSales(prev => prev.filter(s => s.id !== id));
+    try {
+      await api.delete(`/api/admin/orders/${id}`);
+      setSales(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      alert('Failed to delete sale: ' + (err.message || 'Error'));
+    }
   };
 
   const filtered = sales.filter(s =>
@@ -230,6 +252,14 @@ export default function AdminSalesPage() {
                   <td className="num">{money(docVat(s))}</td>
                   <td className="num"><strong>{money(docTotal(s))}</strong></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <Link
+                      href={`/admin/returns?saleId=${s.id}`}
+                      className="icon-btn"
+                      title="Create Sales Return"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      <Icon name="arrowDown" size={15} />
+                    </Link>
                     <button className="icon-btn" title="View tax invoice" onClick={() => { setSelectedSale(s); setViewInvoiceModal(true); }}>
                       <Icon name="eye" size={15} />
                     </button>

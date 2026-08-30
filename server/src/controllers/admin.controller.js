@@ -172,6 +172,16 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Order status updated.', data: { order } });
 });
 
+export const createOrder = asyncHandler(async (req, res) => {
+  const result = await adminOrderService.createAdminOrder(req.body, req.user);
+  res.status(201).json({ message: 'Order created successfully.', data: result });
+});
+
+export const deleteOrder = asyncHandler(async (req, res) => {
+  const result = await adminOrderService.deleteAdminOrder(req.params.id);
+  res.status(200).json(result);
+});
+
 export const refundOrder = asyncHandler(async (req, res) => {
   const { amount, reason } = req.body;
   const order = await adminOrderService.processOrderRefund({
@@ -180,7 +190,7 @@ export const refundOrder = asyncHandler(async (req, res) => {
     reason,
     user: req.user
   });
-  res.status(200).json({ message: 'Order refunded.', data: { order } });
+  res.status(200).json({ message: 'Order refund processed.', data: { order } });
 });
 
 // --- Customers ---
@@ -244,7 +254,9 @@ export default {
   listStockMoves,
   listOrders,
   getOrder,
+  createOrder,
   updateOrderStatus,
+  deleteOrder,
   refundOrder,
   listCustomers,
   getCustomer,

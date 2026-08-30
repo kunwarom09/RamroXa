@@ -24,7 +24,9 @@ import {
   listStockMoves,
   listOrders,
   getOrder,
+  createOrder,
   updateOrderStatus,
+  deleteOrder,
   refundOrder,
   listCustomers,
   getCustomer,
@@ -103,9 +105,11 @@ router.get('/inventory/moves', listStockMoves);
 
 // Orders & Fulfillment
 router.get('/orders', listOrders);
+router.post('/orders', createOrder);
 router.get('/orders/:id', getOrder);
 router.put('/orders/:id/status', updateOrderStatus);
 router.patch('/orders/:id/status', updateOrderStatus);
+router.delete('/orders/:id', deleteOrder);
 router.post('/orders/:id/refund', refundOrder);
 
 // Sales Returns

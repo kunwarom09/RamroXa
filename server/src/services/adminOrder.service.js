@@ -91,9 +91,85 @@ export async function processOrderRefund({ orderId, amount, reason = 'Customer r
   return getAdminOrderById(order.id || order._id.toString());
 }
 
+export async function createAdminOrder(data, user) {
+  const count = await Order.countDocuments();
+  const nextOrderNo = data.invoice || data.orderNo || `INV-${2030 + count + 1}`;
+
+  const rawItems = Array.isArray(data.items) ? data.items : [];
+  const items = rawItems.map((it, idx) => {
+    const qty = Number(it.qty) || 1;
+    const rateNpr = Number(it.rate) || Number(it.price) || 0;
+    const unitPricePaisa = it.unitPrice != null ? Number(it.unitPrice) : rateNpr * 100;
+    const lineTotalPaisa = unitPricePaisa * qty;
+
+    return {
+      productId: it.productId || `p_manual_${idx}`,
+      variantId: it.variantId || `v_manual_${idx}`,
+      name: it.desc || it.name || 'Custom item',
+      variantLabel: it.variantLabel || '',
+      sku: it.sku || `SKU-${idx + 1}`,
+      qty,
+      unitPrice: unitPricePaisa,
+      lineTotal: lineTotalPaisa
+    };
+  });
+
+  const subtotalPaisa = items.reduce((sum, i) => sum + i.lineTotal, 0);
+  const vatTotalPaisa = data.vatable !== false ? Math.round(subtotalPaisa * 0.13) : 0;
+  const grandTotalPaisa = subtotalPaisa + vatTotalPaisa;
+
+  const paymentMethod = String(data.payment || data.paymentMethod || 'cod').toLowerCase();
+  const validPaymentMethod = ['cod', 'esewa', 'fonepay'].includes(paymentMethod) ? paymentMethod : 'cod';
+
+  const newOrder = await Order.create({
+    orderNo: nextOrderNo,
+    user: user?._id || null,
+    guestEmail: data.email || null,
+    guestPhone: data.customerPhone || data.phone || null,
+    items,
+    subtotal: subtotalPaisa,
+    vatTotal: vatTotalPaisa,
+    grandTotal: grandTotalPaisa,
+    shippingAddress: {
+      fullName: data.customer || 'Walk-in customer',
+      phone: data.customerPhone || data.phone || '9800000000',
+      line1: data.address || 'Direct counter sale',
+      city: 'Kathmandu'
+    },
+    paymentMethod: validPaymentMethod,
+    paymentStatus: data.paymentStatus || 'paid',
+    fulfillmentStatus: data.fulfillmentStatus || 'delivered',
+    statusHistory: [
+      {
+        status: 'created',
+        by: user?.email || 'admin',
+        note: 'Manual sale invoice created via Admin Portal'
+      }
+    ]
+  });
+
+  return newOrder;
+}
+
+export async function deleteAdminOrder(orderId) {
+  const order = await Order.findOneAndDelete({
+    $or: [
+      { id: orderId },
+      { _id: orderId },
+      { orderNo: orderId }
+    ]
+  });
+  if (!order) {
+    throw ApiError.notFound(`Order '${orderId}' not found.`);
+  }
+  return { message: 'Order deleted successfully.' };
+}
+
 export default {
   listAdminOrders,
   getAdminOrderById,
   updateFulfillmentStatus,
-  processOrderRefund
+  processOrderRefund,
+  createAdminOrder,
+  deleteAdminOrder
 };
