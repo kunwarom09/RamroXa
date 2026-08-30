@@ -4,6 +4,7 @@ export const defaultCategories = [
   { id: "c_tops", name: "Tops", slug: "tops", parentId: "c_app", sortOrder: 0, featured: false, visible: true, status: "active", description: "" },
   { id: "c_bottoms", name: "Bottoms", slug: "bottoms", parentId: "c_app", sortOrder: 1, featured: false, visible: true, status: "active", description: "" },
   { id: "c_out", name: "Outerwear", slug: "outerwear", parentId: "c_men", sortOrder: 1, featured: false, visible: true, status: "active", description: "Shells and jackets" },
+  { id: "c_footwear", name: "Footwear", slug: "footwear", parentId: null, sortOrder: 1, featured: true, visible: true, status: "active", description: "Sneakers, boots and runners" },
   { id: "c_acc", name: "Accessories", slug: "accessories", parentId: null, sortOrder: 1, featured: true, visible: true, status: "active", description: "Caps, socks and small goods" },
   { id: "c_bags", name: "Bags", slug: "bags", parentId: null, sortOrder: 2, featured: false, visible: true, status: "active", description: "" }
 ];

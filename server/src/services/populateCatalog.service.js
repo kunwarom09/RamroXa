@@ -446,6 +446,52 @@ export const sampleProducts20 = [
     images: [
       { url: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&auto=format&fit=crop&q=80', alt: 'Structured Twill Cap', isFeatured: true }
     ]
+  },
+  {
+    id: 'prod_apex_runner',
+    name: 'Apex Carbon Knit Runner',
+    slug: 'apex-carbon-knit-runner',
+    sku: 'ZYL-SHOE-001',
+    brand: 'Zylo Footwear',
+    categoryId: 'c_footwear',
+    productType: 'Footwear',
+    status: 'published',
+    gender: 'Unisex',
+    season: 'SS26',
+    tags: ['sneakers', 'footwear', 'runner', 'knit'],
+    basePrice: 485000,
+    price: 485000,
+    mrp: 620000,
+    cost: 195000,
+    description: 'Ultra-lightweight breathable engineered knit runner with carbon fiber propulsion plate, responsive EVA midsole, and high-traction rubber outsole.',
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    options: { Size: ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8'], Colour: ['Blue', 'Red'] },
+    images: [
+      { url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80', alt: 'Apex Carbon Knit Runner in Red/Blue', isFeatured: true }
+    ]
+  },
+  {
+    id: 'prod_vertex_sneaker',
+    name: 'Vertex Street Leather Low-Top',
+    slug: 'vertex-street-leather-low-top',
+    sku: 'ZYL-SHOE-002',
+    brand: 'Zylo Footwear',
+    categoryId: 'c_footwear',
+    productType: 'Footwear',
+    status: 'published',
+    gender: 'Unisex',
+    season: 'SS26',
+    tags: ['sneakers', 'footwear', 'leather', 'lowtop'],
+    basePrice: 540000,
+    price: 540000,
+    mrp: 690000,
+    cost: 220000,
+    description: 'Full-grain Italian nappa leather low-top sneaker featuring custom tonal eyelets, cushioned OrthoLite insole, and vulcanized rubber sole.',
+    labels: { featured: true, trending: true, newArrival: false, bestSelling: true },
+    options: { Size: ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'], Colour: ['Blue', 'Purple'] },
+    images: [
+      { url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80', alt: 'Vertex Street Leather Low-Top', isFeatured: true }
+    ]
   }
 ];
 
@@ -487,8 +533,10 @@ export async function populate20ProductsWithVariantsAndOrders() {
     for (const size of sizes) {
       for (const colour of colours) {
         varIdx++;
-        const vId = `v_${p.id}_${size.toLowerCase()}_${colour.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-        const sku = `${p.sku}-${size}-${colour.slice(0, 3).toUpperCase()}`;
+        const cleanSizeStr = size.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanColStr = colour.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const vId = `v_${p.id}_${cleanSizeStr}_${cleanColStr}`;
+        const sku = `${p.sku}-${size.replace(/\s+/g, '').toUpperCase()}-${colour.slice(0, 3).toUpperCase()}`;
         const barcode = `890${String(Date.now()).slice(-6)}${String(varIdx).padStart(3, '0')}`;
 
         allVariantsToInsert.push({
@@ -506,17 +554,33 @@ export async function populate20ProductsWithVariantsAndOrders() {
           updatedAt: new Date()
         });
 
+        // Calculate available stock (with exact example counts for UK 3 and UK 5)
+        let initialQty = 15;
+        if (p.productType === 'Footwear' || p.categoryId === 'c_footwear') {
+          if (size === 'UK 3' && colour === 'Blue') initialQty = 3;
+          else if (size === 'UK 3' && colour === 'Red') initialQty = 5;
+          else if (size === 'UK 5' && colour === 'Blue') initialQty = 7;
+          else if (size === 'UK 5' && colour === 'Purple') initialQty = 3;
+          else if (size === 'UK 5' && colour === 'Red') initialQty = 4;
+          else if (size === 'UK 4') initialQty = 6;
+          else if (size === 'UK 6') initialQty = 8;
+          else if (size === 'UK 7') initialQty = 10;
+          else if (size === 'UK 8') initialQty = 5;
+        } else {
+          initialQty = 20 + ((varIdx * 7) % 30);
+        }
+
         // Stock in Warehouse 1 (Kathmandu Central)
         allInventoryToInsert.push({
           id: `inv_${vId}_w1`,
           variantId: vId,
           warehouseId: 'w1',
-          available: 40 + (varIdx * 5 % 25),
+          available: initialQty,
           reserved: 0,
           damaged: 0,
           returned: 0,
-          reorderLevel: 10,
-          minStock: 5,
+          reorderLevel: 5,
+          minStock: 2,
           maxStock: 100,
           archived: false,
           createdAt: new Date(),

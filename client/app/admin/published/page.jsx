@@ -245,7 +245,15 @@ export default function AdminPublishedStockPage() {
         });
       });
 
-      const sizesList = Object.values(sizeGroups);
+      const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', '28', '30', '32', '34', '36', '38', '40'];
+      const sizesList = Object.values(sizeGroups).sort((a, b) => {
+        const idxA = sizeOrder.indexOf(a.size);
+        const idxB = sizeOrder.indexOf(b.size);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.size.localeCompare(b.size, undefined, { numeric: true });
+      });
       const isOutOfStock = totalProdStock <= 0;
 
       return {
