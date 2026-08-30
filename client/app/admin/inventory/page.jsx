@@ -24,6 +24,10 @@ export default function AdminInventoryPage() {
   const [expandedProductIds, setExpandedProductIds] = useState(new Set());
   const [toastMsg, setToastMsg] = useState('');
 
+  // Pending manual stock changes state (key: `${v.id}_${warehouseId}` => { variantItem, newStock, originalStock })
+  const [pendingStockChanges, setPendingStockChanges] = useState({});
+  const [savingPending, setSavingPending] = useState(false);
+
   // Action Menu dropdown state
   const [openMenuKey, setOpenMenuKey] = useState(null);
   const menuRef = useRef(null);
@@ -433,24 +437,57 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // 2. Direct inline stock adjustment on exact Size + Colour
-  const handleInlineStockChange = async (variantItem, newStock) => {
-    const target = Number(newStock);
-    if (isNaN(target) || target < 0) return;
-    if (target === variantItem.available) return;
+  // 2. Queue manual stock change without immediate saving
+  const handleInlineStockChange = (variantItem, value) => {
+    const rawNum = value === '' ? 0 : Number(value);
+    if (isNaN(rawNum) || rawNum < 0) return;
+    const itemKey = `${variantItem.v.id}_${variantItem.warehouse.id}`;
 
+    setPendingStockChanges(prev => {
+      const next = { ...prev };
+      if (rawNum === variantItem.available) {
+        delete next[itemKey];
+      } else {
+        next[itemKey] = {
+          variantItem,
+          newStock: rawNum,
+          originalStock: variantItem.available
+        };
+      }
+      return next;
+    });
+  };
+
+  // Reset all pending changes back to saved values
+  const handleResetPendingChanges = () => {
+    setPendingStockChanges({});
+    showToast('Stock quantities restored to their previous saved state.');
+  };
+
+  // Commit and save all pending manual stock changes
+  const handleSaveAllPendingChanges = async () => {
+    const changesList = Object.values(pendingStockChanges);
+    if (changesList.length === 0) return;
+
+    setSavingPending(true);
     try {
-      await api.post('/api/admin/inventory/adjust', {
-        variantId: variantItem.v.id,
-        warehouseId: variantItem.warehouse.id,
-        change: target - variantItem.available,
-        reason: 'Stock correction',
-        note: `Inline edit: ${variantItem.size} / ${variantItem.color}`
-      });
-      showToast(`Stock updated for ${variantItem.size} / ${variantItem.color} → ${target} units`);
+      for (const change of changesList) {
+        const delta = change.newStock - change.originalStock;
+        await api.post('/api/admin/inventory/adjust', {
+          variantId: change.variantItem.v.id,
+          warehouseId: change.variantItem.warehouse.id,
+          change: delta,
+          reason: 'Stock correction',
+          note: `Manual inline update: ${change.variantItem.size} / ${change.variantItem.color}`
+        });
+      }
+      showToast(`Successfully saved stock adjustments across ${changesList.length} variant(s).`);
+      setPendingStockChanges({});
       refreshData();
     } catch (err) {
-      console.error('Inline stock adjustment failed:', err);
+      alert('Failed to save some stock changes: ' + (err.message || 'Error'));
+    } finally {
+      setSavingPending(false);
     }
   };
 
@@ -658,6 +695,34 @@ export default function AdminInventoryPage() {
           <button className="btn btn-sm" onClick={collapseAll}>Collapse All</button>
         </div>
         <div className="spacer" />
+        
+        {/* Save Changes & Reset actions */}
+        {Object.keys(pendingStockChanges).length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'var(--accent-soft, #fef3c7)', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--accent, #f59e0b)' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent, #b45309)', marginRight: '4px' }}>
+              {Object.keys(pendingStockChanges).length} unsaved
+            </span>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleResetPendingChanges}
+              disabled={savingPending}
+              style={{ padding: '2px 10px', fontSize: '12px' }}
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={handleSaveAllPendingChanges}
+              disabled={savingPending}
+              style={{ padding: '2px 12px', fontSize: '12px', fontWeight: 600 }}
+            >
+              {savingPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        )}
+
         <button className="btn" onClick={exportCsv}>Export CSV</button>
       </div>
 
@@ -814,31 +879,39 @@ export default function AdminInventoryPage() {
                                             </div>
                                           </div>
 
-                                          {/* Stock Quantity Input (Editable) */}
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>Qty:</span>
-                                            <input
-                                              type="number"
-                                              min="0"
-                                              defaultValue={item.available}
-                                              key={`qty_${item.v.id}_${item.available}`}
-                                              onBlur={(e) => handleInlineStockChange(item, e.target.value)}
-                                              style={{
-                                                width: '56px',
-                                                height: '28px',
-                                                textAlign: 'center',
-                                                fontSize: '13px',
-                                                fontWeight: 700,
-                                                padding: '0 4px',
-                                                background: item.available <= 0 ? 'var(--danger-soft)' : 'var(--surface)',
-                                                color: item.available <= 0 ? 'var(--danger)' : 'var(--primary)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: '5px',
-                                                outline: 'none'
-                                              }}
-                                              title="Edit quantity for this exact Size + Colour"
-                                            />
-                                          </div>
+                                          {/* Stock Quantity Input (Editable with pending state) */}
+                                          {(() => {
+                                            const itemKey = `${item.v.id}_${item.warehouse.id}`;
+                                            const isModified = pendingStockChanges[itemKey] !== undefined;
+                                            const currentQtyVal = isModified ? pendingStockChanges[itemKey].newStock : item.available;
+
+                                            return (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span style={{ fontSize: '11px', color: isModified ? 'var(--accent, #b45309)' : 'var(--muted-foreground)', fontWeight: isModified ? 600 : 400 }}>Qty:</span>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  value={currentQtyVal}
+                                                  onChange={(e) => handleInlineStockChange(item, e.target.value)}
+                                                  style={{
+                                                    width: '58px',
+                                                    height: '28px',
+                                                    textAlign: 'center',
+                                                    fontSize: '13px',
+                                                    fontWeight: 700,
+                                                    padding: '0 4px',
+                                                    background: isModified ? 'var(--accent-soft, #fef3c7)' : (item.available <= 0 ? 'var(--danger-soft)' : 'var(--surface)'),
+                                                    color: isModified ? 'var(--accent, #b45309)' : (item.available <= 0 ? 'var(--danger)' : 'var(--primary)'),
+                                                    border: isModified ? '2px solid var(--accent, #f59e0b)' : '1px solid var(--border)',
+                                                    borderRadius: '5px',
+                                                    outline: 'none',
+                                                    boxShadow: isModified ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none'
+                                                  }}
+                                                  title={isModified ? `Unsaved change: was ${item.available}, now ${currentQtyVal}` : "Edit quantity for this exact Size + Colour"}
+                                                />
+                                              </div>
+                                            );
+                                          })()}
 
                                           {/* Price */}
                                           <div style={{ fontSize: '12px', fontWeight: 600, minWidth: '60px', textAlign: 'right' }}>
@@ -1440,6 +1513,60 @@ export default function AdminInventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button type="button" className="btn" onClick={() => setReturnsModalOpen(false)}>Close</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* FLOATING ACTION BAR FOR UNSAVED STOCK CHANGES */}
+      {/* ---------------------------------------------------------------- */}
+      {Object.keys(pendingStockChanges).length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'var(--surface)',
+          border: '2px solid var(--accent, #f59e0b)',
+          borderRadius: '12px',
+          padding: '12px 24px',
+          boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '18px',
+          zIndex: 1001
+        }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              display: 'inline-block',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: 'var(--accent, #f59e0b)'
+            }} />
+            <span>
+              You have <strong>{Object.keys(pendingStockChanges).length}</strong> unsaved stock {Object.keys(pendingStockChanges).length === 1 ? 'change' : 'changes'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleResetPendingChanges}
+              disabled={savingPending}
+              style={{ minWidth: '75px' }}
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={handleSaveAllPendingChanges}
+              disabled={savingPending}
+              style={{ minWidth: '120px', fontWeight: 600 }}
+            >
+              {savingPending ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </div>
       )}
