@@ -19,25 +19,33 @@ export default function AdminPurchasesPage() {
     items: [{ desc: '', qty: 1, rate: 0 }]
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
   const refreshData = async () => {
     setLoading(true);
     try {
       const res = await api.get('/api/admin/purchases');
-      const list = res.data?.purchases || res.data || [];
-      const normalized = list.map((p, idx) => {
-        const rawItems = p.items || [{ desc: 'Purchase items', qty: 1, rate: p.subtotal || p.total || 0 }];
-        const sub = p.subtotal != null ? p.subtotal : rawItems.reduce((a, i) => a + (Number(i.qty) * Number(i.rate)), 0);
-        const vat = p.vat != null ? p.vat : (p.vatable !== false ? Math.round(sub * 0.13) : 0);
-        const total = p.total != null ? p.total : (sub + vat);
+      const list = res.data?.purchases || res.data?.data || res.data || [];
+      const normalized = (Array.isArray(list) ? list : []).map((p, idx) => {
+        const rawItems = (p.items && p.items.length) ? p.items : [{ desc: p.head || 'Purchase item', qty: 1, rate: p.subtotal || p.totalAmount || p.total || 0 }];
+        const sub = p.subtotal != null ? p.subtotal : rawItems.reduce((a, i) => a + (Number(i.qty || 1) * Number(i.rate || 0)), 0);
+        const vat = p.vatAmount != null ? p.vatAmount : (p.vat != null ? p.vat : (p.vatable !== false ? Math.round(sub * 0.13) : 0));
+        const total = p.totalAmount != null ? p.totalAmount : (p.total != null ? p.total : (sub + vat));
 
         return {
           id: p._id || p.id || `p_${idx}`,
-          bill: p.bill || p.billNo || `BILL-${500 + idx}`,
-          date: (p.date || today()).slice(0, 10),
+          bill: p.billNo || p.bill || `BILL-${500 + idx}`,
+          billNo: p.billNo || p.bill || `BILL-${500 + idx}`,
+          date: (p.date || p.createdAt || today()).slice(0, 10),
           supplier: p.supplier || 'Supplier',
           head: p.head || 'Purchases (stock)',
           vatable: p.vatable !== false,
-          items: rawItems,
+          items: rawItems.map(it => ({
+            desc: it.desc || it.name || 'Item',
+            name: it.name || it.desc || 'Item',
+            qty: Number(it.qty) || 1,
+            rate: Number(it.rate) || 0
+          })),
           subtotal: sub,
           vat,
           total
@@ -71,12 +79,12 @@ export default function AdminPurchasesPage() {
   const openEditPurchaseModal = (p) => {
     setEditingId(p.id);
     setFormData({
-      bill: p.bill || '',
+      bill: p.bill || p.billNo || '',
       date: p.date || today(),
       supplier: p.supplier || '',
       head: p.head || 'Purchases (stock)',
       vatable: p.vatable !== false,
-      items: p.items ? JSON.parse(JSON.stringify(p.items)) : [{ desc: '', qty: 1, rate: 0 }]
+      items: p.items && p.items.length ? JSON.parse(JSON.stringify(p.items)) : [{ desc: '', qty: 1, rate: 0 }]
     });
     setModalOpen(true);
   };
@@ -103,41 +111,56 @@ export default function AdminPurchasesPage() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    const validItems = formData.items.filter(i => i.desc.trim() && i.qty > 0);
+    if (e) e.preventDefault();
+    const validItems = formData.items.filter(i => (i.desc || i.name || '').trim() && Number(i.qty) > 0);
     if (!validItems.length) {
       alert('Add at least one item with description and quantity');
       return;
     }
     const sub = validItems.reduce((acc, i) => acc + (Number(i.qty || 0) * Number(i.rate || 0)), 0);
-    const vat = formData.vatable ? Math.round(sub * 0.13) : 0;
+    const vat = formData.vatable !== false ? Math.round(sub * 0.13) : 0;
     const total = sub + vat;
 
-    const newPurch = {
-      id: editingId || ('p_' + Date.now().toString(36)),
-      ...formData,
-      items: validItems,
+    const payload = {
+      billNo: formData.bill || formData.billNo,
+      bill: formData.bill || formData.billNo,
+      date: formData.date || today(),
+      supplier: formData.supplier,
+      supplierPan: formData.supplierPan || '',
+      head: formData.head || 'Purchases (stock)',
+      vatable: formData.vatable !== false,
+      items: validItems.map(it => ({
+        name: it.desc || it.name,
+        desc: it.desc || it.name,
+        qty: Number(it.qty) || 1,
+        rate: Number(it.rate) || 0,
+        amount: (Number(it.qty) || 1) * (Number(it.rate) || 0)
+      })),
       subtotal: sub,
-      vat,
-      total
+      vatAmount: vat,
+      totalAmount: total,
+      editingId: editingId || null
     };
 
+    setSubmitting(true);
     try {
-      await api.post('/api/admin/purchases', newPurch);
-      refreshData();
-    } catch (apiErr) {
-      setPurchases(prev => editingId ? prev.map(p => p.id === editingId ? newPurch : p) : [newPurch, ...prev]);
+      await api.post('/api/admin/purchases', payload);
+      setModalOpen(false);
+      await refreshData();
+    } catch (err) {
+      alert('Failed to save purchase bill: ' + (err?.response?.data?.message || err.message || 'Server error'));
+    } finally {
+      setSubmitting(false);
     }
-    setModalOpen(false);
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this purchase?')) return;
+    if (!confirm('Delete this purchase bill?')) return;
     try {
       await api.delete(`/api/admin/purchases/${id}`);
-      refreshData();
+      await refreshData();
     } catch (e) {
-      setPurchases(prev => prev.filter(p => p.id !== id));
+      alert('Failed to delete purchase: ' + (e?.response?.data?.message || e.message || 'Server error'));
     }
   };
 
@@ -312,7 +335,7 @@ export default function AdminPurchasesPage() {
                     />
                     <input
                       type="number"
-                      placeholder="Rate (paisa)"
+                      placeholder="Rate (NPR)"
                       value={item.rate}
                       onChange={(e) => handleLineChange(idx, 'rate', Number(e.target.value))}
                       required
@@ -334,13 +357,15 @@ export default function AdminPurchasesPage() {
 
               <div className="totals-box">
                 <div><span>Taxable amount</span><span>{money(calcSubtotal)}</span></div>
-                <div><span>VAT</span><span>{money(calcVat)}</span></div>
+                <div><span>VAT (13%)</span><span>{money(calcVat)}</span></div>
                 <div className="grand"><span>Total</span><span>{money(calcTotal)}</span></div>
               </div>
 
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '18px' }}>
                 <button type="button" className="btn" onClick={() => setModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save purchase</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving...' : 'Save purchase'}
+                </button>
               </div>
             </form>
           </div>
