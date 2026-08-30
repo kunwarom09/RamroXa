@@ -60,24 +60,38 @@ export async function createOrder(data) {
 
   // 2. Server Re-Pricing & Exact Variant/Sub-variant Resolution
   const productLookupKeys = items.map((i) => i.productId || i.id || i.slug).filter(Boolean);
-  const variantLookupKeys = items.map((i) => i.variantId || i.sku).filter(Boolean);
+  const variantLookupKeys = items.map((i) => i.variantId || i.sku || i.id).filter(Boolean);
 
-  const [products, variants] = await Promise.all([
-    Product.find({
-      $or: [
-        { id: { $in: productLookupKeys } },
-        { sku: { $in: productLookupKeys } },
-        { slug: { $in: productLookupKeys } }
-      ]
-    }).lean(),
-    Variant.find({
-      $or: [
-        { id: { $in: variantLookupKeys } },
-        { sku: { $in: variantLookupKeys } },
-        { productId: { $in: productLookupKeys } }
-      ]
-    }).lean()
-  ]);
+  const validVariantObjectIds = variantLookupKeys.filter((k) => mongoose.isValidObjectId(k));
+  const validProductObjectIds = productLookupKeys.filter((k) => mongoose.isValidObjectId(k));
+
+  const variants = await Variant.find({
+    $or: [
+      { id: { $in: variantLookupKeys } },
+      validVariantObjectIds.length ? { _id: { $in: validVariantObjectIds } } : null,
+      { sku: { $in: variantLookupKeys } },
+      productLookupKeys.length ? { productId: { $in: productLookupKeys } } : null,
+      validProductObjectIds.length ? { product: { $in: validProductObjectIds } } : null
+    ].filter(Boolean)
+  }).lean();
+
+  // Also collect products referenced by matched variants
+  for (const v of variants) {
+    if (v.productId) productLookupKeys.push(v.productId);
+    if (v.product) productLookupKeys.push(v.product.toString());
+  }
+
+  const allProductKeys = Array.from(new Set(productLookupKeys));
+  const allValidProductObjectIds = allProductKeys.filter((k) => mongoose.isValidObjectId(k));
+
+  const products = await Product.find({
+    $or: [
+      { id: { $in: allProductKeys } },
+      allValidProductObjectIds.length ? { _id: { $in: allValidProductObjectIds } } : null,
+      { sku: { $in: allProductKeys } },
+      { slug: { $in: allProductKeys } }
+    ].filter(Boolean)
+  }).lean();
 
   const prodsById = {};
   for (const p of products) {
@@ -90,41 +104,55 @@ export async function createOrder(data) {
   // Group variants by productId
   const variantsByProdId = {};
   for (const v of variants) {
-    if (!variantsByProdId[v.productId]) variantsByProdId[v.productId] = [];
-    variantsByProdId[v.productId].push(v);
+    const pKeys = [v.productId, v.product ? v.product.toString() : null].filter(Boolean);
+    for (const pk of pKeys) {
+      if (!variantsByProdId[pk]) variantsByProdId[pk] = [];
+      variantsByProdId[pk].push(v);
+    }
   }
 
   const orderLineItems = [];
 
   for (const item of items) {
-    // 1. Resolve parent product
-    let p = prodsById[item.productId] || prodsById[item.id] || prodsById[item.slug];
+    // 1. Resolve variant first if variantId or sku provided
+    let v = null;
+    if (item.variantId) {
+      v = variants.find((varDoc) =>
+        varDoc.id === item.variantId ||
+        varDoc._id?.toString() === item.variantId ||
+        varDoc.sku === item.variantId
+      );
+    }
+    if (!v && item.sku) {
+      v = variants.find((varDoc) => varDoc.sku === item.sku);
+    }
+
+    // 2. Resolve parent product
+    let p = null;
+    if (v) {
+      p = prodsById[v.productId] || prodsById[v.product?.toString()];
+    }
+    if (!p) {
+      p = prodsById[item.productId] || prodsById[item.id] || prodsById[item.slug];
+    }
     if (!p && item.name) {
       p = products.find((prod) => prod.name && prod.name.toLowerCase() === item.name.toLowerCase());
     }
 
     if (!p || p.status === 'archived' || p.deletedAt) {
-      throw ApiError.badRequest(`Product '${item.name || item.productId}' is not available.`);
+      throw ApiError.badRequest(`Product '${item.name || item.productId || item.variantId}' is not available.`);
     }
 
     const pVariants = variantsByProdId[p.id] || variantsByProdId[p._id?.toString()] || [];
     const targetSize = (item.size || '').trim().toLowerCase();
     const targetColor = (item.color || item.colour || '').trim().toLowerCase();
 
-    let v = null;
-
-    // Direct ID match if variantId supplied
-    if (item.variantId) {
-      v = pVariants.find((varDoc) => varDoc.id === item.variantId || varDoc._id?.toString() === item.variantId);
-    }
-
-    // Match by Size (top variant) + Colour (sub-variant)
+    // If variant not yet resolved, match by size / colour within product's variants
     if (!v && pVariants.length > 0) {
       const topVars = pVariants.filter((varDoc) => !varDoc.parentVariantId);
       const subVars = pVariants.filter((varDoc) => !!varDoc.parentVariantId);
 
       if (targetSize && targetColor) {
-        // Find matching top variant (size)
         const matchedTop = topVars.find((tv) => {
           const optSize = (tv.options?.get ? tv.options.get('Size') : (tv.options?.Size || tv.options?.size || ''))?.toLowerCase();
           const nameMatch = (tv.name || '').toLowerCase();
@@ -133,7 +161,6 @@ export async function createOrder(data) {
         });
 
         if (matchedTop) {
-          // Find matching sub-variant under this top variant
           const matchedSub = subVars.find((sv) => {
             if (sv.parentVariantId !== matchedTop.id) return false;
             const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
@@ -143,7 +170,6 @@ export async function createOrder(data) {
           });
           v = matchedSub || matchedTop;
         } else {
-          // Check all subvariants or variants directly
           v = subVars.find((sv) => {
             const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
             const nameMatch = (sv.name || '').toLowerCase();
@@ -163,7 +189,7 @@ export async function createOrder(data) {
           const optCol = (sv.options?.get ? (sv.options.get('Colour') || sv.options.get('Color')) : (sv.options?.Colour || sv.options?.Color || sv.options?.color || ''))?.toLowerCase();
           const nameMatch = (sv.name || '').toLowerCase();
           return (optCol && (optCol === targetColor || optCol.includes(targetColor))) ||
-                 (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
+                   (nameMatch && (nameMatch === targetColor || nameMatch.includes(targetColor)));
         }) || pVariants[0];
       } else {
         v = pVariants[0];
@@ -173,9 +199,9 @@ export async function createOrder(data) {
     // Default variant if no variant document exists
     if (!v) {
       v = {
-        id: `v_${p.id}_0`,
-        productId: p.id,
-        sku: p.sku || `SKU-${p.id}`,
+        id: item.variantId || `v_${p.id || p._id || '0'}_0`,
+        productId: p.id || p._id?.toString(),
+        sku: p.sku || `SKU-${p.id || p._id}`,
         price: p.price || p.basePrice || 150000,
         options: {
           Size: item.size || 'M',

@@ -368,6 +368,8 @@ export async function createAdminProduct(data, user) {
         const svPrice = (sv.amount !== undefined && sv.amount !== null && sv.amount !== '')
           ? Number(sv.amount)
           : ((sv.price !== undefined && sv.price !== null && sv.price !== '') ? Number(sv.price) : vPrice);
+        const isHidden = sv.hidden === true || sv.status === 'hidden' || isValHidden;
+        const isSubPublished = normalizedStatus === 'published' && !isHidden && sv.published !== false && sv.status !== 'draft';
         let svOpts = sv.options ? (sv.options instanceof Map ? Object.fromEntries(sv.options) : { ...sv.options }) : {};
         if (!svOpts.Size && !svOpts.size) {
           const parentSize = (v.name || '').replace(/^(Size|Variant)\s*:\s*/i, '').trim();

@@ -232,7 +232,8 @@ export async function getProductBySlug(slug) {
   return {
     ...product,
     category,
-    variants: structuredTopVars,
+    variants: enrichedVariants,
+    structuredVariants: structuredTopVars,
     allVariants: enrichedVariants,
     totalStock: effectiveStockVars.reduce((sum, v) => sum + (v.availableStock || 0), 0)
   };
