@@ -180,13 +180,23 @@ export default function AdminInventoryPage() {
     return <span className="badge badge-success">in stock</span>;
   };
 
-  // Map inventories by variantId + warehouseId
-  const invMap = useMemo(() => {
+  // Map inventories by variantId across warehouses
+  const invByVariantId = useMemo(() => {
     const map = {};
     inventoryList.forEach(inv => {
       if (!inv.archived) {
-        map[`${inv.variantId}_${inv.warehouseId}`] = inv;
-        map[inv.variantId] = inv;
+        if (!map[inv.variantId]) {
+          map[inv.variantId] = {
+            totalAvailable: 0,
+            totalReserved: 0,
+            byWarehouse: {}
+          };
+        }
+        const avail = Number(inv.available) || 0;
+        const res = Number(inv.reserved) || 0;
+        map[inv.variantId].totalAvailable += avail;
+        map[inv.variantId].totalReserved += res;
+        map[inv.variantId].byWarehouse[inv.warehouseId] = inv;
       }
     });
     return map;
@@ -215,9 +225,21 @@ export default function AdminInventoryPage() {
         sizeSet.add(size);
         colorSet.add(color);
 
-        const invDoc = invMap[v.id] || null;
-        const available = invDoc ? Number(invDoc.available) || 0 : 0;
-        const reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
+        const invData = invByVariantId[v.id];
+        let available = 0;
+        let reserved = 0;
+        let invDoc = null;
+
+        if (warehouseFilter && warehouseFilter !== 'all') {
+          invDoc = invData?.byWarehouse[warehouseFilter] || null;
+          available = invDoc ? Number(invDoc.available) || 0 : 0;
+          reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
+        } else {
+          invDoc = invData?.byWarehouse['w1'] || (invData ? Object.values(invData.byWarehouse)[0] : null);
+          available = invData ? invData.totalAvailable : (invDoc ? Number(invDoc.available) || 0 : 0);
+          reserved = invData ? invData.totalReserved : (invDoc ? Number(invDoc.reserved) || 0 : 0);
+        }
+
         const price = getVariantPrice(v, prod);
 
         totalProdStock += available;
@@ -236,7 +258,7 @@ export default function AdminInventoryPage() {
           v,
           m: prod,
           r: invDoc,
-          sku: v.sku || `${prod.sku}-${size}-${color.slice(0, 3).toUpperCase()}`,
+          sku: v.sku || `${prod.sku}-${size.replace(/\s+/g, '')}-${color.slice(0, 3).toUpperCase()}`,
           size,
           color,
           available,
@@ -277,18 +299,48 @@ export default function AdminInventoryPage() {
         published: prod.status === 'published'
       };
     });
-  }, [products, variants, invMap, warehouses]);
+  }, [products, variants, invByVariantId, warehouseFilter, warehouses]);
 
-  // Overall metrics
-  const totalStockUnits = useMemo(() => groupedProducts.reduce((sum, p) => sum + p.totalStock, 0), [groupedProducts]);
-  const outOfStockCount = useMemo(() => groupedProducts.filter(p => p.isOutOfStock).length, [groupedProducts]);
-  const totalVariantsCount = useMemo(() => groupedProducts.reduce((sum, p) => sum + p.variantsCount, 0), [groupedProducts]);
+  // Overall accurate metrics
+  const stats = useMemo(() => {
+    let totalStock = 0;
+    let totalVariants = 0;
+    let outOfStockVars = 0;
+    let lowStockVars = 0;
+    let inStockVars = 0;
+
+    groupedProducts.forEach(p => {
+      p.sizeGroups.forEach(sg => {
+        sg.colours.forEach(c => {
+          totalVariants++;
+          totalStock += c.available;
+          if (c.available <= 0) {
+            outOfStockVars++;
+          } else if (c.available <= 5) {
+            lowStockVars++;
+          } else {
+            inStockVars++;
+          }
+        });
+      });
+    });
+
+    return {
+      totalStockUnits: totalStock,
+      totalVariantsCount: totalVariants,
+      masterProductsCount: groupedProducts.length,
+      outOfStockCount: outOfStockVars,
+      lowStockCount: lowStockVars,
+      inStockCount: inStockVars
+    };
+  }, [groupedProducts]);
 
   // Filter products by search, warehouse, and status
   const filteredProducts = useMemo(() => {
     return groupedProducts.filter(p => {
       if (statusFilter === 'out' && !p.isOutOfStock) return false;
       if (statusFilter === 'ok' && p.isOutOfStock) return false;
+      if (statusFilter === 'low' && (p.totalStock > 10 || p.isOutOfStock)) return false;
       if (search) {
         const q = search.toLowerCase().trim();
         const matchName = p.name.toLowerCase().includes(q);
@@ -563,23 +615,29 @@ export default function AdminInventoryPage() {
       </div>
 
       {/* Metrics Bar */}
-      <div className="stats-grid" style={{ marginBottom: '16px' }}>
+      <div className="stats-grid" style={{ marginBottom: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
         <div className="stat-card">
           <div className="stat-label">Total Stock Balance</div>
-          <div className="stat-value">{totalStockUnits.toLocaleString()} units</div>
+          <div className="stat-value">{stats.totalStockUnits.toLocaleString()} units</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Total Variants / SKUs</div>
-          <div className="stat-value">{totalVariantsCount}</div>
+          <div className="stat-value">{stats.totalVariantsCount}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Master Products</div>
-          <div className="stat-value">{groupedProducts.length}</div>
+          <div className="stat-value">{stats.masterProductsCount}</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Out of Stock</div>
-          <div className="stat-value" style={{ color: outOfStockCount > 0 ? 'var(--danger)' : 'inherit' }}>
-            {outOfStockCount}
+          <div className="stat-value" style={{ color: stats.outOfStockCount > 0 ? 'var(--danger)' : 'inherit' }}>
+            {stats.outOfStockCount}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Low Stock (&le; 5)</div>
+          <div className="stat-value" style={{ color: stats.lowStockCount > 0 ? 'var(--warning)' : 'inherit' }}>
+            {stats.lowStockCount}
           </div>
         </div>
       </div>
@@ -590,11 +648,18 @@ export default function AdminInventoryPage() {
           placeholder="Search by product, size, colour, SKU"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: '280px' }}
+          style={{ width: '260px' }}
         />
+        <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)}>
+          <option value="">All warehouses</option>
+          {warehouses.map(w => (
+            <option key={w.id} value={w.id}>{w.name}</option>
+          ))}
+        </select>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All availability</option>
           <option value="ok">In stock products</option>
+          <option value="low">Low stock (&le; 5)</option>
           <option value="out">Out of stock products</option>
         </select>
         <div style={{ display: 'flex', gap: '6px' }}>
