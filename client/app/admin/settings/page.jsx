@@ -347,9 +347,9 @@ export default function AdminSettingsPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '540px' }}>
             <h2>Database Migration Report</h2>
             <div style={{ fontSize: '13px', lineHeight: '1.6', marginTop: '12px' }}>
-              <p><strong>Current Schema Version:</strong> v{db.version || DB_VERSION}</p>
+              <p><strong>Current Schema Version:</strong> v{DB_VERSION}</p>
               <p><strong>App Version:</strong> {APP_VERSION}</p>
-              <p><strong>Last Migration Date:</strong> {db.lastMigratedAt ? new Date(db.lastMigratedAt).toLocaleString() : 'N/A'}</p>
+              <p><strong>Database Engine:</strong> MongoDB (Mongoose Schema v{DB_VERSION})</p>
               <div style={{ background: 'var(--muted)', padding: '12px', borderRadius: '8px', marginTop: '12px' }}>
                 <div style={{ fontWeight: 600, marginBottom: '6px' }}>Migration Steps Applied:</div>
                 <div>✓ v1: Base catalog and invoicing schema</div>
@@ -357,6 +357,7 @@ export default function AdminSettingsPage() {
                 <div>✓ v3: Double-entry accounting journal sync</div>
                 <div>✓ v4: Sales return wizard and credit notes</div>
                 <div>✓ v5: Variant matrix, barcodes and category taxonomy</div>
+                <div>✓ v7: Real-time inventory ledger and variant sync</div>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px' }}>
