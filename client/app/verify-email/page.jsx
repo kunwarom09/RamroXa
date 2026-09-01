@@ -7,32 +7,66 @@ import { api } from '../../services/apiClient';
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
-  const redirect = searchParams.get('redirect') || '/shop';
+  
+  // Extract token from searchParams with immediate fallback to window.location
+  const urlToken = searchParams.get('token');
+  const [token, setToken] = useState(urlToken || '');
+  const [redirect, setRedirect] = useState(searchParams.get('redirect') || '/shop');
 
   const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
   const [resendEmail, setResendEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState('');
-  const hasRequestedRef = React.useRef(false);
+  const verifiedTokenRef = React.useRef(null);
+
+  // Sync token from window immediately on mount if searchParams was delayed
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const windowToken = params.get('token');
+      const windowRedirect = params.get('redirect');
+      if (windowToken && windowToken !== token) {
+        setToken(windowToken);
+      }
+      if (windowRedirect && windowRedirect !== redirect) {
+        setRedirect(windowRedirect);
+      }
+    }
+  }, [urlToken]);
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setErrorMessage('No verification token was found in the link. Please check your email or request a new link.');
-      return;
+    const activeToken = token || urlToken || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null);
+
+    if (!activeToken) {
+      const timeout = setTimeout(() => {
+        const fallbackToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null;
+        if (!fallbackToken) {
+          setStatus('error');
+          setErrorMessage('No verification token was found in this link. Please check your email or request a new link.');
+        }
+      }, 300);
+      return () => clearTimeout(timeout);
     }
 
-    if (hasRequestedRef.current) return;
-    hasRequestedRef.current = true;
+    if (verifiedTokenRef.current === activeToken) return;
+    verifiedTokenRef.current = activeToken;
 
     let isMounted = true;
 
+    // Safety timeout: never hang more than 4 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && status === 'verifying') {
+        setStatus('error');
+        setErrorMessage('Verification is taking longer than expected. Please check your connection or request a new link.');
+      }
+    }, 4000);
+
     async function verify() {
       try {
-        const res = await api.post('/api/auth/verify-email', { token });
+        const res = await api.post('/api/auth/verify-email', { token: activeToken });
         if (!isMounted) return;
+        clearTimeout(safetyTimeout);
 
         const tokenVal = res?.data?.accessToken || res?.accessToken;
         if (tokenVal) {
@@ -50,16 +84,18 @@ function VerifyEmailContent() {
 
         setStatus('success');
 
-        // Redirect back to checkout (or specified redirect) after short celebratory pause
+        // Instant redirect in 400ms for quick smooth experience
         setTimeout(() => {
+          const targetUrl = redirect || '/shop';
           if (typeof window !== 'undefined') {
-            window.location.href = redirect;
+            window.location.href = targetUrl;
           } else {
-            router.push(redirect);
+            router.push(targetUrl);
           }
-        }, 1200);
+        }, 400);
       } catch (err) {
         if (!isMounted) return;
+        clearTimeout(safetyTimeout);
         setStatus('error');
         setErrorMessage(err.message || 'Verification link is invalid or has expired.');
       }
@@ -69,8 +105,9 @@ function VerifyEmailContent() {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
     };
-  }, [token, redirect, router]);
+  }, [token, urlToken, redirect, router]);
 
   const handleResend = async (e) => {
     e.preventDefault();
