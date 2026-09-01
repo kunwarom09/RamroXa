@@ -21,6 +21,8 @@ const addressSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
+    receiverPhone: { type: String, default: '', trim: true },
+    receiverNumber: { type: String, default: '', trim: true },
     line1: { type: String, default: '', trim: true },
     line2: { type: String, default: '', trim: true },
     city: { type: String, default: 'Kathmandu', trim: true },

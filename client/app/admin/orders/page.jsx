@@ -206,9 +206,26 @@ export default function AdminOrdersPage() {
               <p style={{ margin: '4px 0' }}><strong>Customer:</strong> {selectedOrder.customer}</p>
               {selectedOrder.phone && <p style={{ margin: '4px 0' }}><strong>Phone:</strong> {selectedOrder.phone}</p>}
               {selectedOrder.shippingAddress && (
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Shipping Address:</strong> {selectedOrder.shippingAddress.line1 ? `${selectedOrder.shippingAddress.line1}, ${selectedOrder.shippingAddress.city || 'Kathmandu'}` : (typeof selectedOrder.shippingAddress === 'string' ? selectedOrder.shippingAddress : 'Kathmandu Valley')}
-                </p>
+                <div style={{ margin: '8px 0', padding: '8px 12px', background: '#f8f8f8', borderRadius: 6 }}>
+                  <p style={{ margin: '2px 0' }}>
+                    <strong>Address Line 1:</strong> {selectedOrder.shippingAddress.line1 || (typeof selectedOrder.shippingAddress === 'string' ? selectedOrder.shippingAddress : 'N/A')}
+                  </p>
+                  {selectedOrder.shippingAddress.line2 && (
+                    <p style={{ margin: '2px 0' }}>
+                      <strong>Address Line 2:</strong> {selectedOrder.shippingAddress.line2}
+                    </p>
+                  )}
+                  {(selectedOrder.shippingAddress.receiverPhone || selectedOrder.shippingAddress.receiverNumber) && (
+                    <p style={{ margin: '2px 0', color: '#0284c7' }}>
+                      <strong>Receiver Number:</strong> {selectedOrder.shippingAddress.receiverPhone || selectedOrder.shippingAddress.receiverNumber}
+                    </p>
+                  )}
+                  {selectedOrder.shippingAddress.city && (
+                    <p style={{ margin: '2px 0' }}>
+                      <strong>City / Region:</strong> {selectedOrder.shippingAddress.city}
+                    </p>
+                  )}
+                </div>
               )}
               <p style={{ margin: '4px 0' }}><strong>Order Date:</strong> {selectedOrder.date}</p>
               <p style={{ margin: '4px 0' }}><strong>Payment Method:</strong> {selectedOrder.pay}</p>

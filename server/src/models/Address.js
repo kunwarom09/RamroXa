@@ -18,6 +18,16 @@ const addressSchema = new mongoose.Schema(
       required: [true, 'Phone number is required'],
       trim: true
     },
+    receiverPhone: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    receiverNumber: {
+      type: String,
+      default: '',
+      trim: true
+    },
     line1: {
       type: String,
       required: [true, 'Address line 1 is required'],

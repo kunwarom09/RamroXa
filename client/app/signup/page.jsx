@@ -33,6 +33,8 @@ function SignupContent() {
     email: '',
     phone: '',
     address: '',
+    address2: '',
+    receiverPhone: '',
     password: '',
     retypePassword: ''
   });
@@ -66,7 +68,7 @@ function SignupContent() {
     setError('');
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.address.trim()) {
-      setError('Please fill in all required fields (Name, Email, Address).');
+      setError('Please fill in all required fields (Name, Email, Address 1).');
       return;
     }
 
@@ -88,9 +90,10 @@ function SignupContent() {
         name: formData.name.trim(),
         email: targetEmail,
         phone: formData.phone.trim(),
+        receiverPhone: formData.receiverPhone.trim(),
         address: formData.address.trim(),
         permanentAddress: formData.address.trim(),
-        temporaryAddress: formData.address.trim(),
+        temporaryAddress: formData.address2.trim() || formData.address.trim(),
         password: formData.password,
         redirect
       });
@@ -359,17 +362,63 @@ function SignupContent() {
               />
             </div>
 
-            {/* Address */}
+            {/* Address 1 */}
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                ADDRESS <span style={{ color: '#dc2626' }}>*</span>
+                ADDRESS 1 (PERMANENT / PRIMARY) <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Thamel, Kathmandu"
+                placeholder="e.g. Ward 4, Baluwatar, Kathmandu"
                 value={formData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 42,
+                  padding: '0 14px',
+                  borderRadius: 8,
+                  border: '1px solid #d4d4d4',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Address 2 */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                ADDRESS 2 (TEMPORARY / DELIVERY / LANDMARK) <span style={{ color: '#888', fontWeight: 400 }}>(Optional)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Apartment 3B, Opposite City Center, Thamel"
+                value={formData.address2}
+                onChange={(e) => handleChange('address2', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 42,
+                  padding: '0 14px',
+                  borderRadius: 8,
+                  border: '1px solid #d4d4d4',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Receiver Number - Placed just below Address 2 */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
+                RECEIVER NUMBER <span style={{ color: '#888', fontWeight: 400 }}>(Optional / Alternate Contact)</span>
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. +977 9841234567"
+                value={formData.receiverPhone}
+                onChange={(e) => handleChange('receiverPhone', e.target.value)}
                 style={{
                   width: '100%',
                   height: 42,

@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true
     },
+    receiverPhone: {
+      type: String,
+      default: '',
+      trim: true
+    },
     permanentAddress: {
       type: String,
       default: '',

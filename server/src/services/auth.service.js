@@ -11,7 +11,7 @@ import {
 import { sendVerificationEmail } from './email.service.js';
 
 export async function register(data) {
-  const { email, password, name, phone, permanentAddress, temporaryAddress, redirect } = data;
+  const { email, password, name, phone, receiverPhone, permanentAddress, temporaryAddress, redirect } = data;
 
   if (!email || !password || !name) {
     throw ApiError.badRequest('Email, password, and name are required.');
@@ -40,6 +40,7 @@ export async function register(data) {
     passwordHash,
     name: name.trim(),
     phone: (phone || '').trim(),
+    receiverPhone: (receiverPhone || '').trim(),
     permanentAddress: (permanentAddress || '').trim(),
     temporaryAddress: (temporaryAddress || '').trim(),
     role: 'customer',
@@ -286,7 +287,7 @@ export async function logout({ sessionId, rawRefreshToken }) {
 }
 
 export async function updateProfile(userId, data) {
-  const { name, phone, permanentAddress, temporaryAddress } = data;
+  const { name, phone, receiverPhone, permanentAddress, temporaryAddress } = data;
   const user = await User.findById(userId);
   if (!user || user.deletedAt) {
     throw ApiError.notFound('User not found.');
@@ -294,6 +295,7 @@ export async function updateProfile(userId, data) {
 
   if (name !== undefined && name.trim()) user.name = name.trim();
   if (phone !== undefined) user.phone = phone.trim();
+  if (receiverPhone !== undefined) user.receiverPhone = receiverPhone.trim();
   if (permanentAddress !== undefined) user.permanentAddress = permanentAddress.trim();
   if (temporaryAddress !== undefined) user.temporaryAddress = temporaryAddress.trim();
 
