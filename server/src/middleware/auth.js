@@ -6,17 +6,25 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 export const authenticate = asyncHandler(async (req, res, next) => {
   let token = null;
 
-  if (req.cookies && req.cookies.zylo_access_token) {
-    token = req.cookies.zylo_access_token;
-  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+  // Prefer explicit Authorization Bearer header first, then cookie
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.zylo_access_token) {
+    token = req.cookies.zylo_access_token;
   }
 
   if (!token) {
     return next();
   }
 
-  const decoded = verifyAccessToken(token);
+  let decoded = verifyAccessToken(token);
+
+  // Fallback: If header token failed and cookie is present, try cookie
+  if (!decoded && req.cookies && req.cookies.zylo_access_token && token !== req.cookies.zylo_access_token) {
+    token = req.cookies.zylo_access_token;
+    decoded = verifyAccessToken(token);
+  }
+
   if (!decoded) {
     return next();
   }
@@ -27,7 +35,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
     return next();
   }
 
-  // Check session validity if sessionId is present
+  // Check session context if sessionId is present
   if (decoded.sessionId) {
     const session = await Session.findOne({
       _id: decoded.sessionId,
@@ -35,10 +43,9 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       expiresAt: { $gt: new Date() }
     }).lean();
 
-    if (!session) {
-      return next();
+    if (session) {
+      req.sessionId = session._id;
     }
-    req.sessionId = session._id;
   }
 
   req.user = user;
@@ -75,19 +82,24 @@ export const verifyCsrf = (req, res, next) => {
     return next();
   }
 
-  const cookieToken = req.cookies['XSRF-TOKEN'] || req.cookies['xsrf-token'];
-  const headerToken = req.headers['x-csrf-token'] || req.headers['xsrf-token'] || req.headers['x-xsrf-token'];
-
-  // In non-production/API testing or if bearer token is used, allow with warning
-  if (req.headers.authorization && !req.cookies.zylo_access_token) {
+  // If request carries Bearer token in Authorization header, it is immune to CSRF
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     return next();
   }
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-    return next(ApiError.forbidden('Invalid or missing CSRF token.'));
+  const cookieToken = req.cookies['XSRF-TOKEN'] || req.cookies['xsrf-token'];
+  const headerToken = req.headers['x-csrf-token'] || req.headers['xsrf-token'] || req.headers['x-xsrf-token'];
+
+  if (cookieToken && headerToken && cookieToken === headerToken) {
+    return next();
   }
 
-  next();
+  // If no auth cookie is present, allow API requests
+  if (!req.cookies.zylo_access_token) {
+    return next();
+  }
+
+  return next(ApiError.forbidden('Invalid or missing CSRF token.'));
 };
 
 export default { authenticate, requireAuth, requireRole, requireAdmin, verifyCsrf };

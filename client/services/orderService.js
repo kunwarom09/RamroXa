@@ -7,18 +7,27 @@ export async function placeOrderApi(orderData) {
       'Idempotency-Key': idempotencyKey
     }
   });
-  return res.data?.order || res;
+  return res?.data?.order || res?.order || res?.data || res;
 }
 
 export async function fetchOrderApi(orderId, orderNo) {
   const query = orderNo ? `?orderNo=${orderNo}` : '';
   const res = await api.get(`/api/orders/${orderId}${query}`);
-  return res.data?.order || null;
+  return res?.data?.order || res?.order || res?.data || null;
 }
 
 export async function fetchUserOrdersApi() {
-  const res = await api.get('/api/orders');
-  return res.data?.orders || [];
+  try {
+    const res = await api.get('/api/orders');
+    if (Array.isArray(res?.data?.orders)) return res.data.orders;
+    if (Array.isArray(res?.orders)) return res.orders;
+    if (Array.isArray(res?.data)) return res.data;
+    if (Array.isArray(res)) return res;
+    return [];
+  } catch (err) {
+    console.warn('fetchUserOrdersApi notice:', err.message);
+    return [];
+  }
 }
 
 export async function getOrders() {

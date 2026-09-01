@@ -11,7 +11,8 @@ const orderItemSchema = new mongoose.Schema(
     sku: { type: String, required: true },
     qty: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true, min: 0 }, // In Paisa
-    lineTotal: { type: Number, required: true, min: 0 } // In Paisa
+    lineTotal: { type: Number, required: true, min: 0 }, // In Paisa
+    image: { type: String, default: '' }
   },
   { _id: false }
 );

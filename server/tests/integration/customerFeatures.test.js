@@ -14,7 +14,8 @@ import {
   Coupon,
   Review,
   Address,
-  Wishlist
+  Wishlist,
+  User
 } from '../../src/models/index.js';
 import { createAdminUser } from '../../src/scripts/createAdmin.js';
 import { defaultCategories, defaultWarehouses, defaultProducts } from '../../src/scripts/seedData.js';
@@ -70,6 +71,8 @@ describe('Phase 6 - Customer Profiles, Addresses, Coupons, Reviews & Wishlist AP
       .send({ email: 'bikash@example.com', password: 'Password123!', name: 'Bikash Thapa', phone: '+977 9804556677' });
     customer1Id = cust1Reg.body.data.user.id;
 
+    await User.updateOne({ email: 'bikash@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
+
     const cust1Login = await request(app)
       .post('/api/auth/login')
       .send({ email: 'bikash@example.com', password: 'Password123!' });
@@ -80,6 +83,8 @@ describe('Phase 6 - Customer Profiles, Addresses, Coupons, Reviews & Wishlist AP
       .post('/api/auth/register')
       .send({ email: 'sita@example.com', password: 'Password123!', name: 'Sita Rai', phone: '+977 9801234567' });
     customer2Id = cust2Reg.body.data.user.id;
+
+    await User.updateOne({ email: 'sita@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
 
     const cust2Login = await request(app)
       .post('/api/auth/login')

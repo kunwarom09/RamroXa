@@ -84,9 +84,11 @@ export default function AdminOrdersPage() {
   const badgeForStatus = {
     pending: 'badge-warning',
     confirmed: 'badge-accent',
+    processing: 'badge-accent',
     shipped: 'badge-accent',
     delivered: 'badge-success',
-    cancelled: 'badge-danger'
+    cancelled: 'badge-danger',
+    returned: 'badge-muted'
   };
 
   return (
@@ -127,9 +129,11 @@ export default function AdminOrdersPage() {
           <option value="">All statuses</option>
           <option value="pending">pending</option>
           <option value="confirmed">confirmed</option>
+          <option value="processing">processing</option>
           <option value="shipped">shipped</option>
           <option value="delivered">delivered</option>
           <option value="cancelled">cancelled</option>
+          <option value="returned">returned</option>
         </select>
         <div className="spacer" />
         <button className="btn" onClick={exportCsv}>Export CSV</button>
@@ -171,9 +175,11 @@ export default function AdminOrdersPage() {
                     >
                       <option value="pending">pending</option>
                       <option value="confirmed">confirmed</option>
+                      <option value="processing">processing</option>
                       <option value="shipped">shipped</option>
                       <option value="delivered">delivered</option>
                       <option value="cancelled">cancelled</option>
+                      <option value="returned">returned</option>
                     </select>
                   </td>
                   <td style={{ textAlign: 'right' }}>

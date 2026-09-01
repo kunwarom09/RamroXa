@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 
 export const router = express.Router();
 
-router.post('/', createOrder);
+router.post('/', requireAuth, createOrder);
 router.get('/', requireAuth, listMyOrders);
 router.get('/:id', getOrderById);
 

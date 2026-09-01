@@ -44,25 +44,28 @@ export async function register(data) {
     temporaryAddress: (temporaryAddress || '').trim(),
     role: 'customer',
     isEmailVerified: false,
-    isActive: true
+    isVerified: false,
+    emailVerifiedAt: null,
+    isActive: true,
+    lastLoginAt: null
   });
 
-  // Generate verification token (24h expiry)
+  // Generate verification token in background (expires in 24 hours)
   const rawToken = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
   await VerificationToken.create({
     user: user._id,
     token: rawToken,
     type: 'email_verification',
-    expiresAt
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
   });
 
-  // Send verification email via nodemailer
-  await sendVerificationEmail({
+  // Send verification email in background
+  sendVerificationEmail({
     user,
     token: rawToken,
     redirect: redirect || '/checkout'
+  }).catch((err) => {
+    console.error('❌ Failed to send verification email during registration:', err.message);
   });
 
   return {
@@ -97,6 +100,8 @@ export async function verifyEmail({ token, userAgent = '', ip = '' }) {
 
   // Mark verified
   user.isEmailVerified = true;
+  user.isVerified = true;
+  user.emailVerifiedAt = new Date();
   user.isActive = true;
   user.lastLoginAt = new Date();
   await user.save();
@@ -138,7 +143,7 @@ export async function resendVerificationEmail({ email, redirect = '/checkout' })
     return { message: 'If an account exists with that email, a verification link has been sent.' };
   }
 
-  if (user.isEmailVerified) {
+  if (user.isEmailVerified || user.isVerified) {
     return { message: 'Your email address is already verified. You may sign in to continue.' };
   }
 
@@ -182,6 +187,13 @@ export async function login({ email, password, userAgent = '', ip = '', requireA
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     throw ApiError.unauthorized('Invalid email or password.');
+  }
+
+  // Block login for unverified customers
+  if (!user.isEmailVerified && !user.isVerified && user.role !== 'admin') {
+    const err = ApiError.forbidden('Please verify your email before logging in.');
+    err.code = 'EMAIL_NOT_VERIFIED';
+    throw err;
   }
 
   if (requireAdminRole && user.role !== 'admin' && user.role !== 'staff') {

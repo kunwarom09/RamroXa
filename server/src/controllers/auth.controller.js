@@ -7,12 +7,15 @@ import {
 } from '../utils/token.js';
 
 export const register = asyncHandler(async (req, res) => {
-  const result = await authService.register(req.body);
+  const userAgent = req.headers['user-agent'] || '';
+  const ip = req.ip || req.connection.remoteAddress || '';
+  const result = await authService.register({ ...req.body, userAgent, ip });
+
   res.status(201).json({
-    message: 'Account created successfully. Please verify your email to continue.',
+    message: 'Account created! Please check your email and click the verification link to activate your account.',
     data: {
-      user: result.user || result,
-      emailVerificationSent: result.emailVerificationSent ?? true
+      user: result.user,
+      emailVerificationSent: true
     }
   });
 });

@@ -42,6 +42,10 @@ export async function createOrder(data) {
     guestPhone
   } = data;
 
+  if (!user) {
+    throw ApiError.unauthorized('You must be signed in to complete checkout.');
+  }
+
   if (!items || !items.length) {
     throw ApiError.badRequest('Cannot place an order with an empty cart.');
   }
@@ -231,6 +235,8 @@ export async function createOrder(data) {
       variantLabel = parts.join(' / ') || 'Default';
     }
 
+    const itemImage = item.image || item.img || item.imageUrl || (p.images && p.images.find(img => img.isFeatured)?.url) || (p.images && p.images[0]?.url) || p.img1 || '';
+
     orderLineItems.push({
       product: p._id,
       variant: v ? (v._id || undefined) : undefined,
@@ -240,7 +246,8 @@ export async function createOrder(data) {
       variantLabel,
       sku: v ? v.sku : p.sku,
       qty: Number(item.qty) || 1,
-      unitPrice
+      unitPrice,
+      image: itemImage
     });
   }
 
@@ -423,7 +430,15 @@ export async function listUserOrders(user) {
   if (!user) {
     throw ApiError.unauthorized('Authentication required to view orders.');
   }
-  return Order.find({ user: user._id }).sort({ createdAt: -1 }).lean();
+  const orConditions = [{ user: user._id }];
+  if (user.email) {
+    orConditions.push({ guestEmail: user.email.toLowerCase() });
+  }
+  if (user.phone) {
+    orConditions.push({ guestPhone: user.phone });
+    orConditions.push({ 'shippingAddress.phone': user.phone });
+  }
+  return Order.find({ $or: orConditions }).sort({ createdAt: -1 }).lean();
 }
 
 export async function updateFulfillmentStatus({ orderId, newStatus, user, note = '' }) {
@@ -432,25 +447,39 @@ export async function updateFulfillmentStatus({ orderId, newStatus, user, note =
     throw ApiError.notFound('Order not found.');
   }
 
-  const currentStatus = order.fulfillmentStatus;
-  const allowed = ALLOWED_FULFILLMENT_TRANSITIONS[currentStatus] || [];
-
-  if (!allowed.includes(newStatus)) {
-    throw ApiError.conflict(
-      `Cannot transition fulfillment status from '${currentStatus}' to '${newStatus}'. Allowed transitions: ${allowed.join(', ')}`
-    );
+  const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
+  if (!validStatuses.includes(newStatus)) {
+    throw ApiError.badRequest(`Invalid fulfillment status '${newStatus}'. Allowed: ${validStatuses.join(', ')}`);
   }
 
+  const currentStatus = order.fulfillmentStatus;
+
+  if (currentStatus !== newStatus) {
+    const allowed = ALLOWED_FULFILLMENT_TRANSITIONS[currentStatus] || [];
+    if (!allowed.includes(newStatus)) {
+      throw ApiError.conflict(
+        `Cannot transition fulfillment status from '${currentStatus}' to '${newStatus}'. Allowed transitions: ${allowed.join(', ')}`
+      );
+    }
+  }
+
+  const previousStatus = order.fulfillmentStatus;
   order.fulfillmentStatus = newStatus;
+
+  // Auto mark payment as paid if delivered via COD
+  if (newStatus === 'delivered' && order.paymentMethod === 'cod' && order.paymentStatus === 'pending') {
+    order.paymentStatus = 'paid';
+  }
+
   order.statusHistory.push({
     status: newStatus,
     at: new Date(),
-    by: user ? user.name || user.email : 'admin',
-    note
+    by: user ? (user.name || user.email) : 'admin',
+    note: note || `Status updated from ${previousStatus} to ${newStatus}`
   });
 
   // If order was cancelled, release reserved stock back to available
-  if (newStatus === 'cancelled') {
+  if (newStatus === 'cancelled' && previousStatus !== 'cancelled') {
     for (const item of order.items) {
       if (!item.variantId) continue;
       const inv = await Inventory.findOneAndUpdate(
@@ -478,7 +507,7 @@ export async function updateFulfillmentStatus({ orderId, newStatus, user, note =
   }
 
   // If order was returned, restore available stock
-  if (newStatus === 'returned') {
+  if (newStatus === 'returned' && previousStatus !== 'returned') {
     for (const item of order.items) {
       if (!item.variantId) continue;
       const inv = await Inventory.findOneAndUpdate(

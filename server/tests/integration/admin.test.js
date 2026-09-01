@@ -3,7 +3,7 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createApp } from '../../src/app.js';
 import { connectDB, disconnectDB } from '../../src/config/db.js';
-import { Category, Product, Variant, Inventory, Warehouse, Order, Payment } from '../../src/models/index.js';
+import { Category, Product, Variant, Inventory, Warehouse, Order, Payment, User } from '../../src/models/index.js';
 import { createAdminUser } from '../../src/scripts/createAdmin.js';
 import { defaultWarehouses } from '../../src/scripts/seedData.js';
 
@@ -31,9 +31,11 @@ describe('Phase 5 - Admin CRUD & Management API', () => {
     adminToken = adminLoginRes.body.data.accessToken;
 
     // 2. Create Customer User
-    const custRegRes = await request(app)
+    await request(app)
       .post('/api/auth/register')
       .send({ email: 'customer@example.com', password: 'CustPassword123!', name: 'Regular Customer' });
+
+    await User.updateOne({ email: 'customer@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
 
     const custLoginRes = await request(app)
       .post('/api/auth/login')

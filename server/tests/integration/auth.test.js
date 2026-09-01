@@ -99,7 +99,23 @@ describe('Phase 2 - Authentication & Session Lifecycle API', () => {
   });
 
   describe('User Login & Session Cookies', () => {
-    it('POST /api/auth/login with valid credentials should return tokens and set HttpOnly cookies', async () => {
+    it('POST /api/auth/login should block unverified users with 403 Forbidden', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'sita.rai@example.com',
+          password: 'CustomerPass123!'
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('EMAIL_NOT_VERIFIED');
+      expect(res.body.error.message).toContain('Please verify your email');
+    });
+
+    it('POST /api/auth/login with valid credentials after email verification should return tokens and set HttpOnly cookies', async () => {
+      // Mark user as verified
+      await User.updateOne({ email: 'sita.rai@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
+
       const res = await request(app)
         .post('/api/auth/login')
         .send({

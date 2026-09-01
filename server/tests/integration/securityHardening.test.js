@@ -55,6 +55,8 @@ describe('Security Hardening & Vulnerability Remediation Suite', () => {
       });
     normalUser = userRes.body.data.user;
 
+    await User.updateOne({ email: 'legit.customer@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
+
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({
@@ -74,6 +76,8 @@ describe('Security Hardening & Vulnerability Remediation Suite', () => {
       });
     attackerUser = attackerRes.body.data.user;
 
+    await User.updateOne({ email: 'attacker@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
+
     const attackerLoginRes = await request(app)
       .post('/api/auth/login')
       .send({
@@ -92,6 +96,7 @@ describe('Security Hardening & Vulnerability Remediation Suite', () => {
     it('should completely ignore client-injected unitPrice and charge the verified database price', async () => {
       const res = await request(app)
         .post('/api/orders')
+        .set('Authorization', `Bearer ${normalUserToken}`)
         .send({
           items: [
             {
@@ -119,14 +124,13 @@ describe('Security Hardening & Vulnerability Remediation Suite', () => {
   });
 
   describe('VULN-02: IDOR & PII Disclosure Defense on Order Retrieval', () => {
-    let guestOrderNo;
-    let validGuestToken = 'secret_guest_session_token_xyz';
+    let legitOrderNo;
 
     beforeAll(async () => {
-      // Create order as guest with valid guest token
+      // Create order as legitimate customer
       const res = await request(app)
         .post('/api/orders')
-        .set('X-Guest-Token', validGuestToken)
+        .set('Authorization', `Bearer ${normalUserToken}`)
         .send({
           items: [{ variantId: 'v_sec_test', qty: 1 }],
           shippingAddress: {
@@ -137,32 +141,32 @@ describe('Security Hardening & Vulnerability Remediation Suite', () => {
           },
           paymentMethod: 'cod'
         });
-      guestOrderNo = res.body.data.order.orderNo;
+      legitOrderNo = res.body.data.order.orderNo;
     });
 
-    it('should reject unauthenticated request without guest token with 403 Forbidden', async () => {
+    it('should reject unauthenticated request without authentication token with 401/403 Forbidden', async () => {
       const res = await request(app)
-        .get(`/api/orders/${guestOrderNo}`);
+        .get(`/api/orders/${legitOrderNo}`);
+
+      expect([401, 403]).toContain(res.status);
+    });
+
+    it('should reject attacker request attempting to read another user order with 403 Forbidden', async () => {
+      const res = await request(app)
+        .get(`/api/orders/${legitOrderNo}`)
+        .set('Authorization', `Bearer ${attackerUserToken}`);
 
       expect(res.status).toBe(403);
       expect(res.body.error.code).toBe('FORBIDDEN');
     });
 
-    it('should reject unauthenticated request with incorrect guest token with 403 Forbidden', async () => {
+    it('should allow retrieval when legitimate order owner requests their order', async () => {
       const res = await request(app)
-        .get(`/api/orders/${guestOrderNo}`)
-        .set('X-Guest-Token', 'wrong_attacker_token');
-
-      expect(res.status).toBe(403);
-    });
-
-    it('should allow retrieval when valid matching guest token is provided', async () => {
-      const res = await request(app)
-        .get(`/api/orders/${guestOrderNo}`)
-        .set('X-Guest-Token', validGuestToken);
+        .get(`/api/orders/${legitOrderNo}`)
+        .set('Authorization', `Bearer ${normalUserToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.order.orderNo).toBe(guestOrderNo);
+      expect(res.body.data.order.orderNo).toBe(legitOrderNo);
       expect(res.body.data.order.shippingAddress.fullName).toBe('Secret VIP Customer');
     });
   });

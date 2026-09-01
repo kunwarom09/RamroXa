@@ -3,12 +3,13 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createApp } from '../../src/app.js';
 import { connectDB, disconnectDB } from '../../src/config/db.js';
-import { Product, Variant, Inventory, Warehouse, Order, StockMove } from '../../src/models/index.js';
+import { Product, Variant, Inventory, Warehouse, Order, StockMove, User } from '../../src/models/index.js';
 import { defaultProducts, defaultWarehouses } from '../../src/scripts/seedData.js';
 
 describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
   let app;
   let mongoServer;
+  let testUserToken;
 
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -63,6 +64,27 @@ describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
       available: 1, // Only 1 available for race test!
       reserved: 0
     });
+
+    // Register and authenticate customer
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: 'cart.customer@example.com',
+        password: 'Password123!',
+        name: 'Cart Customer',
+        phone: '+977 9801234567'
+      });
+
+    await User.updateOne({ email: 'cart.customer@example.com' }, { isEmailVerified: true, isVerified: true, emailVerifiedAt: new Date() });
+
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'cart.customer@example.com',
+        password: 'Password123!'
+      });
+
+    testUserToken = loginRes.body.data.accessToken;
   });
 
   afterAll(async () => {
@@ -137,6 +159,7 @@ describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
 
       const res = await request(app)
         .post('/api/orders')
+        .set('Authorization', `Bearer ${testUserToken}`)
         .send({
           items: [
             {
@@ -180,6 +203,7 @@ describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
       // 1. First call
       const res1 = await request(app)
         .post('/api/orders')
+        .set('Authorization', `Bearer ${testUserToken}`)
         .set('Idempotency-Key', idempotencyKey)
         .send({
           items: [{ variantId: 'v_m1_s', qty: 1 }],
@@ -193,6 +217,7 @@ describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
       // 2. Replay with identical Idempotency-Key
       const res2 = await request(app)
         .post('/api/orders')
+        .set('Authorization', `Bearer ${testUserToken}`)
         .set('Idempotency-Key', idempotencyKey)
         .send({
           items: [{ variantId: 'v_m1_s', qty: 1 }],
@@ -222,8 +247,8 @@ describe('Phase 3 - Cart, Checkout & Inventory Reservation API', () => {
 
       // Fire two checkout requests simultaneously
       const [req1, req2] = await Promise.all([
-        request(app).post('/api/orders').send(orderPayload),
-        request(app).post('/api/orders').send(orderPayload)
+        request(app).post('/api/orders').set('Authorization', `Bearer ${testUserToken}`).send(orderPayload),
+        request(app).post('/api/orders').set('Authorization', `Bearer ${testUserToken}`).send(orderPayload)
       ]);
 
       const statuses = [req1.status, req2.status].sort();

@@ -83,9 +83,8 @@ function SignupContent() {
     setLoading(true);
 
     try {
-      // 1. Register account with verification email
       const targetEmail = formData.email.trim().toLowerCase();
-      await api.post('/api/auth/register', {
+      const res = await api.post('/api/auth/register', {
         name: formData.name.trim(),
         email: targetEmail,
         phone: formData.phone.trim(),
@@ -99,7 +98,8 @@ function SignupContent() {
       setRegisteredEmail(targetEmail);
       setVerificationSent(true);
     } catch (err) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to create account. Please try again.';
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -166,9 +166,27 @@ function SignupContent() {
             borderRadius: 8,
             fontSize: 13,
             marginBottom: 20,
-            lineHeight: 1.5
+            lineHeight: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8
           }}>
-            {error}
+            <span>{error}</span>
+            {error.toLowerCase().includes('already exists') && (
+              <Link
+                href={`/login?redirect=${encodeURIComponent(redirect)}`}
+                style={{
+                  color: '#b91c1c',
+                  fontWeight: 700,
+                  textDecoration: 'underline',
+                  fontSize: 13
+                }}
+              >
+                Sign in now &rarr;
+              </Link>
+            )}
           </div>
         )}
 

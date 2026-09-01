@@ -15,10 +15,33 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+
+  const handleResend = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email address above to receive a verification link.');
+      return;
+    }
+    setResendLoading(true);
+    setResendMessage('');
+    try {
+      const res = await api.post('/api/auth/resend-verification', {
+        email: email.trim().toLowerCase(),
+        redirect
+      });
+      setResendMessage(res?.message || 'A fresh verification link has been sent to your email.');
+    } catch (err) {
+      setResendMessage(err.message || 'Could not resend email. Please check the address and try again.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setResendMessage('');
 
     if (!email.trim() || !password) {
       setError('Please enter your email and password.');
@@ -33,20 +56,40 @@ function LoginContent() {
         password
       });
 
+      const token = res?.data?.accessToken || res?.accessToken;
+      if (token) {
+        localStorage.setItem('zylo_access_token', token);
+        document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+      }
       if (res?.data?.user) {
-        localStorage.setItem('zylo_user', JSON.stringify(res.data.user));
+        const u = res.data.user;
+        localStorage.setItem('zylo_user', JSON.stringify(u));
+        if (u.name) localStorage.setItem('zylo-c-name', u.name);
+        if (u.phone) localStorage.setItem('zylo-c-phone', u.phone);
+        const addr = u.permanentAddress || u.temporaryAddress || u.address;
+        if (addr) localStorage.setItem('zylo-c-address', addr);
       }
 
       setSuccess(true);
       setTimeout(() => {
-        router.push(redirect);
-      }, 800);
+        if (typeof window !== 'undefined') {
+          window.location.href = redirect;
+        } else {
+          router.push(redirect);
+        }
+      }, 300);
     } catch (err) {
       setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const isUnverifiedError = error && (
+    error.toLowerCase().includes('verify your email') ||
+    error.toLowerCase().includes('verification') ||
+    error.toLowerCase().includes('not verified')
+  );
 
   return (
     <div style={{
@@ -82,13 +125,49 @@ function LoginContent() {
             background: '#fef2f2',
             color: '#b91c1c',
             border: '1px solid #fecaca',
+            padding: '14px 16px',
+            borderRadius: 8,
+            fontSize: 13,
+            marginBottom: 20,
+            lineHeight: 1.5
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: isUnverifiedError ? 8 : 0 }}>{error}</div>
+            {isUnverifiedError && (
+              <div style={{ marginTop: 8, borderTop: '1px solid #fee2e2', paddingTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendLoading}
+                  style={{
+                    background: '#b91c1c',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '6px 12px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: resendLoading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {resendMessage && (
+          <div style={{
+            background: '#f0fdf4',
+            color: '#16a34a',
+            border: '1px solid #bbf7d0',
             padding: '12px 16px',
             borderRadius: 8,
             fontSize: 13,
             marginBottom: 20,
             lineHeight: 1.5
           }}>
-            {error}
+            {resendMessage}
           </div>
         )}
 

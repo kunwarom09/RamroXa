@@ -6,7 +6,12 @@ let transporter = null;
 async function getTransporter() {
   if (transporter) return transporter;
 
-  if (env.SMTP_SERVICE && env.SMTP_USER && env.SMTP_PASS) {
+  if (env.NODE_ENV === 'test') {
+    // In test environment, use a mock transport to avoid network calls
+    transporter = nodemailer.createTransport({
+      jsonTransport: true
+    });
+  } else if (env.SMTP_SERVICE && env.SMTP_USER && env.SMTP_PASS) {
     transporter = nodemailer.createTransport({
       service: env.SMTP_SERVICE,
       auth: {
@@ -26,11 +31,6 @@ async function getTransporter() {
       }
     });
     console.log(`📧 Configured email transporter using host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
-  } else if (env.NODE_ENV === 'test') {
-    // In test environment, use a mock transport to avoid network calls
-    transporter = nodemailer.createTransport({
-      jsonTransport: true
-    });
   } else {
     // In dev mode without configured SMTP, try ethereal email or stream
     try {

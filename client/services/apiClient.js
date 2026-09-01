@@ -120,9 +120,9 @@ export async function apiRequest(endpoint, options = {}, isRetry = false) {
     const isJson = contentType && contentType.includes('application/json');
     const data = isJson ? await res.json() : null;
 
-    // If login or auth refresh endpoint returned tokens, persist them immediately
+    // If ANY endpoint returned tokens or user data, persist them immediately
     if (res.ok && data) {
-      if (endpoint.includes('/auth/login') || endpoint.includes('/auth/admin/login') || endpoint.includes('/auth/refresh')) {
+      if (data?.data?.accessToken || data?.accessToken || data?.data?.user || data?.user || endpoint.includes('/auth/')) {
         persistTokens(data);
       }
     }

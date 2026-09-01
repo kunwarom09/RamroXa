@@ -8,7 +8,7 @@ function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const redirect = searchParams.get('redirect') || '/checkout';
+  const redirect = searchParams.get('redirect') || '/shop';
 
   const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
@@ -30,8 +30,18 @@ function VerifyEmailContent() {
         const res = await api.post('/api/auth/verify-email', { token });
         if (!isMounted) return;
 
+        const token = res?.data?.accessToken || res?.accessToken;
+        if (token) {
+          localStorage.setItem('zylo_access_token', token);
+          document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+        }
         if (res?.data?.user) {
-          localStorage.setItem('zylo_user', JSON.stringify(res.data.user));
+          const u = res.data.user;
+          localStorage.setItem('zylo_user', JSON.stringify(u));
+          if (u.name) localStorage.setItem('zylo-c-name', u.name);
+          if (u.phone) localStorage.setItem('zylo-c-phone', u.phone);
+          const addr = u.permanentAddress || u.temporaryAddress || u.address;
+          if (addr) localStorage.setItem('zylo-c-address', addr);
         }
 
         setStatus('success');
@@ -39,7 +49,7 @@ function VerifyEmailContent() {
         // Redirect back to checkout (or specified redirect) after short celebratory pause
         setTimeout(() => {
           router.push(redirect);
-        }, 1500);
+        }, 1000);
       } catch (err) {
         if (!isMounted) return;
         setStatus('error');
