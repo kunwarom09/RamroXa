@@ -48,6 +48,11 @@ antigravity-ide/
 .agents/
 .system_generated/
 
+# Database Storage
+data/
+server/data/
+*.db
+
 # Scratch, Planning & Old Prototype Files
 /admin/
 zylo-admin.html

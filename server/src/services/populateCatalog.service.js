@@ -495,7 +495,15 @@ export const sampleProducts20 = [
   }
 ];
 
-export async function populate20ProductsWithVariantsAndOrders() {
+export async function populate20ProductsWithVariantsAndOrders(force = false) {
+  if (!force) {
+    const existingCount = await Product.countDocuments();
+    if (existingCount > 0) {
+      logger.info('Catalog already populated in MongoDB. Preserving existing database records.');
+      return;
+    }
+  }
+
   logger.info('🚀 Starting catalog population with 20 master products, variants (S/M/L/XL), inventory, and orders...');
 
   // Ensure default categories & warehouses exist
@@ -507,7 +515,7 @@ export async function populate20ProductsWithVariantsAndOrders() {
     await Warehouse.findOneAndUpdate({ id: wh.id }, wh, { upsert: true, new: true });
   }
 
-  // Purge any existing products and inventory
+  // Purge any existing products and inventory if empty or force=true
   await Promise.all([
     Product.deleteMany({}),
     Variant.deleteMany({}),
