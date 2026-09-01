@@ -18,7 +18,9 @@ export async function resetDatabase() {
   }
 
   await seedDatabase();
-  logger.info('✅ Database reset and re-seeded successfully.');
+  const { createAdminUser } = await import('./createAdmin.js');
+  await createAdminUser('admin@zylo.com.np', 'AdminPassword123!', 'Super Admin');
+  logger.info('✅ Database reset and re-seeded successfully with Super Admin.');
 }
 
 if (process.argv[1] && process.argv[1].endsWith('reset.js')) {
