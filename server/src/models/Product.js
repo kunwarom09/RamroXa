@@ -41,14 +41,14 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       default: function () {
-        return this.price !== undefined ? this.price : 0;
+        return this?.price !== undefined ? this.price : 0;
       }
     },
     price: {
       type: Number,
       min: 0,
       default: function () {
-        return this.basePrice !== undefined ? this.basePrice : 0;
+        return this?.basePrice !== undefined ? this.basePrice : 0;
       }
     },
     mrp: { type: Number, default: 0, min: 0 },

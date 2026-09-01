@@ -655,5 +655,42 @@ export const defaultProducts = [
       { url: "/assets/ea97fe30fd8d1dfc.q.jpg", alt: "Eclipse Heavyweight Boxy Tee in Pitch Black", isFeatured: true },
       { url: "/assets/09789ab9b9e151f6.q.jpg", alt: "Eclipse Heavyweight Boxy Tee in Pure White", isFeatured: false }
     ]
+  },
+  {
+    id: "prod_phantom_velocity",
+    name: "Phantom Velocity Trail Runner",
+    slug: "phantom-velocity-trail-runner",
+    sku: "ZYL-SHOE-003",
+    categoryId: "c_footwear",
+    productType: "Footwear",
+    brand: "Ramroxa Footwear",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["shoes", "sneakers", "runner", "footwear", "trail", "carbon", "vibram"],
+    basePrice: 580000,
+    price: 580000,
+    mrp: 750000,
+    cost: 260000,
+    status: "published",
+    labels: { featured: true, trending: true, newArrival: true, bestSelling: true },
+    description: "Engineered for rugged terrains and urban concrete alike. Features a multi-directional Vibram® Megagrip lugged outsole, breathable ripstop Cordura® upper with TPU film overlays, and an energy-returning dual-density nitrogen-infused midsole.",
+    options: {
+      Colour: ["Triple Black", "Desert Sand", "Alpine Green"],
+      Size: ["UK 6", "UK 7", "UK 8", "UK 9", "UK 10", "UK 11"]
+    },
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&auto=format&fit=crop&q=80",
+        alt: "Phantom Velocity Trail Runner Profile",
+        isFeatured: true,
+        format: "webp"
+      },
+      {
+        url: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800&auto=format&fit=crop&q=80",
+        alt: "Phantom Velocity Trail Runner Outsole Detail",
+        isFeatured: false,
+        format: "webp"
+      }
+    ]
   }
 ];

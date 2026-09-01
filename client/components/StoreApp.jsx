@@ -547,6 +547,24 @@ const DEFAULT_CATALOG = [
     options: { Colour: ["Blue", "Purple"], Size: ["UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"] },
     img1: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80",
     img2: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "prod_phantom_velocity",
+    name: "Phantom Velocity Trail Runner",
+    slug: "phantom-velocity-trail-runner",
+    sku: "ZYL-SHOE-003",
+    categoryId: "c_footwear",
+    brand: "Ramroxa Footwear",
+    gender: "Unisex",
+    season: "SS26",
+    tags: ["shoes", "sneakers", "runner", "footwear", "trail", "carbon", "vibram"],
+    price: 5800,
+    compare: 7500,
+    labels: { bestSelling: true, featured: true, newArrival: true },
+    description: "Engineered for rugged terrains and urban concrete alike. Features a multi-directional Vibram® Megagrip lugged outsole, breathable ripstop Cordura® upper with TPU film overlays, and an energy-returning dual-density nitrogen-infused midsole.",
+    options: { Colour: ["Triple Black", "Desert Sand", "Alpine Green"], Size: ["UK 6", "UK 7", "UK 8", "UK 9", "UK 10", "UK 11"] },
+    img1: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=800&auto=format&fit=crop&q=80",
+    img2: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800&auto=format&fit=crop&q=80"
   }
 ];
 
