@@ -15,6 +15,7 @@ function VerifyEmailContent() {
   const [resendEmail, setResendEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState('');
+  const hasRequestedRef = React.useRef(false);
 
   useEffect(() => {
     if (!token) {
@@ -23,6 +24,9 @@ function VerifyEmailContent() {
       return;
     }
 
+    if (hasRequestedRef.current) return;
+    hasRequestedRef.current = true;
+
     let isMounted = true;
 
     async function verify() {
@@ -30,10 +34,10 @@ function VerifyEmailContent() {
         const res = await api.post('/api/auth/verify-email', { token });
         if (!isMounted) return;
 
-        const token = res?.data?.accessToken || res?.accessToken;
-        if (token) {
-          localStorage.setItem('zylo_access_token', token);
-          document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+        const tokenVal = res?.data?.accessToken || res?.accessToken;
+        if (tokenVal) {
+          localStorage.setItem('zylo_access_token', tokenVal);
+          document.cookie = `zylo_access_token=${tokenVal}; path=/; max-age=86400; SameSite=Lax;`;
         }
         if (res?.data?.user) {
           const u = res.data.user;
@@ -48,8 +52,12 @@ function VerifyEmailContent() {
 
         // Redirect back to checkout (or specified redirect) after short celebratory pause
         setTimeout(() => {
-          router.push(redirect);
-        }, 1000);
+          if (typeof window !== 'undefined') {
+            window.location.href = redirect;
+          } else {
+            router.push(redirect);
+          }
+        }, 1200);
       } catch (err) {
         if (!isMounted) return;
         setStatus('error');
