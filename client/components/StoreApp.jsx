@@ -1154,10 +1154,12 @@ export default class StoreApp extends React.Component {
         } catch (e) { }
       }
       if (u) {
-        const addr = this.state.profileTemporaryAddress || u.temporaryAddress || this.state.profilePermanentAddress || u.permanentAddress || u.address || '';
-        if (addr) {
-          extraState.cAddress = addr;
-        }
+        const addr1 = this.state.profilePermanentAddress || u.permanentAddress || u.address || '';
+        const addr2 = this.state.profileTemporaryAddress || u.temporaryAddress || '';
+        const recPhone = this.state.profileReceiverPhone || u.receiverPhone || '';
+        if (addr1) extraState.cAddress = addr1;
+        if (addr2) extraState.cAddress2 = addr2;
+        if (recPhone) extraState.cReceiverPhone = recPhone;
         if (!this.state.cName && u.name) {
           extraState.cName = u.name;
         }
@@ -1782,7 +1784,7 @@ export default class StoreApp extends React.Component {
           receiverNumber: customerReceiverPhone,
           line1: customerAddress,
           line2: customerAddress2,
-          city: customerAddress.split(',').pop()?.trim() || 'Kathmandu'
+          city: (customerAddress.includes(',') ? customerAddress.split(',').pop()?.trim() : '') || customerAddress || 'Kathmandu'
         },
         paymentMethod: (this.state.pay || 'cod').toLowerCase(),
         guestEmail: user?.email || this.state.currentUser?.email || undefined,
@@ -5284,9 +5286,20 @@ export default class StoreApp extends React.Component {
                               )}
                             </div>
                             <div style={{ fontSize: 12.5, color: '#555', marginTop: 2 }}>
-                              {ord.shippingAddress?.line1 || ord.shippingAddress?.address1 || ord.shippingAddress?.street || 'Kathmandu'}
-                              {ord.shippingAddress?.line2 ? `, ${ord.shippingAddress?.line2}` : ''}
-                              {`, ${ord.shippingAddress?.city || 'Kathmandu, Nepal'}`}
+                              {(() => {
+                                const sAddr = ord.shippingAddress;
+                                if (!sAddr) return currentUser?.permanentAddress || currentUser?.temporaryAddress || currentUser?.address || 'Kathmandu, Nepal';
+                                if (typeof sAddr === 'string') return sAddr;
+                                const parts = [];
+                                const l1 = (sAddr.line1 || sAddr.address1 || sAddr.street || '').trim();
+                                const l2 = (sAddr.line2 || '').trim();
+                                if (l1) parts.push(l1);
+                                if (l2 && l2 !== l1) parts.push(l2);
+                                if (!parts.length) {
+                                  return sAddr.city || 'Kathmandu, Nepal';
+                                }
+                                return parts.join(', ');
+                              })()}
                             </div>
                           </div>
 

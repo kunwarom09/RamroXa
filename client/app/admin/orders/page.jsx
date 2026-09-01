@@ -220,7 +220,7 @@ export default function AdminOrdersPage() {
                       <strong>Receiver Number:</strong> {selectedOrder.shippingAddress.receiverPhone || selectedOrder.shippingAddress.receiverNumber}
                     </p>
                   )}
-                  {selectedOrder.shippingAddress.city && (
+                  {selectedOrder.shippingAddress.city && selectedOrder.shippingAddress.city !== selectedOrder.shippingAddress.line1 && selectedOrder.shippingAddress.city !== selectedOrder.shippingAddress.line2 && (
                     <p style={{ margin: '2px 0' }}>
                       <strong>City / Region:</strong> {selectedOrder.shippingAddress.city}
                     </p>
