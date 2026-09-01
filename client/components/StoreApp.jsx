@@ -3483,12 +3483,31 @@ export default class StoreApp extends React.Component {
 
     return (
       <main className="zylo-page-container">
-        <a
+        <button
+          type="button"
           onClick={() => this.goToView('collections', { colFilter: 'all' })}
           className="zylo-detail-back-link"
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            fontSize: 13,
+            color: '#666',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 20,
+            fontFamily: 'inherit',
+            fontWeight: 500,
+            transition: 'color 0.15s ease, transform 0.15s ease',
+            userSelect: 'none'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#000'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#666'; }}
         >
           &larr; Back to all products
-        </a>
+        </button>
 
         <div className="zylo-detail-grid">
           {/* Left Column: Images */}

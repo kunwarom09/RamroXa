@@ -1007,6 +1007,30 @@ tbody tr:hover {
   }
 }
 
+/* Product Detail Back Link */
+.zylo-detail-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer !important;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 20px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.zylo-detail-back-link:hover {
+  color: #000;
+  cursor: pointer !important;
+  transform: translateX(-3px);
+}
+
 /* Detail Page Responsive Grid */
 .zylo-detail-grid {
   display: grid;
