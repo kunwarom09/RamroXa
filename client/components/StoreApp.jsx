@@ -1303,32 +1303,42 @@ export default class StoreApp extends React.Component {
           }
         }
         if (user) {
-          const defAddr = user.temporaryAddress || user.permanentAddress || user.address || '';
+          const defAddr = user.permanentAddress || user.address || '';
+          const defAddr2 = user.temporaryAddress || '';
+          const defReceiver = user.receiverPhone || '';
           this.setState({
             currentUser: user,
             profileName: user.name || '',
             profilePhone: user.phone || '',
+            profileReceiverPhone: defReceiver || this.state.profileReceiverPhone || '',
             profilePermanentAddress: user.permanentAddress || '',
             profileTemporaryAddress: user.temporaryAddress || '',
             cName: user.name || this.state.cName || '',
             cPhone: user.phone || this.state.cPhone || '',
-            cAddress: defAddr || this.state.cAddress || ''
+            cAddress: defAddr || this.state.cAddress || '',
+            cAddress2: defAddr2 || this.state.cAddress2 || '',
+            cReceiverPhone: defReceiver || this.state.cReceiverPhone || ''
           });
         }
         try {
           const meData = await api.get('/api/auth/me');
           if (meData?.data?.user) {
             user = meData.data.user;
-            const defAddr = user.temporaryAddress || user.permanentAddress || user.address || '';
+            const defAddr = user.permanentAddress || user.address || '';
+            const defAddr2 = user.temporaryAddress || '';
+            const defReceiver = user.receiverPhone || '';
             this.setState({
               currentUser: user,
               profileName: user.name || '',
               profilePhone: user.phone || '',
+              profileReceiverPhone: defReceiver || this.state.profileReceiverPhone || '',
               profilePermanentAddress: user.permanentAddress || '',
               profileTemporaryAddress: user.temporaryAddress || '',
               cName: user.name || this.state.cName || '',
               cPhone: user.phone || this.state.cPhone || '',
-              cAddress: defAddr || this.state.cAddress || ''
+              cAddress: defAddr || this.state.cAddress || '',
+              cAddress2: defAddr2 || this.state.cAddress2 || '',
+              cReceiverPhone: defReceiver || this.state.cReceiverPhone || ''
             });
             if (typeof window !== 'undefined') {
               localStorage.setItem('zylo_user', JSON.stringify(user));
@@ -4797,7 +4807,7 @@ export default class StoreApp extends React.Component {
   }
 
   renderAccount = () => {
-    const { currentUser, accountTab, userOrders, loadingOrders, savingProfile, profileName, profilePhone, profilePermanentAddress, profileTemporaryAddress } = this.state;
+    const { currentUser, accountTab, userOrders, loadingOrders, savingProfile, profileName, profilePhone, profilePermanentAddress, profileTemporaryAddress, profileReceiverPhone } = this.state;
 
     if (!currentUser) {
       return (
