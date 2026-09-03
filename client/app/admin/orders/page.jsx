@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { money } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
+import RamroxaReceiptModal from '../../../components/admin/RamroxaReceiptModal';
+import { printThermalReceipt, downloadReceiptPdf } from '../../../services/ramroxaReceiptService';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -10,6 +12,7 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
 
   const refreshData = async () => {
     setLoading(true);
@@ -23,7 +26,9 @@ export default function AdminOrdersPage() {
           rate: it.unitPrice != null ? Math.round(it.unitPrice / 100) : (Number(it.rate) || 0)
         }));
         return {
+          ...o,
           no: o.orderNo || o.no,
+          orderNo: o.orderNo || o.no,
           customer: o.shippingAddress?.fullName || o.customer || o.guestEmail || 'Storefront Customer',
           phone: o.shippingAddress?.phone || o.guestPhone || o.phone || '',
           date: o.createdAt ? o.createdAt.slice(0, 10) : (o.date || new Date().toISOString().slice(0, 10)),
@@ -150,7 +155,7 @@ export default function AdminOrdersPage() {
               <th>Payment</th>
               <th>Status</th>
               <th>Update Status</th>
-              <th style={{ textAlign: 'right' }}>Details</th>
+              <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Receipt Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -182,9 +187,27 @@ export default function AdminOrdersPage() {
                       <option value="returned">returned</option>
                     </select>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className="icon-btn" title="View details" onClick={() => setSelectedOrder(o)}>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button
+                      className="icon-btn"
+                      title="View Receipt"
+                      onClick={() => setReceiptOrder(o)}
+                    >
                       <Icon name="eye" size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Print Thermal Receipt"
+                      onClick={() => printThermalReceipt(o)}
+                    >
+                      <Icon name="printer" size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Download PDF Receipt"
+                      onClick={() => downloadReceiptPdf(o)}
+                    >
+                      <Icon name="download" size={15} />
                     </button>
                   </td>
                 </tr>
@@ -259,12 +282,51 @@ export default function AdminOrdersPage() {
                 <div className="grand"><span>Total Amount</span><span>{money(selectedOrder.total)}</span></div>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button className="btn" onClick={() => setSelectedOrder(null)}>Close</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setReceiptOrder(selectedOrder)}
+                  title="View Receipt"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Icon name="eye" size={14} />
+                  <span>View Receipt</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => printThermalReceipt(selectedOrder)}
+                  title="Print Thermal Receipt"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Icon name="printer" size={14} />
+                  <span>Print</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => downloadReceiptPdf(selectedOrder)}
+                  title="Download PDF Receipt"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Icon name="download" size={14} />
+                  <span>Download PDF</span>
+                </button>
+              </div>
+              <button className="btn btn-sm" onClick={() => setSelectedOrder(null)}>Close</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* RAMROXA GLOBAL THERMAL RECEIPT MODAL */}
+      <RamroxaReceiptModal
+        order={receiptOrder}
+        isOpen={!!receiptOrder}
+        onClose={() => setReceiptOrder(null)}
+      />
     </div>
   );
 }

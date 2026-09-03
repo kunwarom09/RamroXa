@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { money, today, docSubtotal, docVat, docTotal } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
+import RamroxaReceiptModal from '../../../components/admin/RamroxaReceiptModal';
+import { printThermalReceipt, downloadReceiptPdf } from '../../../services/ramroxaReceiptService';
 
 export default function AdminSalesPage() {
   const [sales, setSales] = useState([]);
@@ -260,8 +262,26 @@ export default function AdminSalesPage() {
                     >
                       <Icon name="arrowDown" size={15} />
                     </Link>
-                    <button className="icon-btn" title="View tax invoice" onClick={() => { setSelectedSale(s); setViewInvoiceModal(true); }}>
+                    <button
+                      className="icon-btn"
+                      title="View Receipt"
+                      onClick={() => { setSelectedSale(s); setViewInvoiceModal(true); }}
+                    >
                       <Icon name="eye" size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Print Thermal Receipt"
+                      onClick={() => printThermalReceipt(s)}
+                    >
+                      <Icon name="printer" size={15} />
+                    </button>
+                    <button
+                      className="icon-btn"
+                      title="Download PDF Receipt"
+                      onClick={() => downloadReceiptPdf(s)}
+                    >
+                      <Icon name="download" size={15} />
                     </button>
                     <button className="icon-btn" title="Edit" onClick={() => openEditSaleModal(s)}>
                       <Icon name="edit" size={15} />
@@ -382,58 +402,12 @@ export default function AdminSalesPage() {
         </div>
       )}
 
-      {/* TAX INVOICE MODAL */}
-      {viewInvoiceModal && selectedSale && (
-        <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setViewInvoiceModal(false); }}>
-          <div className="modal" style={{ maxWidth: '580px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <h2 style={{ margin: 0 }}>TAX INVOICE</h2>
-              <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--muted-foreground)' }}>Zylo Pvt. Ltd. &middot; PAN: 601234567</p>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '14px' }}>
-              <div>
-                <strong>Invoice: {selectedSale.invoice}</strong><br />
-                Date: {selectedSale.date}
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                Customer: {selectedSale.customer}<br />
-                Payment: {selectedSale.payment || selectedSale.pay || 'COD'}
-              </div>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th className="num">Qty</th>
-                    <th className="num">Rate</th>
-                    <th className="num">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(selectedSale.items || []).map((it, idx) => (
-                    <tr key={idx}>
-                      <td>{it.desc}</td>
-                      <td className="num">{it.qty}</td>
-                      <td className="num">{money(it.rate)}</td>
-                      <td className="num">{money(it.qty * it.rate)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="totals-box" style={{ marginTop: '14px' }}>
-              <div><span>Taxable Subtotal</span><span>{money(docSubtotal(selectedSale))}</span></div>
-              <div><span>VAT (13%)</span><span>{money(docVat(selectedSale))}</span></div>
-              <div className="grand"><span>Grand Total</span><span>{money(docTotal(selectedSale))}</span></div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '18px' }}>
-              <button className="btn btn-primary" onClick={() => window.print()}>Print Tax Invoice</button>
-              <button className="btn" onClick={() => setViewInvoiceModal(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* RAMROXA GLOBAL THERMAL RECEIPT MODAL */}
+      <RamroxaReceiptModal
+        order={selectedSale}
+        isOpen={viewInvoiceModal}
+        onClose={() => setViewInvoiceModal(false)}
+      />
     </div>
   );
 }
