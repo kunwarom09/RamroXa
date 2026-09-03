@@ -146,13 +146,51 @@ export async function apiRequest(endpoint, options = {}, isRetry = false) {
         }
       }
 
-      const err = data?.error || {};
+      let errorMsg = null;
+      let errorCode = `HTTP_${res.status}`;
+      let errorDetails = null;
+
+      if (data && typeof data === 'object') {
+        if (data.error) {
+          if (typeof data.error === 'string') {
+            errorMsg = data.error;
+          } else if (typeof data.error === 'object') {
+            errorMsg = data.error.message;
+            errorCode = data.error.code || errorCode;
+            errorDetails = data.error.details || null;
+          }
+        } else if (typeof data.message === 'string') {
+          errorMsg = data.message;
+        }
+
+        if (!errorMsg && data.details && typeof data.details === 'object') {
+          const detailVals = Object.values(data.details).filter(Boolean);
+          if (detailVals.length) errorMsg = detailVals.join(', ');
+        }
+      } else if (typeof data === 'string' && data.trim()) {
+        errorMsg = data.trim();
+      }
+
+      if (!errorMsg) {
+        if (res.status === 409) {
+          errorMsg = 'An account with this email already exists.';
+        } else if (res.status === 400) {
+          errorMsg = 'Please verify your information and try again.';
+        } else if (res.status === 429) {
+          errorMsg = 'Too many attempts. Please wait a moment before trying again.';
+        } else if (res.status === 500) {
+          errorMsg = 'Server encountered a temporary issue. Please try again shortly.';
+        } else {
+          errorMsg = res.statusText || 'Unable to complete request. Please try again.';
+        }
+      }
+
       throw new ApiClientError(
         res.status,
-        err.code || `HTTP_${res.status}`,
-        err.message || res.statusText || 'API request failed',
-        err.details || null,
-        err.requestId || res.headers.get('x-request-id')
+        errorCode,
+        errorMsg,
+        errorDetails,
+        data?.error?.requestId || res.headers.get('x-request-id')
       );
     }
 
@@ -161,8 +199,21 @@ export async function apiRequest(endpoint, options = {}, isRetry = false) {
     if (error instanceof ApiClientError) {
       throw error;
     }
-    // Network or parse error
-    throw new ApiClientError(0, 'NETWORK_ERROR', error.message || 'Network connection error');
+
+    // Direct localhost backend fallback if relative /api route failed in dev browser
+    if (!isRetry && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      if (url.startsWith('/api/')) {
+        try {
+          const directBackendUrl = `http://127.0.0.1:5000${url}`;
+          return await apiRequest(directBackendUrl, options, true);
+        } catch (fallbackErr) {
+          if (fallbackErr instanceof ApiClientError) throw fallbackErr;
+        }
+      }
+    }
+
+    // Network or connection error
+    throw new ApiClientError(0, 'NETWORK_ERROR', 'Network connection error. Please ensure the backend server is running and try again.');
   }
 }
 

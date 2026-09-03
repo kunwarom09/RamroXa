@@ -49,7 +49,7 @@ export function createApp() {
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Idempotency-Key', 'X-Guest-Token', 'XSRF-TOKEN']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Idempotency-Key', 'X-Guest-Token', 'XSRF-TOKEN', 'x-csrf-token', 'X-CSRF-Token', 'X-Csrf-Token']
     })
   );
 

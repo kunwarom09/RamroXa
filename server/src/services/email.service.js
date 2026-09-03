@@ -11,7 +11,13 @@ async function getTransporter() {
     transporter = nodemailer.createTransport({
       jsonTransport: true
     });
-  } else if (env.SMTP_SERVICE && env.SMTP_USER && env.SMTP_PASS) {
+  } else if (
+    env.SMTP_SERVICE &&
+    env.SMTP_USER &&
+    env.SMTP_PASS &&
+    !env.SMTP_USER.includes('your_email') &&
+    env.SMTP_PASS !== 'your_app_password'
+  ) {
     transporter = nodemailer.createTransport({
       service: env.SMTP_SERVICE,
       auth: {
@@ -20,7 +26,13 @@ async function getTransporter() {
       }
     });
     console.log(`📧 Configured email transporter using service: ${env.SMTP_SERVICE}`);
-  } else if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
+  } else if (
+    env.SMTP_HOST &&
+    env.SMTP_USER &&
+    env.SMTP_PASS &&
+    !env.SMTP_USER.includes('your_email') &&
+    env.SMTP_PASS !== 'your_app_password'
+  ) {
     transporter = nodemailer.createTransport({
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,

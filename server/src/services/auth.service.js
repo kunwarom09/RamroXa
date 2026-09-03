@@ -71,9 +71,14 @@ export async function register(data) {
     console.error('❌ Failed to send verification email during registration:', err.message);
   });
 
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verificationUrl = `${baseUrl}/verify-email?token=${rawToken}&redirect=${encodeURIComponent(targetRedirect)}`;
+
   return {
     user,
-    emailVerificationSent: true
+    emailVerificationSent: true,
+    verificationToken: rawToken,
+    verificationUrl
   };
 }
 

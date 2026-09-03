@@ -48,6 +48,7 @@ function SignupContent() {
 
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [devVerificationUrl, setDevVerificationUrl] = useState('');
 
   // Live password validation rules
   const hasMinLen = formData.password.length >= 8;
@@ -98,8 +99,18 @@ function SignupContent() {
 
       setRegisteredEmail(targetEmail);
       setVerificationSent(true);
+
+      const vUrl = res?.data?.verificationUrl || (res?.data?.verificationToken ? `/verify-email?token=${res.data.verificationToken}&redirect=${encodeURIComponent(redirect)}` : '');
+      if (vUrl) {
+        setDevVerificationUrl(vUrl);
+      }
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || 'Failed to create account. Please try again.';
+      const errMsg =
+        err.message ||
+        err.details ||
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Failed to create account. Please check your information and try again.';
       setError(errMsg);
     } finally {
       setLoading(false);
@@ -248,6 +259,29 @@ function SignupContent() {
                 marginBottom: 16
               }}>
                 {resendMessage}
+              </div>
+            )}
+
+            {devVerificationUrl && (
+              <div style={{ marginBottom: 16 }}>
+                <a
+                  href={devVerificationUrl}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '13px 18px',
+                    background: '#000',
+                    color: '#fff',
+                    borderRadius: 8,
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  Activate Account &amp; Continue &rarr;
+                </a>
               </div>
             )}
 

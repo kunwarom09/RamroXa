@@ -15,7 +15,9 @@ export const register = asyncHandler(async (req, res) => {
     message: 'Account created! Please check your email and click the verification link to activate your account.',
     data: {
       user: result.user,
-      emailVerificationSent: true
+      emailVerificationSent: true,
+      verificationToken: result.verificationToken,
+      verificationUrl: result.verificationUrl
     }
   });
 });
