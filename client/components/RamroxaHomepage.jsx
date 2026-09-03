@@ -1085,20 +1085,28 @@ function CommunityNewsletterSection({ section, onNav }) {
         )}
       </div>
 
-      <div className="rmx-community-gallery">
-        {images.map((imgItem, idx) => {
-          const src = typeof imgItem === 'string' ? imgItem : (imgItem?.src || imgItem?.url || '');
-          return (
-            <div
-              key={imgItem?.id || idx}
-              className="rmx-community-img"
-              style={{ backgroundImage: `url('${src}')` }}
-              onClick={() => onNav('collections', { colFilter: 'all' })}
-              role="button"
-              tabIndex={0}
-            />
-          );
-        })}
+      <div className="rmx-community-gallery" aria-label="Community Gallery">
+        {[0, 1, 2, 3].map((groupIndex) => (
+          <div
+            key={groupIndex}
+            className="rmx-community-track"
+            aria-hidden={groupIndex > 0 ? "true" : undefined}
+          >
+            {images.map((imgItem, idx) => {
+              const src = typeof imgItem === 'string' ? imgItem : (imgItem?.src || imgItem?.url || '');
+              return (
+                <div
+                  key={`${groupIndex}-${imgItem?.id || idx}`}
+                  className="rmx-community-img"
+                  style={{ backgroundImage: `url('${src}')` }}
+                  onClick={() => onNav('collections', { colFilter: 'all' })}
+                  role="button"
+                  tabIndex={0}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
     </section>
   );

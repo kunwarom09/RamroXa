@@ -19,6 +19,18 @@ const verificationTokenSchema = new mongoose.Schema(
       enum: ['email_verification', 'password_reset'],
       default: 'email_verification'
     },
+    redirect: {
+      type: String,
+      default: '/shop'
+    },
+    isUsed: {
+      type: Boolean,
+      default: false
+    },
+    usedAt: {
+      type: Date,
+      default: null
+    },
     expiresAt: {
       type: Date,
       required: true,

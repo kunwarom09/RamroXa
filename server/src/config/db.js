@@ -41,12 +41,8 @@ export async function seedIfEmpty() {
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       logger.info('Database empty. Seeding initial catalog, categories, products, inventory, and reviews...');
-      const { seedDatabase } = await import('../scripts/seed.js');
-      await seedDatabase();
-      try {
-        const { default: populateService } = await import('../services/populateCatalog.service.js');
-        if (populateService) await populateService(false);
-      } catch (e) { }
+      const { populate20ProductsWithVariantsAndOrders } = await import('../services/populateCatalog.service.js');
+      await populate20ProductsWithVariantsAndOrders(false);
     } else {
       logger.info(`Database contains ${productCount} products. Skipping seeding.`);
     }

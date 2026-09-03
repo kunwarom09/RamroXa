@@ -7,107 +7,110 @@ import { api } from '../../services/apiClient';
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Extract token from searchParams with immediate fallback to window.location
-  const urlToken = searchParams.get('token');
-  const [token, setToken] = useState(urlToken || '');
-  const [redirect, setRedirect] = useState(searchParams.get('redirect') || '/shop');
+
+  // Extract initial parameters
+  const [redirectPath, setRedirectPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('redirect') || searchParams.get('redirect') || '/shop';
+    }
+    return searchParams.get('redirect') || '/shop';
+  });
 
   const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
+  const [destinationUrl, setDestinationUrl] = useState('/shop');
   const [resendEmail, setResendEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState('');
-  const verifiedTokenRef = React.useRef(null);
-
-  // Sync token from window immediately on mount if searchParams was delayed
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const windowToken = params.get('token');
-      const windowRedirect = params.get('redirect');
-      if (windowToken && windowToken !== token) {
-        setToken(windowToken);
-      }
-      if (windowRedirect && windowRedirect !== redirect) {
-        setRedirect(windowRedirect);
-      }
-    }
-  }, [urlToken]);
+  
+  const hasExecutedRef = React.useRef(false);
 
   useEffect(() => {
-    const activeToken = token || urlToken || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null);
+    if (hasExecutedRef.current) return;
+    hasExecutedRef.current = true;
+
+    const urlQuery = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const activeToken = urlQuery?.get('token') || searchParams.get('token') || '';
+    const rawRedirect = urlQuery?.get('redirect') || searchParams.get('redirect') || redirectPath || '/shop';
+    const cleanRedirect = rawRedirect.startsWith('http') ? rawRedirect : (rawRedirect.startsWith('/') ? rawRedirect : `/${rawRedirect}`);
+
+    setRedirectPath(cleanRedirect);
+    setDestinationUrl(cleanRedirect);
 
     if (!activeToken) {
-      const timeout = setTimeout(() => {
-        const fallbackToken = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('token') : null;
-        if (!fallbackToken) {
-          setStatus('error');
-          setErrorMessage('No verification token was found in this link. Please check your email or request a new link.');
-        }
-      }, 300);
-      return () => clearTimeout(timeout);
+      setStatus('error');
+      setErrorMessage('No verification token was found in this link. Please check your email or request a new link below.');
+      return;
     }
 
-    if (verifiedTokenRef.current === activeToken) return;
-    verifiedTokenRef.current = activeToken;
-
-    let isMounted = true;
-
-    // Safety timeout: never hang more than 4 seconds
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && status === 'verifying') {
-        setStatus('error');
-        setErrorMessage('Verification is taking longer than expected. Please check your connection or request a new link.');
-      }
-    }, 4000);
-
-    async function verify() {
+    async function executeVerification() {
       try {
-        const res = await api.post('/api/auth/verify-email', { token: activeToken });
-        if (!isMounted) return;
-        clearTimeout(safetyTimeout);
+        const res = await api.post('/api/auth/verify-email', {
+          token: activeToken,
+          redirect: cleanRedirect
+        });
 
+        // 1. Persist authentication session
         const tokenVal = res?.data?.accessToken || res?.accessToken;
         if (tokenVal) {
           localStorage.setItem('zylo_access_token', tokenVal);
+          localStorage.setItem('zylo_admin_token', tokenVal);
           document.cookie = `zylo_access_token=${tokenVal}; path=/; max-age=86400; SameSite=Lax;`;
         }
-        if (res?.data?.user) {
-          const u = res.data.user;
-          localStorage.setItem('zylo_user', JSON.stringify(u));
-          if (u.name) localStorage.setItem('zylo-c-name', u.name);
-          if (u.phone) localStorage.setItem('zylo-c-phone', u.phone);
-          const addr = u.permanentAddress || u.temporaryAddress || u.address;
+
+        const userObj = res?.data?.user || res?.user;
+        if (userObj) {
+          localStorage.setItem('zylo_user', JSON.stringify(userObj));
+          if (userObj.name) localStorage.setItem('zylo-c-name', userObj.name);
+          if (userObj.phone) localStorage.setItem('zylo-c-phone', userObj.phone);
+          const addr = userObj.permanentAddress || userObj.temporaryAddress || userObj.address;
           if (addr) localStorage.setItem('zylo-c-address', addr);
         }
 
+        const finalDest = res?.data?.redirect || cleanRedirect || '/shop';
+        setDestinationUrl(finalDest);
         setStatus('success');
 
-        // Instant redirect in 400ms for quick smooth experience
+        // Broadcast storage change to other tabs/listeners
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new CustomEvent('zylo:auth-change', { detail: { user: userObj, token: tokenVal } }));
+        }
+
+        // 2. Perform automatic redirect to original page
         setTimeout(() => {
-          const targetUrl = redirect || '/shop';
           if (typeof window !== 'undefined') {
-            window.location.href = targetUrl;
+            window.location.href = finalDest;
           } else {
-            router.push(targetUrl);
+            router.push(finalDest);
           }
-        }, 400);
+        }, 500);
       } catch (err) {
-        if (!isMounted) return;
-        clearTimeout(safetyTimeout);
+        const errMsg = err?.message || err?.response?.data?.message || '';
+
+        // If the email was already verified, seamlessly log in / redirect
+        if (errMsg.toLowerCase().includes('already verified')) {
+          setStatus('success');
+          const finalDest = cleanRedirect || '/shop';
+          setDestinationUrl(finalDest);
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = finalDest;
+            } else {
+              router.push(finalDest);
+            }
+          }, 500);
+          return;
+        }
+
         setStatus('error');
-        setErrorMessage(err.message || 'Verification link is invalid or has expired.');
+        setErrorMessage(errMsg || 'Verification link is invalid or has expired.');
       }
     }
 
-    verify();
-
-    return () => {
-      isMounted = false;
-      clearTimeout(safetyTimeout);
-    };
-  }, [token, urlToken, redirect, router]);
+    executeVerification();
+  }, []);
 
   const handleResend = async (e) => {
     e.preventDefault();
@@ -118,9 +121,9 @@ function VerifyEmailContent() {
     try {
       const res = await api.post('/api/auth/resend-verification', {
         email: resendEmail.trim().toLowerCase(),
-        redirect
+        redirect: destinationUrl || redirectPath || '/shop'
       });
-      setResendSuccess(res.message || 'A fresh verification link has been sent to your email.');
+      setResendSuccess(res?.message || 'A fresh verification link has been sent to your email.');
     } catch (err) {
       setResendSuccess('');
       setErrorMessage(err.message || 'Could not send verification email. Please check the address.');
@@ -205,10 +208,10 @@ function VerifyEmailContent() {
               Your account is active and verified.
             </p>
             <p style={{ color: '#666', fontSize: 13, margin: '0 0 24px' }}>
-              Redirecting you back to complete your checkout with your saved cart...
+              Redirecting you to continue...
             </p>
             <Link
-              href={redirect}
+              href={destinationUrl}
               style={{
                 display: 'inline-block',
                 background: '#000',
@@ -221,7 +224,7 @@ function VerifyEmailContent() {
                 letterSpacing: 1
               }}
             >
-              CONTINUE TO CHECKOUT &rarr;
+              CONTINUE &rarr;
             </Link>
           </div>
         )}

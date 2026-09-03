@@ -22,11 +22,13 @@ export const register = asyncHandler(async (req, res) => {
 
 export const verifyEmail = asyncHandler(async (req, res) => {
   const token = req.query?.token || req.body?.token;
+  const redirect = req.query?.redirect || req.body?.redirect;
   const userAgent = req.headers['user-agent'] || '';
   const ip = req.ip || req.connection.remoteAddress || '';
 
-  const { user, accessToken, refreshToken } = await authService.verifyEmail({
+  const { user, accessToken, refreshToken, redirect: finalRedirect } = await authService.verifyEmail({
     token,
+    redirect,
     userAgent,
     ip
   });
@@ -42,7 +44,8 @@ export const verifyEmail = asyncHandler(async (req, res) => {
     data: {
       user,
       accessToken,
-      csrfToken
+      csrfToken,
+      redirect: finalRedirect || redirect || '/shop'
     }
   });
 });

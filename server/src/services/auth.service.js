@@ -53,10 +53,12 @@ export async function register(data) {
 
   // Generate verification token in background (expires in 24 hours)
   const rawToken = crypto.randomBytes(32).toString('hex');
+  const targetRedirect = redirect || '/checkout';
   await VerificationToken.create({
     user: user._id,
     token: rawToken,
     type: 'email_verification',
+    redirect: targetRedirect,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
   });
 
@@ -64,7 +66,7 @@ export async function register(data) {
   sendVerificationEmail({
     user,
     token: rawToken,
-    redirect: redirect || '/checkout'
+    redirect: targetRedirect
   }).catch((err) => {
     console.error('❌ Failed to send verification email during registration:', err.message);
   });
@@ -75,39 +77,57 @@ export async function register(data) {
   };
 }
 
-export async function verifyEmail({ token, userAgent = '', ip = '' }) {
+export async function verifyEmail({ token, redirect: requestedRedirect = null, userAgent = '', ip = '' }) {
   if (!token || typeof token !== 'string') {
     throw ApiError.badRequest('Verification token is required.');
   }
 
-  const tokenDoc = await VerificationToken.findOne({
-    token: token.trim(),
-    type: 'email_verification'
+  const cleanToken = token.trim();
+  let tokenDoc = await VerificationToken.findOne({
+    token: cleanToken
   });
 
-  if (!tokenDoc) {
+  let user = null;
+  let finalRedirect = requestedRedirect || '/shop';
+
+  if (tokenDoc) {
+    finalRedirect = requestedRedirect || tokenDoc.redirect || '/shop';
+    if (tokenDoc.expiresAt < new Date()) {
+      await VerificationToken.deleteOne({ _id: tokenDoc._id });
+      throw ApiError.badRequest('Email verification link has expired. Please request a new verification link.');
+    }
+
+    user = await User.findById(tokenDoc.user);
+    if (!user || user.deletedAt) {
+      throw ApiError.notFound('User account associated with this verification link was not found.');
+    }
+
+    // Mark token as used to allow seamless retry/reloads within TTL
+    tokenDoc.isUsed = true;
+    tokenDoc.usedAt = new Date();
+    await tokenDoc.save();
+
+    // Clean up older verification tokens for this user
+    await VerificationToken.deleteMany({
+      user: user._id,
+      _id: { $ne: tokenDoc._id },
+      type: 'email_verification'
+    });
+  }
+
+  if (!user) {
     throw ApiError.badRequest('Invalid or expired email verification link. Please request a new link.');
   }
 
-  if (tokenDoc.expiresAt < new Date()) {
-    await VerificationToken.deleteOne({ _id: tokenDoc._id });
-    throw ApiError.badRequest('Email verification link has expired. Please request a new verification link.');
-  }
-
-  const user = await User.findById(tokenDoc.user);
-  if (!user || user.deletedAt) {
-    throw ApiError.notFound('User account associated with this verification link was not found.');
-  }
-
-  // Mark verified
+  // Mark verified (safe idempotent update)
   user.isEmailVerified = true;
   user.isVerified = true;
-  user.emailVerifiedAt = new Date();
+  if (!user.emailVerifiedAt) user.emailVerifiedAt = new Date();
   user.isActive = true;
   user.lastLoginAt = new Date();
   await user.save();
 
-  // Delete all verification tokens for this user
+  // Delete all verification tokens for this user upon completion
   await VerificationToken.deleteMany({ user: user._id });
 
   // Create active login session
@@ -129,7 +149,8 @@ export async function verifyEmail({ token, userAgent = '', ip = '' }) {
     user,
     accessToken,
     refreshToken: rawRefreshToken,
-    sessionId: session._id
+    sessionId: session._id,
+    redirect: finalRedirect
   };
 }
 
@@ -159,6 +180,7 @@ export async function resendVerificationEmail({ email, redirect = '/checkout' })
     user: user._id,
     token: rawToken,
     type: 'email_verification',
+    redirect: redirect || '/checkout',
     expiresAt
   });
 

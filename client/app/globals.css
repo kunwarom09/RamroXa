@@ -2247,8 +2247,8 @@ tbody tr:hover {
 
 .zylo-flyout-auth-header.logged-in {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: flex-start;
   text-align: left;
   background: #fafafa;
   padding: 18px 24px;
@@ -2309,6 +2309,9 @@ tbody tr:hover {
 .zylo-flyout-user-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
 }
 
 .zylo-flyout-greeting {
@@ -2325,10 +2328,11 @@ tbody tr:hover {
 .zylo-flyout-email {
   font-size: 11.5px;
   color: #71717a;
-  max-width: 200px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-top: 1px;
 }
 
 .zylo-flyout-profile-btn {
@@ -3476,15 +3480,34 @@ tbody tr:hover {
 
 .rmx-community-gallery {
   display: flex;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  gap: 6px;
-  padding-bottom: 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  gap: 14px;
+  user-select: none;
+  padding: 6px 0 20px;
 }
 
-.rmx-community-gallery::-webkit-scrollbar {
-  display: none;
+.rmx-community-track {
+  display: flex;
+  flex-shrink: 0;
+  gap: 14px;
+  align-items: center;
+  animation: rmx-community-marquee-ltr 32s linear infinite;
+  will-change: transform;
+}
+
+.rmx-community-gallery:hover .rmx-community-track {
+  animation-play-state: paused;
+}
+
+@keyframes rmx-community-marquee-ltr {
+  0% {
+    transform: translateX(calc(-100% - 14px));
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .rmx-community-img {
@@ -3492,12 +3515,16 @@ tbody tr:hover {
   height: 280px;
   background-size: cover;
   background-position: center;
+  border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
 }
 
 .rmx-community-img:hover {
-  transform: scale(1.02);
+  transform: scale(1.03);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* ─── SKELETON LOADER ─────────────────────────────────────────── */
@@ -3733,11 +3760,26 @@ tbody tr:hover {
 
   .rmx-community-img {
     flex: 0 0 160px;
-    height: 200px;
+    height: 210px;
+    border-radius: 10px;
   }
 
   .rmx-community-gallery {
-    padding: 0 18px 24px;
+    padding: 4px 0 16px;
+    gap: 10px;
+  }
+
+  .rmx-community-track {
+    gap: 10px;
+  }
+
+  @keyframes rmx-community-marquee-ltr {
+    0% {
+      transform: translateX(calc(-100% - 10px));
+    }
+    100% {
+      transform: translateX(0);
+    }
   }
 }
 
@@ -4796,15 +4838,17 @@ html.dark .zylo-detail-wishlist-btn.active .rmx-heart-svg {
 .zylo-cart-stepper {
   display: flex;
   align-items: center;
+  height: 36px;
   border: 1.5px solid #000;
   border-radius: 999px;
   background: #fff;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .zylo-cart-stepper-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 100%;
   border: none;
   background: none;
   cursor: pointer;
@@ -4829,32 +4873,226 @@ html.dark .zylo-detail-wishlist-btn.active .rmx-heart-svg {
   font-weight: 600;
 }
 
-.zylo-cart-remove-btn {
+/* ── Wishlist Header Buttons (ADD ALL TO CART & CLEAR ALL) ── */
+.zylo-wishlist-add-all-btn,
+.zylo-wishlist-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 22px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-family: inherit;
+  box-shadow: none;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.zylo-wishlist-add-all-btn {
+  background: #000000;
+  border: 1px solid #000000;
+  color: #ffffff !important;
+}
+
+.zylo-wishlist-add-all-btn:hover {
+  background: #262626;
+  border-color: #262626;
+}
+
+.zylo-wishlist-clear-btn {
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  color: #ffffff !important;
+}
+
+.zylo-wishlist-clear-btn svg {
+  stroke: #ffffff;
+}
+
+.zylo-wishlist-clear-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+.zylo-wishlist-clear-btn:active {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* ── Wishlist Card Bottom Action Row (Exact to Wireframe) ── */
+.zylo-wishlist-actions-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin-top: 14px !important;
+  box-sizing: border-box !important;
+}
+
+.zylo-wishlist-add-btn {
+  flex: 1 1 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  border-radius: 20px;
+  cursor: pointer;
+  background: #000000;
+  border: 1px solid #000000;
+  color: #ffffff !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+  box-shadow: none;
+  box-sizing: border-box;
+  line-height: 1;
+  text-align: center;
+}
+
+.zylo-wishlist-add-btn:hover {
+  background: #262626;
+  border-color: #262626;
+  color: #ffffff !important;
+}
+
+.zylo-wishlist-add-btn:active {
+  background: #111111;
+  transform: scale(0.99);
+}
+
+.zylo-wishlist-remove-btn {
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  max-width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  color: #ef4444 !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+  box-shadow: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.zylo-wishlist-remove-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: #ef4444;
+  stroke-width: 2;
+  transition: transform 0.15s ease, stroke 0.15s ease;
+}
+
+.zylo-wishlist-remove-btn:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #dc2626 !important;
+  box-shadow: none;
+}
+
+.zylo-wishlist-remove-btn:hover svg {
+  stroke: #dc2626;
+  transform: scale(1.1);
+}
+
+.zylo-wishlist-remove-btn:active {
+  background: #fee2e2;
+  border-color: #dc2626;
+  transform: scale(0.96);
+}
+
+/* ── Cart Clear & Remove Action Buttons ── */
+.zylo-cart-clear-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: transparent;
-  border: 1px solid #e4e4e7;
-  border-radius: 6px;
-  padding: 6px 12px;
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  border-radius: 999px;
+  padding: 8px 18px;
   font-size: 12.5px;
-  font-weight: 500;
-  color: #71717a;
+  font-weight: 600;
+  color: #ffffff !important;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
   font-family: inherit;
+  box-shadow: none;
+}
+
+.zylo-cart-clear-btn svg {
+  stroke: #ffffff;
+}
+
+.zylo-cart-clear-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+.zylo-cart-clear-btn:active {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.zylo-cart-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  background: #ef4444;
+  border: 1.5px solid #ef4444;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-family: inherit;
+  box-shadow: none;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 .zylo-cart-remove-btn:hover {
-  color: #dc2626;
-  border-color: #fca5a5;
-  background: #fef2f2;
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+.zylo-cart-remove-btn:active {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
 .zylo-cart-remove-icon {
   width: 14px;
   height: 14px;
-  stroke: currentColor;
+  stroke: #ffffff;
   fill: none;
   stroke-width: 2;
   stroke-linecap: round;
@@ -4960,21 +5198,27 @@ html.dark .zylo-detail-wishlist-btn.active .rmx-heart-svg {
     flex-wrap: wrap;
   }
 
+  .zylo-cart-stepper {
+    height: 30px;
+  }
+
   .zylo-cart-stepper-btn {
     width: 28px;
-    height: 28px;
-    font-size: 14px;
+    height: 100%;
+    font-size: 13px;
   }
 
   .zylo-cart-stepper-qty {
     font-size: 12px;
-    min-width: 20px;
+    min-width: 18px;
   }
 
   .zylo-cart-remove-btn {
-    padding: 4px 8px;
+    height: 30px;
+    padding: 0 10px;
     font-size: 11px;
     gap: 4px;
+    border-radius: 999px;
   }
 
   .zylo-cart-remove-btn span {
@@ -5202,4 +5446,141 @@ html.dark .zylo-detail-wishlist-btn.active .rmx-heart-svg {
 
 .zylo-size-guide-btn:hover {
   color: #000;
+}
+
+/* ==========================================================================
+   Collections Pagination
+   ========================================================================== */
+.zylo-pagination-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid #e4e4e7;
+  width: 100%;
+}
+
+.zylo-pagination-info {
+  font-size: 13px;
+  color: #71717a;
+  letter-spacing: 0.2px;
+}
+
+.zylo-pagination-info strong {
+  color: #18181b;
+  font-weight: 600;
+}
+
+.zylo-pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zylo-pagination-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  color: #18181b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  user-select: none;
+}
+
+.zylo-pagination-nav-btn:hover:not(:disabled) {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #000000;
+}
+
+.zylo-pagination-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #f4f4f5;
+  background: #fafafa;
+}
+
+.zylo-pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zylo-pagination-page-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  color: #18181b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  user-select: none;
+}
+
+.zylo-pagination-page-btn:hover:not(.active) {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  color: #000000;
+}
+
+.zylo-pagination-page-btn.active {
+  background: #000000;
+  border-color: #000000;
+  color: #ffffff !important;
+  font-weight: 700;
+  cursor: default;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.zylo-pagination-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 40px;
+  color: #a1a1aa;
+  font-size: 14px;
+  letter-spacing: 2px;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .zylo-pagination-container {
+    margin-top: 32px;
+    padding-top: 24px;
+    gap: 12px;
+  }
+
+  .zylo-pagination-nav-btn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .zylo-pagination-page-btn {
+    min-width: 36px;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 8px;
+  }
 }
