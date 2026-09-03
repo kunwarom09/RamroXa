@@ -48,6 +48,7 @@ function SignupContent() {
 
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [verificationLink, setVerificationLink] = useState('');
 
   // Live password validation rules
   const hasMinLen = formData.password.length >= 8;
@@ -66,13 +67,18 @@ function SignupContent() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.address.trim()) {
-      setError('Please fill in all required fields (Name, Email, Address 1).');
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setError('Please fill in your Full Name and Email address.');
+      return;
+    }
+
+    if (!formData.password) {
+      setError('Please enter a password.');
       return;
     }
 
     if (!isPasswordValid) {
-      setError('Password must meet all complexity requirements (min 8 chars, 1 letter, 1 number, 1 special character).');
+      setError('Password must be at least 8 characters long and contain at least 1 alphabet, 1 number, and 1 special character.');
       return;
     }
 
@@ -88,16 +94,21 @@ function SignupContent() {
       const res = await api.post('/api/auth/register', {
         name: formData.name.trim(),
         email: targetEmail,
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        permanentAddress: formData.address.trim(),
-        temporaryAddress: formData.address2.trim() || formData.address.trim(),
+        phone: (formData.phone || '').trim(),
+        address: (formData.address || '').trim(),
+        permanentAddress: (formData.address || '').trim(),
+        temporaryAddress: (formData.address2 || formData.address || '').trim(),
         password: formData.password,
         redirect
       });
 
       setRegisteredEmail(targetEmail);
       setVerificationSent(true);
+
+      const vUrl = res?.data?.verificationUrl || (res?.data?.verificationToken ? `/verify-email?token=${res.data.verificationToken}&redirect=${encodeURIComponent(redirect)}` : '');
+      if (vUrl) {
+        setVerificationLink(vUrl);
+      }
     } catch (err) {
       const errMsg =
         err.message ||
@@ -256,6 +267,31 @@ function SignupContent() {
               </div>
             )}
 
+            {verificationLink && (
+              <div style={{ margin: '16px 0 14px' }}>
+                <a
+                  href={verificationLink}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: 44,
+                    background: '#000',
+                    color: '#fff',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    letterSpacing: 0.5,
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  COMPLETE ACCOUNT CREATION &rarr;
+                </a>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <button
                 type="button"
@@ -368,11 +404,10 @@ function SignupContent() {
             {/* Address 1 */}
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: 0.5, marginBottom: 6, color: '#333' }}>
-                ADDRESS 1 (PERMANENT / PRIMARY) <span style={{ color: '#dc2626' }}>*</span>
+                ADDRESS 1 (PERMANENT / PRIMARY) <span style={{ color: '#888', fontWeight: 400 }}>(Optional)</span>
               </label>
               <input
                 type="text"
-                required
                 placeholder="e.g. Ward 4, Baluwatar, Kathmandu"
                 value={formData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
@@ -573,18 +608,18 @@ function SignupContent() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !isPasswordValid || !passwordsMatch}
+              disabled={loading}
               style={{
                 width: '100%',
                 height: 44,
-                background: (loading || !isPasswordValid || !passwordsMatch) ? '#888' : '#000',
+                background: loading ? '#888' : '#000',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: 1.5,
-                cursor: (loading || !isPasswordValid || !passwordsMatch) ? 'not-allowed' : 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: 6,
                 transition: 'background 0.15s ease'
               }}

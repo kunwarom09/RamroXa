@@ -8,6 +8,12 @@ export default function AdminIrdPage() {
   const [salesList, setSalesList] = useState([]);
   const [purchasesList, setPurchasesList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState({
+    company: 'Zylo Pvt. Ltd.',
+    address: 'Thamel, Kathmandu',
+    pan: '601234567',
+    vatRate: 13
+  });
 
   const refreshData = async () => {
     setLoading(true);
@@ -30,11 +36,20 @@ export default function AdminIrdPage() {
   };
 
   useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? (localStorage.getItem('zylo_admin_settings') || localStorage.getItem('zylo_settings')) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          setSettings((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch (e) {}
     refreshData();
   }, []);
 
   const m = monthStr;
-  const vatRate = 13;
+  const vatRate = settings?.vatRate != null ? settings.vatRate : 13;
 
   const sales = salesList.filter(s => {
     const d = (s.createdAt || s.date || '').slice(0, 7);
@@ -132,8 +147,8 @@ export default function AdminIrdPage() {
 
       <div className="card card-pad form-max" style={{ marginTop: '16px' }}>
         <div className="report-head" style={{ marginBottom: '24px' }}>
-          <h2>{settings.company || 'Zylo Pvt. Ltd.'}</h2>
-          <p>{settings.address || 'Thamel, Kathmandu'} &middot; PAN: {settings.pan || '601234567'}</p>
+          <h2>{settings?.company || 'Zylo Pvt. Ltd.'}</h2>
+          <p>{settings?.address || 'Thamel, Kathmandu'} &middot; PAN: {settings?.pan || '601234567'}</p>
           <p style={{ marginTop: '6px', fontWeight: 500, color: 'var(--accent)' }}>
             VAT Return Summary &mdash; {monthStr}
           </p>

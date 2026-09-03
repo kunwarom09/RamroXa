@@ -31,11 +31,29 @@ export default function AdminCustomersPage() {
       const apiCusts = custRes.data?.customers || custRes.data || [];
       const apiOrders = orderRes.data?.orders || orderRes.data || [];
 
+      const deletedKeys = typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('zylo_deleted_customers') || '[]')
+        : [];
+
       const custMap = new Map();
 
       // 1. Registered API customers
       apiCusts.forEach((ac) => {
-        const key = (ac.phone || ac.email || ac.name || '').toLowerCase().trim();
+        const idKey = (ac.id || ac._id || '').toString().toLowerCase();
+        const phoneKey = (ac.phone || '').toLowerCase().trim();
+        const emailKey = (ac.email || '').toLowerCase().trim();
+        const nameKey = (ac.name || '').toLowerCase().trim();
+        const key = phoneKey || emailKey || nameKey;
+
+        if (
+          (idKey && deletedKeys.includes(idKey)) ||
+          (phoneKey && deletedKeys.includes(phoneKey)) ||
+          (emailKey && deletedKeys.includes(emailKey)) ||
+          (key && deletedKeys.includes(key))
+        ) {
+          return;
+        }
+
         const spendNpr = ac.totalSpend != null ? Math.round(ac.totalSpend / 100) : 0;
         if (key) {
           custMap.set(key, {
@@ -60,6 +78,16 @@ export default function AdminCustomersPage() {
         const city = o.shippingAddress?.city || 'Kathmandu';
         const key = (phone || o.guestEmail || name || '').toLowerCase().trim();
         const orderTotal = o.grandTotal != null ? Math.round(o.grandTotal / 100) : (Number(o.total) || 0);
+
+        if (name === '[Deleted Customer]') return;
+        if (
+          (phone && deletedKeys.includes(phone.toLowerCase().trim())) ||
+          (o.guestEmail && deletedKeys.includes(o.guestEmail.toLowerCase().trim())) ||
+          (name && deletedKeys.includes(name.toLowerCase().trim())) ||
+          (key && deletedKeys.includes(key))
+        ) {
+          return;
+        }
 
         if (key) {
           const existing = custMap.get(key);
@@ -122,25 +150,52 @@ export default function AdminCustomersPage() {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    if (editingCust) {
-      setCustomers((prev) => prev.map((c) => (c.id === editingCust.id ? { ...c, ...formData } : c)));
-    } else {
-      setCustomers((prev) => [
-        {
-          id: 'cust_' + Date.now().toString(36),
-          ...formData,
-          orders: 0,
-          spend: 0
-        },
-        ...prev
-      ]);
+    try {
+      if (editingCust && editingCust.id && !editingCust.id.startsWith('cust_')) {
+        await api.put(`/api/admin/customers/${editingCust.id}`, formData);
+      } else {
+        await api.post('/api/admin/customers', formData);
+      }
+      await refreshData();
+      setModalOpen(false);
+    } catch (err) {
+      console.error('Failed to save customer:', err);
+      alert(err.message || 'Failed to save customer.');
     }
-    setModalOpen(false);
   };
 
-  const handleDelete = (c) => {
-    if (!confirm(`Delete customer ${c.name}?`)) return;
-    setCustomers((prev) => prev.filter((x) => (x.id ? x.id !== c.id : x.name !== c.name)));
+  const handleDelete = async (c) => {
+    if (!confirm(`Are you sure you want to delete customer "${c.name || 'this customer'}"?`)) return;
+    try {
+      const targetId = c.id || c.email || c.phone || c.name;
+      if (targetId) {
+        await api.delete(`/api/admin/customers/${encodeURIComponent(targetId)}`);
+      }
+
+      // Add to exclusion set so order aggregation never resurrects this customer
+      const keysToExclude = [
+        c.id,
+        c.email,
+        c.phone,
+        c.name,
+        (c.phone || c.email || c.name || '').toLowerCase().trim()
+      ].filter(Boolean);
+
+      try {
+        const deletedKeys = JSON.parse(localStorage.getItem('zylo_deleted_customers') || '[]');
+        keysToExclude.forEach((k) => {
+          const lk = String(k).toLowerCase().trim();
+          if (lk && !deletedKeys.includes(lk)) deletedKeys.push(lk);
+        });
+        localStorage.setItem('zylo_deleted_customers', JSON.stringify(deletedKeys));
+      } catch (e) {}
+
+      // Update state immediately
+      setCustomers((prev) => prev.filter((x) => x.id !== c.id && x.email !== c.email && x.phone !== c.phone && x.name !== c.name));
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+      alert(err.message || 'Failed to delete customer.');
+    }
   };
 
   const filtered = customers.filter((c) =>

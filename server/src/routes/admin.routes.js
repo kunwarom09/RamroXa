@@ -30,6 +30,9 @@ import {
   refundOrder,
   listCustomers,
   getCustomer,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
   getDashboardStats,
   listSalesReturns,
   createSalesReturn,
@@ -135,7 +138,11 @@ router.delete('/reviews/:id', deleteAdminReview);
 
 // Customers
 router.get('/customers', listCustomers);
+router.post('/customers', createCustomer);
 router.get('/customers/:id', getCustomer);
+router.put('/customers/:id', updateCustomer);
+router.patch('/customers/:id', updateCustomer);
+router.delete('/customers/:id', deleteCustomer);
 
 // Finance & Accounting
 router.get('/finance/journal', getJournal);

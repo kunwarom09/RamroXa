@@ -24,12 +24,9 @@ function VerifyEmailContent() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState('');
   
-  const hasExecutedRef = React.useRef(false);
+  const executedTokenRef = React.useRef('');
 
   useEffect(() => {
-    if (hasExecutedRef.current) return;
-    hasExecutedRef.current = true;
-
     const urlQuery = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const activeToken = urlQuery?.get('token') || searchParams.get('token') || '';
     const rawRedirect = urlQuery?.get('redirect') || searchParams.get('redirect') || redirectPath || '/shop';
@@ -43,6 +40,9 @@ function VerifyEmailContent() {
       setErrorMessage('No verification token was found in this link. Please check your email or request a new link below.');
       return;
     }
+
+    if (executedTokenRef.current === activeToken) return;
+    executedTokenRef.current = activeToken;
 
     async function executeVerification() {
       try {

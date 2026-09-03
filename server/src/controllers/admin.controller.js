@@ -206,6 +206,24 @@ export const getCustomer = asyncHandler(async (req, res) => {
   res.status(200).json({ data: result });
 });
 
+export const createCustomer = asyncHandler(async (req, res) => {
+  const { createAdminCustomer } = await import('../services/adminCustomer.service.js');
+  const result = await createAdminCustomer(req.body);
+  res.status(201).json({ message: 'Customer created successfully.', data: result });
+});
+
+export const updateCustomer = asyncHandler(async (req, res) => {
+  const { updateAdminCustomer } = await import('../services/adminCustomer.service.js');
+  const result = await updateAdminCustomer(req.params.id, req.body);
+  res.status(200).json({ message: 'Customer updated successfully.', data: result });
+});
+
+export const deleteCustomer = asyncHandler(async (req, res) => {
+  const { deleteAdminCustomer } = await import('../services/adminCustomer.service.js');
+  const result = await deleteAdminCustomer(req.params.id);
+  res.status(200).json({ message: result.message || 'Customer deleted successfully.' });
+});
+
 // --- Dashboard Live Stats ---
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const { getDashboardStats: fetchStats } = await import('../services/dashboard.service.js');
@@ -260,6 +278,9 @@ export default {
   refundOrder,
   listCustomers,
   getCustomer,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
   getDashboardStats,
   listSalesReturns,
   createSalesReturn,

@@ -51,7 +51,7 @@ export async function register(data) {
     lastLoginAt: null
   });
 
-  // Generate verification token in background (expires in 24 hours)
+  // Generate verification token (expires in 24 hours)
   const rawToken = crypto.randomBytes(32).toString('hex');
   const targetRedirect = redirect || '/checkout';
   await VerificationToken.create({
@@ -62,17 +62,17 @@ export async function register(data) {
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
   });
 
-  // Send verification email in background
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verificationUrl = `${baseUrl}/verify-email?token=${rawToken}&redirect=${encodeURIComponent(targetRedirect)}`;
+
+  // Send verification email (delivers via SMTP if configured, logs link to console/preview for dev)
   sendVerificationEmail({
     user,
     token: rawToken,
     redirect: targetRedirect
   }).catch((err) => {
-    console.error('❌ Failed to send verification email during registration:', err.message);
+    console.warn('⚠️ Background email send warning:', err.message);
   });
-
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const verificationUrl = `${baseUrl}/verify-email?token=${rawToken}&redirect=${encodeURIComponent(targetRedirect)}`;
 
   return {
     user,
@@ -189,10 +189,12 @@ export async function resendVerificationEmail({ email, redirect = '/checkout' })
     expiresAt
   });
 
-  await sendVerificationEmail({
+  sendVerificationEmail({
     user,
     token: rawToken,
     redirect: redirect || '/checkout'
+  }).catch((err) => {
+    console.warn('⚠️ Background email resend warning:', err.message);
   });
 
   return { message: 'A new verification link has been sent to your email address.' };

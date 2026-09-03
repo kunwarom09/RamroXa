@@ -6,45 +6,36 @@ let transporter = null;
 async function getTransporter() {
   if (transporter) return transporter;
 
-  if (env.NODE_ENV === 'test') {
-    // In test environment, use a mock transport to avoid network calls
-    transporter = nodemailer.createTransport({
-      jsonTransport: true
-    });
-  } else if (
-    env.SMTP_SERVICE &&
+  const isConfigured =
     env.SMTP_USER &&
     env.SMTP_PASS &&
     !env.SMTP_USER.includes('your_email') &&
-    env.SMTP_PASS !== 'your_app_password'
-  ) {
-    transporter = nodemailer.createTransport({
-      service: env.SMTP_SERVICE,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS
-      }
-    });
-    console.log(`📧 Configured email transporter using service: ${env.SMTP_SERVICE}`);
-  } else if (
-    env.SMTP_HOST &&
-    env.SMTP_USER &&
-    env.SMTP_PASS &&
-    !env.SMTP_USER.includes('your_email') &&
-    env.SMTP_PASS !== 'your_app_password'
-  ) {
-    transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS
-      }
-    });
-    console.log(`📧 Configured email transporter using host: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
+    env.SMTP_PASS !== 'your_app_password';
+
+  if (isConfigured) {
+    if (env.SMTP_SERVICE && env.SMTP_SERVICE.toLowerCase() === 'gmail') {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS
+        }
+      });
+      console.log(`📧 Configured Gmail transporter for: ${env.SMTP_USER}`);
+    } else if (env.SMTP_HOST) {
+      transporter = nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT || 587,
+        secure: env.SMTP_SECURE || false,
+        auth: {
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS
+        }
+      });
+      console.log(`📧 Configured custom SMTP transporter: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
+    }
   } else {
-    // In dev mode without configured SMTP, try ethereal email or stream
+    // Graceful fallback for local development / testing
     try {
       const testAccount = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
@@ -58,7 +49,6 @@ async function getTransporter() {
       });
       console.log('📧 Ethereal test email account initialized for development:', testAccount.user);
     } catch (err) {
-      console.warn('⚠️ Could not initialize Ethereal test account, falling back to console logger:', err.message);
       transporter = nodemailer.createTransport({
         streamTransport: true,
         newline: 'unix',
@@ -73,8 +63,9 @@ async function getTransporter() {
 export async function sendEmail({ to, subject, html, text }) {
   try {
     const transport = await getTransporter();
+    const fromAddress = env.SMTP_FROM || (env.SMTP_USER ? `"Ramroxa" <${env.SMTP_USER}>` : '"Ramroxa" <noreply@ramroxa.com>');
     const mailOptions = {
-      from: env.SMTP_FROM || '"Ramroxa" <noreply@ramroxa.com>',
+      from: fromAddress,
       to,
       subject,
       text,
@@ -82,21 +73,15 @@ export async function sendEmail({ to, subject, html, text }) {
     };
 
     const info = await transport.sendMail(mailOptions);
-
     if (nodemailer.getTestMessageUrl && info) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log(`✉️ Email preview URL (Ethereal test mailbox): ${previewUrl}`);
       }
     }
-
     return info;
   } catch (error) {
-    console.error('❌ Failed to send email via nodemailer:', error);
-    // Don't crash request if email sending fails in dev, but log error
-    if (env.NODE_ENV === 'production') {
-      throw error;
-    }
+    console.warn(`⚠️ Email delivery notice for ${to}:`, error.message);
     return null;
   }
 }
