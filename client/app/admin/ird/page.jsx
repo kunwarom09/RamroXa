@@ -152,7 +152,7 @@ export default function AdminIrdPage() {
 
   useEffect(() => {
     try {
-      const saved = typeof window !== 'undefined' ? (localStorage.getItem('zylo_admin_settings') || localStorage.getItem('zylo_settings')) : null;
+      const saved = typeof window !== 'undefined' ? (localStorage.getItem('rmx_admin_settings') || localStorage.getItem('zylo_admin_settings') || localStorage.getItem('zylo_settings')) : null;
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {

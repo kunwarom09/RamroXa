@@ -284,7 +284,7 @@ export default function AdminLayout({ children }) {
             <div className="user-chip">
               <div className="avatar">{initials}</div>
               <div>
-                <div style={{ fontWeight: 500 }}>{currentUser?.name || 'Zylo Super Admin'}</div>
+                <div style={{ fontWeight: 500 }}>{currentUser?.name || 'Ramroxa Super Admin'}</div>
                 <div style={{ fontSize: '11px', color: 'var(--muted-foreground)', textTransform: 'capitalize' }}>
                   {currentUser?.role || 'Admin'}
                 </div>

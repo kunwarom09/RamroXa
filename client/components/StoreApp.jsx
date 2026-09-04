@@ -3,7 +3,7 @@ import React from 'react';
 import Landing from './Landing';
 import RamroxaHomepage from './RamroxaHomepage';
 import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
-import { fetchProducts, fetchCategories } from '../services/productService';
+import { fetchProducts, fetchCategories, fetchProductReviews, submitProductReview } from '../services/productService';
 import { api } from '../services/apiClient';
 import { loadHomepageConfig } from '../services/homepageCms';
 
@@ -1549,7 +1549,16 @@ export default class StoreApp extends React.Component {
       wishlistModalOpen: false,
       wishlistModalProduct: null,
       wishlistModalSize: 'M',
-      wishlistModalColor: ''
+      wishlistModalColor: '',
+      productReviews: [],
+      reviewsSummary: null,
+      reviewsLoading: false,
+      reviewsLoadedProductId: null,
+      writeReviewOpen: false,
+      reviewFormRating: 5,
+      reviewFormTitle: '',
+      reviewFormComment: '',
+      submittingReview: false
     };
   }
 
@@ -4679,9 +4688,353 @@ export default class StoreApp extends React.Component {
             </div>
           </div>
         </div>
+
+        {/* Customer Reviews Section */}
+        {this.renderReviewsModule(p)}
       </main>
     );
   }
+
+  loadProductReviews = async (productIdOrSlug) => {
+    if (!productIdOrSlug) return;
+    this.setState({ reviewsLoading: true, reviewsLoadedProductId: productIdOrSlug });
+    try {
+      const res = await fetchProductReviews(productIdOrSlug);
+      const reviews = res?.data?.reviews || res?.reviews || res?.data || [];
+      const summary = res?.data?.summary || res?.summary || null;
+      this.setState({
+        productReviews: Array.isArray(reviews) ? reviews : [],
+        reviewsSummary: summary,
+        reviewsLoading: false
+      });
+    } catch (err) {
+      console.warn('Could not load reviews:', err);
+      this.setState({ reviewsLoading: false });
+    }
+  };
+
+  handleReviewSubmit = async (productIdOrSlug) => {
+    const { reviewFormRating, reviewFormTitle, reviewFormComment } = this.state;
+    if (!reviewFormComment.trim()) {
+      alert('Please enter your review feedback.');
+      return;
+    }
+    this.setState({ submittingReview: true });
+    try {
+      await submitProductReview(productIdOrSlug, {
+        rating: reviewFormRating,
+        title: reviewFormTitle.trim(),
+        comment: reviewFormComment.trim()
+      });
+      this.showToast('✓ Review submitted successfully! Thank you.');
+      this.setState({
+        writeReviewOpen: false,
+        reviewFormRating: 5,
+        reviewFormTitle: '',
+        reviewFormComment: '',
+        submittingReview: false
+      });
+      this.loadProductReviews(productIdOrSlug);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to submit review. You may need to sign in or have purchased this item.';
+      alert(msg);
+      this.setState({ submittingReview: false });
+    }
+  };
+
+  renderReviewsModule(p) {
+    const prodKey = p.slug || p._id || p.id;
+    if (this.state.reviewsLoadedProductId !== prodKey && !this.state.reviewsLoading) {
+      setTimeout(() => this.loadProductReviews(prodKey), 0);
+    }
+
+    const {
+      productReviews = [],
+      reviewsSummary,
+      reviewsLoading,
+      writeReviewOpen,
+      reviewFormRating,
+      reviewFormTitle,
+      reviewFormComment,
+      submittingReview
+    } = this.state;
+
+    const totalReviews = reviewsSummary?.ratingCount || productReviews.length;
+    const avgScore = reviewsSummary?.ratingAvg ? Number(reviewsSummary.ratingAvg).toFixed(1) : (
+      productReviews.length > 0
+        ? (productReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / productReviews.length).toFixed(1)
+        : '5.0'
+    );
+
+    const dist = reviewsSummary?.percentages || { 5: 85, 4: 12, 3: 3, 2: 0, 1: 0 };
+
+    const renderStars = (rating, size = 15) => {
+      const stars = [];
+      for (let i = 1; i <= 5; i++) {
+        stars.push(
+          <span key={i} style={{ color: i <= rating ? '#f59e0b' : 'var(--mute, #a1a1aa)', fontSize: size, opacity: i <= rating ? 1 : 0.35 }}>
+            ★
+          </span>
+        );
+      }
+      return stars;
+    };
+
+    return (
+      <section className="rmx-reviews-section">
+        {/* Header */}
+        <div className="rmx-reviews-header">
+          <div>
+            <h3 className="rmx-reviews-title">Customer Reviews &amp; Ratings</h3>
+            <p className="rmx-reviews-subtitle">
+              <span>★ {avgScore} out of 5</span>
+              <span>•</span>
+              <span>Based on {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            className="rmx-write-review-btn"
+            onClick={() => this.setState({ writeReviewOpen: true })}
+          >
+            ★ Write a Review
+          </button>
+        </div>
+
+        {/* Overview Box */}
+        <div className="rmx-reviews-overview-card">
+          <div className="rmx-score-display">
+            <span className="rmx-score-number">{avgScore}</span>
+            <div style={{ display: 'flex', gap: 2 }}>{renderStars(Math.round(Number(avgScore)), 18)}</div>
+            <span style={{ fontSize: 13, color: 'var(--mute, #737373)', marginTop: 4 }}>
+              {totalReviews > 0 ? `${totalReviews} customer ratings` : 'Be the first to rate!'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[5, 4, 3, 2, 1].map(stars => {
+              const pct = dist[stars] !== undefined ? dist[stars] : (stars === 5 ? (totalReviews > 0 ? 80 : 0) : (stars === 4 ? (totalReviews > 0 ? 20 : 0) : 0));
+              return (
+                <div key={stars} className="rmx-breakdown-row">
+                  <span style={{ width: 44, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {stars} <span style={{ color: '#f59e0b' }}>★</span>
+                  </span>
+                  <div className="rmx-breakdown-bar-track">
+                    <div className="rmx-breakdown-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span style={{ width: 34, textAlign: 'right' }}>{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Reviews List */}
+        {reviewsLoading ? (
+          <div style={{ padding: '36px', textAlign: 'center', color: 'var(--mute, #737373)', fontSize: 14 }}>
+            Loading reviews...
+          </div>
+        ) : productReviews.length === 0 ? (
+          <div style={{
+            padding: '48px 24px',
+            textAlign: 'center',
+            background: 'var(--smoke, #fafafa)',
+            border: '1px dashed var(--line, #e5e5e5)',
+            borderRadius: 14
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
+            <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 500, color: 'var(--ink, #111)' }}>No Reviews Yet</h4>
+            <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--mute, #737373)', maxWidth: 400, marginInline: 'auto' }}>
+              Have you worn or tested this piece? Be the first to share your experience with other customers!
+            </p>
+            <button
+              type="button"
+              className="rmx-write-review-btn"
+              onClick={() => this.setState({ writeReviewOpen: true })}
+            >
+              Write First Review
+            </button>
+          </div>
+        ) : (
+          <div className="rmx-reviews-list">
+            {productReviews.map((rev, idx) => (
+              <div key={rev._id || rev.id || idx} className="rmx-review-card">
+                <div className="rmx-review-card-header">
+                  <div style={{ display: 'flex', gap: 2 }}>{renderStars(rev.rating || 5, 14)}</div>
+                  {rev.verifiedPurchase && (
+                    <span className="rmx-review-verified-badge">
+                      ✓ Verified
+                    </span>
+                  )}
+                </div>
+                {rev.title && <h5 className="rmx-review-title">{rev.title}</h5>}
+                <p className="rmx-review-comment">{rev.comment}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid var(--line, #f0f0f0)' }}>
+                  <span className="rmx-review-user">{rev.userName || 'Verified Buyer'}</span>
+                  <span className="rmx-review-date">
+                    {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Write Review Modal */}
+        {writeReviewOpen && (
+          <div
+            className="zylo-modal-backdrop"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.65)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: 20
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) this.setState({ writeReviewOpen: false }); }}
+          >
+            <div
+              className="zylo-modal-card"
+              style={{
+                background: 'var(--paper, #ffffff)',
+                border: '1px solid var(--line, #e5e5e5)',
+                borderRadius: 16,
+                padding: '28px',
+                width: '100%',
+                maxWidth: 500,
+                color: 'var(--ink, #111)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Write a Review</h3>
+                <button
+                  type="button"
+                  onClick={() => this.setState({ writeReviewOpen: false })}
+                  style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--mute, #737373)' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Rating selection */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
+                    YOUR RATING
+                  </label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[1, 2, 3, 4, 5].map(st => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => this.setState({ reviewFormRating: st })}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          fontSize: 26,
+                          cursor: 'pointer',
+                          padding: '0 2px',
+                          color: st <= reviewFormRating ? '#f59e0b' : 'var(--mute, #ccc)',
+                          transition: 'transform 0.1s ease'
+                        }}
+                      >
+                        ★
+                      </button>
+                    ))}
+                    <span style={{ fontSize: 13, alignSelf: 'center', marginLeft: 8, fontWeight: 600 }}>
+                      {reviewFormRating} / 5 Stars
+                    </span>
+                  </div>
+                </div>
+
+                {/* Review Title */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
+                    HEADLINE / TITLE
+                  </label>
+                  <input
+                    type="text"
+                    value={reviewFormTitle}
+                    onChange={(e) => this.setState({ reviewFormTitle: e.target.value })}
+                    placeholder="e.g. Incredibly comfortable, fits true to size"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--line, #e5e5e5)',
+                      background: 'var(--smoke, #fafafa)',
+                      color: 'var(--ink, #111)',
+                      fontSize: 13.5,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Review Comment */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
+                    DETAILED FEEDBACK
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={reviewFormComment}
+                    onChange={(e) => this.setState({ reviewFormComment: e.target.value })}
+                    placeholder="How is the fabric quality, sizing, and comfort during everyday wear?"
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--line, #e5e5e5)',
+                      background: 'var(--smoke, #fafafa)',
+                      color: 'var(--ink, #111)',
+                      fontSize: 13.5,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => this.setState({ writeReviewOpen: false })}
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 8,
+                      border: '1px solid var(--line, #e5e5e5)',
+                      background: 'none',
+                      color: 'var(--ink, #111)',
+                      fontSize: 13,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submittingReview}
+                    onClick={() => this.handleReviewSubmit(prodKey)}
+                    className="rmx-write-review-btn"
+                    style={{ height: 38, padding: '0 20px', borderRadius: 8 }}
+                  >
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+    );
+  }
+
 
   renderWishlist() {
     const { wishlist = [] } = this.state;

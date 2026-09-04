@@ -87,7 +87,7 @@ export default function AdminReviewsPage() {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <span key={i} style={{ color: i <= rating ? '#f59e0b' : '#d1d5db', fontSize: '14px' }}>
+        <span key={i} style={{ color: i <= rating ? '#f59e0b' : 'var(--muted-foreground)', fontSize: '13px', opacity: i <= rating ? 1 : 0.4 }}>
           ★
         </span>
       );
@@ -104,19 +104,21 @@ export default function AdminReviewsPage() {
             position: 'fixed',
             bottom: '24px',
             right: '24px',
-            background: '#111827',
-            color: '#fff',
+            background: 'var(--surface)',
+            color: 'var(--primary)',
+            border: '1px solid var(--border)',
             padding: '12px 20px',
             borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
             zIndex: 9999,
-            fontSize: '14px',
+            fontSize: '13.5px',
+            fontWeight: 500,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}
         >
-          <span>✓</span>
+          <span style={{ color: 'var(--success)' }}>✓</span>
           <span>{toastMsg}</span>
         </div>
       )}
@@ -124,28 +126,18 @@ export default function AdminReviewsPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 600, margin: '0 0 6px 0', color: 'var(--foreground, #111)' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 600, margin: '0 0 4px 0', color: 'var(--primary)' }}>
             Customer Reviews
           </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted-foreground, #666)' }}>
-            Moderate ratings, verified purchase reviews, and customer feedback.
+          <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--muted-foreground)' }}>
+            Moderate customer ratings, verified purchase feedback, and testimonials.
           </p>
         </div>
         <button
+          type="button"
           onClick={loadReviews}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            background: 'var(--card, #fff)',
-            border: '1px solid var(--border, #e5e7eb)',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            color: 'var(--foreground, #111)'
-          }}
+          className="btn btn-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <Icon name="refresh" size={14} /> Refresh
         </button>
@@ -153,59 +145,63 @@ export default function AdminReviewsPage() {
 
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground, #666)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Reviews</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--foreground, #111)' }}>{totalCount}</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Reviews</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--primary)' }}>{totalCount}</div>
         </div>
-        <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Published</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: '#10b981' }}>{publishedCount}</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Published</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--success)' }}>{publishedCount}</div>
         </div>
-        <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hidden</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: '#f59e0b' }}>{hiddenCount}</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hidden</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--warning)' }}>{hiddenCount}</div>
         </div>
-        <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Verified Purchases</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: '#3b82f6' }}>{verifiedCount}</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Verified Purchases</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--accent)' }}>{verifiedCount}</div>
         </div>
-        <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground, #666)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Average Rating</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--foreground, #111)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span>★</span> {avgRating}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Average Rating</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ color: '#f59e0b' }}>★</span> {avgRating}
           </div>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '14px 16px',
+        marginBottom: '20px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
+        alignItems: 'center'
+      }}>
         <form onSubmit={handleSearchSubmit} style={{ flex: '1 1 260px', display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder="Search by customer, comment, title..."
+            placeholder="Search by customer, review title, comment..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
               flex: 1,
               padding: '8px 12px',
               borderRadius: '8px',
-              border: '1px solid var(--border, #d1d5db)',
+              border: '1px solid var(--border)',
               fontSize: '13px',
-              background: 'var(--background, #fff)',
-              color: 'var(--foreground, #111)'
+              background: 'var(--canvas)',
+              color: 'var(--primary)',
+              outline: 'none'
             }}
           />
           <button
             type="submit"
-            style={{
-              padding: '8px 16px',
-              background: '#000',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
+            className="btn btn-primary btn-sm"
+            style={{ height: '34px', padding: '0 16px' }}
           >
             Search
           </button>
@@ -216,13 +212,14 @@ export default function AdminReviewsPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             style={{
-              padding: '8px 12px',
+              padding: '7px 12px',
               borderRadius: '8px',
-              border: '1px solid var(--border, #d1d5db)',
+              border: '1px solid var(--border)',
               fontSize: '13px',
-              background: 'var(--background, #fff)',
-              color: 'var(--foreground, #111)',
-              cursor: 'pointer'
+              background: 'var(--canvas)',
+              color: 'var(--primary)',
+              cursor: 'pointer',
+              height: '34px'
             }}
           >
             <option value="all">All Statuses</option>
@@ -234,13 +231,14 @@ export default function AdminReviewsPage() {
             value={ratingFilter}
             onChange={(e) => setRatingFilter(e.target.value)}
             style={{
-              padding: '8px 12px',
+              padding: '7px 12px',
               borderRadius: '8px',
-              border: '1px solid var(--border, #d1d5db)',
+              border: '1px solid var(--border)',
               fontSize: '13px',
-              background: 'var(--background, #fff)',
-              color: 'var(--foreground, #111)',
-              cursor: 'pointer'
+              background: 'var(--canvas)',
+              color: 'var(--primary)',
+              cursor: 'pointer',
+              height: '34px'
             }}
           >
             <option value="all">All Ratings</option>
@@ -254,30 +252,30 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Reviews Table */}
-      <div style={{ background: 'var(--card, #fff)', border: '1px solid var(--border, #e5e7eb)', borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted-foreground, #666)' }}>
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: '13.5px' }}>
             Loading customer reviews...
           </div>
         ) : reviews.length === 0 ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted-foreground, #666)' }}>
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>💬</div>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--foreground, #111)' }}>No reviews found</div>
-            <p style={{ fontSize: '13px', marginTop: '4px' }}>Customer submitted reviews will appear here for moderation.</p>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--primary)' }}>No reviews found</div>
+            <p style={{ fontSize: '13px', marginTop: '4px', color: 'var(--muted-foreground)' }}>Customer submitted reviews will appear here for moderation.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ background: 'var(--muted, #f9fafb)', borderBottom: '1px solid var(--border, #e5e7eb)', color: 'var(--muted-foreground, #666)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  <th style={{ padding: '12px 16px' }}>Product</th>
-                  <th style={{ padding: '12px 16px' }}>Rating</th>
-                  <th style={{ padding: '12px 16px' }}>Review & Feedback</th>
-                  <th style={{ padding: '12px 16px' }}>Reviewer</th>
-                  <th style={{ padding: '12px 16px' }}>Variant</th>
-                  <th style={{ padding: '12px 16px' }}>Date</th>
-                  <th style={{ padding: '12px 16px' }}>Status</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+                <tr style={{ background: 'var(--muted)', borderBottom: '1px solid var(--border)', color: 'var(--muted-foreground)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Product</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Rating</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Review & Feedback</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Reviewer</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Variant</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -288,15 +286,15 @@ export default function AdminReviewsPage() {
                   const isBusy = actionLoading === rId;
 
                   return (
-                    <tr key={rId} style={{ borderBottom: '1px solid var(--border, #f3f4f6)', transition: 'background-color 0.15s ease' }}>
+                    <tr key={rId} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.15s ease' }}>
                       {/* Product */}
                       <td style={{ padding: '14px 16px', verticalAlign: 'top', minWidth: '180px' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--foreground, #111)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
                           <Link href={`/product/${prodSlug}`} target="_blank" style={{ color: 'inherit', textDecoration: 'none' }}>
                             {prodName}
                           </Link>
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--muted-foreground, #888)', marginTop: '2px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--muted-foreground)', marginTop: '2px' }}>
                           ID: {r.productId}
                         </div>
                       </td>
@@ -304,7 +302,7 @@ export default function AdminReviewsPage() {
                       {/* Rating */}
                       <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '2px' }}>{renderStars(r.rating)}</div>
-                        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--foreground, #111)', marginTop: '2px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)', marginTop: '2px' }}>
                           {r.rating} out of 5
                         </div>
                       </td>
@@ -312,20 +310,20 @@ export default function AdminReviewsPage() {
                       {/* Review & Feedback */}
                       <td style={{ padding: '14px 16px', verticalAlign: 'top', maxWidth: '320px' }}>
                         {r.title && (
-                          <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--foreground, #111)' }}>
+                          <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--primary)' }}>
                             {r.title}
                           </div>
                         )}
-                        <div style={{ color: 'var(--foreground, #333)', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                        <div style={{ color: 'var(--primary)', opacity: 0.9, lineHeight: '1.4', wordBreak: 'break-word' }}>
                           {r.comment}
                         </div>
                       </td>
 
                       {/* Reviewer */}
                       <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--foreground, #111)' }}>{r.userName || 'Anonymous'}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{r.userName || 'Anonymous'}</div>
                         {r.userEmail && (
-                          <div style={{ fontSize: '11px', color: 'var(--muted-foreground, #888)' }}>{r.userEmail}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.userEmail}</div>
                         )}
                         {r.verifiedPurchase && (
                           <span
@@ -333,12 +331,12 @@ export default function AdminReviewsPage() {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '3px',
-                              background: '#ecfdf5',
-                              color: '#065f46',
-                              border: '1px solid #a7f3d0',
+                              background: 'var(--success-soft)',
+                              color: 'var(--success)',
+                              border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
                               borderRadius: '4px',
                               padding: '2px 6px',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               fontWeight: 600,
                               marginTop: '4px'
                             }}
@@ -349,12 +347,12 @@ export default function AdminReviewsPage() {
                       </td>
 
                       {/* Variant */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap', fontSize: '12px', color: 'var(--muted-foreground, #666)' }}>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap', fontSize: '12px', color: 'var(--muted-foreground)' }}>
                         {r.variantLabel || (r.color || r.size ? `${r.color || ''} ${r.size ? `/ ${r.size}` : ''}` : '—')}
                       </td>
 
                       {/* Date */}
-                      <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap', color: 'var(--muted-foreground, #666)' }}>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'top', whiteSpace: 'nowrap', color: 'var(--muted-foreground)' }}>
                         {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
 
@@ -363,14 +361,14 @@ export default function AdminReviewsPage() {
                         <span
                           style={{
                             display: 'inline-block',
-                            padding: '3px 8px',
+                            padding: '3px 9px',
                             borderRadius: '999px',
-                            fontSize: '11.5px',
+                            fontSize: '11px',
                             fontWeight: 600,
                             textTransform: 'capitalize',
-                            background: r.status === 'published' ? '#ecfdf5' : '#fef3c7',
-                            color: r.status === 'published' ? '#047857' : '#b45309',
-                            border: `1px solid ${r.status === 'published' ? '#a7f3d0' : '#fde68a'}`
+                            background: r.status === 'published' ? 'var(--success-soft)' : 'var(--warning-soft)',
+                            color: r.status === 'published' ? 'var(--success)' : 'var(--warning)',
+                            border: `1px solid color-mix(in srgb, ${r.status === 'published' ? 'var(--success)' : 'var(--warning)'} 30%, transparent)`
                           }}
                         >
                           {r.status || 'published'}
@@ -381,33 +379,31 @@ export default function AdminReviewsPage() {
                       <td style={{ padding: '14px 16px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'inline-flex', gap: '6px' }}>
                           <button
+                            type="button"
                             onClick={() => handleToggleStatus(r)}
                             disabled={isBusy}
+                            className="btn btn-sm"
                             style={{
-                              padding: '4px 10px',
-                              borderRadius: '6px',
-                              border: '1px solid var(--border, #d1d5db)',
-                              background: r.status === 'published' ? '#fff' : '#000',
-                              color: r.status === 'published' ? '#111' : '#fff',
-                              fontSize: '12px',
-                              cursor: 'pointer',
-                              fontWeight: 500
+                              fontSize: '11.5px',
+                              height: '28px',
+                              padding: '0 8px',
+                              background: r.status === 'published' ? 'var(--surface)' : 'var(--primary)',
+                              color: r.status === 'published' ? 'var(--primary)' : 'var(--primary-foreground)',
+                              borderColor: r.status === 'published' ? 'var(--border)' : 'var(--primary)'
                             }}
                             title={r.status === 'published' ? 'Hide from product page' : 'Publish on product page'}
                           >
                             {r.status === 'published' ? 'Hide' : 'Publish'}
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(rId)}
                             disabled={isBusy}
+                            className="btn btn-sm btn-danger"
                             style={{
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              border: '1px solid #fecaca',
-                              background: '#fef2f2',
-                              color: '#dc2626',
-                              fontSize: '12px',
-                              cursor: 'pointer'
+                              fontSize: '11.5px',
+                              height: '28px',
+                              padding: '0 8px'
                             }}
                             title="Delete review"
                           >

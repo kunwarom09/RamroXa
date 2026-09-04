@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useEffect } from 'react';
 import { money, today, offsetDate } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
@@ -10,7 +10,7 @@ export default function AdminFinancePage() {
   const [salesList, setSalesList] = useState([]);
   const [purchasesList, setPurchasesList] = useState([]);
   const [returnsList, setReturnsList] = useState([]);
-  const [settings, setSettings] = useState({ company: 'Zylo Pvt. Ltd.', pan: '601234567' });
+  const [settings, setSettings] = useState({ company: 'Ramroxa Pvt. Ltd.', pan: '601234567' });
   const [loading, setLoading] = useState(true);
 
   // Ledger state
@@ -181,6 +181,17 @@ export default function AdminFinancePage() {
 
   useEffect(() => {
     refreshData();
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('rmx_admin_settings') || localStorage.getItem('zylo_admin_settings') || localStorage.getItem('zylo_settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.company) {
+            setSettings(prev => ({ ...prev, company: parsed.company, pan: parsed.pan || prev.pan }));
+          }
+        }
+      } catch (e) {}
+    }
   }, []);
 
   // Accounts list for ledger dropdown

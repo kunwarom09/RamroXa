@@ -18103,21 +18103,21 @@ function Container(_p = {}) {
       textAlign: "center",
       lineHeight: "24.800px",
       letterSpacing: "-0.480px",
-      color: "rgb(110,110,110)",
+      color: "var(--color-grey-43)",
       flexShrink: 0,
       whiteSpace: "pre-wrap"
     }
   }, "The premium quality of the men's collection is truly unmatched lately. ", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "rgb(0,0,0)"
+      color: "var(--color-black-solid)"
     }
   }, "The"), "\n", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "rgb(0,0,0)"
+      color: "var(--color-black-solid)"
     }
   }, "fabrics feel incredibly premium and soft."), " This specific tailored fit is perfect for", "\n", "my busy office. ", /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "rgb(0,0,0)"
+      color: "var(--color-black-solid)"
     }
   }, "A very sharp look."), " I love it every day.")))), /*#__PURE__*/React.createElement("div", {
     style: {
