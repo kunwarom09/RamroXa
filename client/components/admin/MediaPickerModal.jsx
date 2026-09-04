@@ -169,16 +169,56 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
                         <div style={{
                           width: '100%',
                           aspectRatio: '1/1',
-                          background: `url('${item.posterUrl || item.url}') center / cover no-repeat`,
+                          background: item.posterUrl
+                            ? `url('${item.posterUrl}') center / cover no-repeat`
+                            : !isVid && item.url
+                            ? `url('${item.url}') center / cover no-repeat`
+                            : '#111',
                           backgroundColor: '#1a1a1a',
-                          position: 'relative'
+                          position: 'relative',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
                         }}>
+                          {isVid && !item.posterUrl && (
+                            <video
+                              src={item.url}
+                              preload="metadata"
+                              muted
+                              playsInline
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          )}
+                          {isVid && (
+                            <div style={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'rgba(0,0,0,0.25)'
+                            }}>
+                              <div style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.85)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                paddingLeft: '2px'
+                              }}>
+                                <span style={{ color: '#000', fontSize: '11px' }}>▶</span>
+                              </div>
+                            </div>
+                          )}
                           {isVid && (
                             <span style={{
                               position: 'absolute',
                               bottom: '4px',
                               left: '4px',
-                              background: 'rgba(0,0,0,0.75)',
+                              background: 'rgba(220,38,38,0.9)',
                               color: '#fff',
                               fontSize: '9px',
                               fontWeight: 700,
@@ -244,9 +284,9 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
               background: 'var(--surface)'
             }}>
               <Icon name="upload" size={36} style={{ color: 'var(--muted-foreground)', marginBottom: '14px' }} />
-              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>Upload Image from your Device</h3>
+              <h3 style={{ margin: '0 0 6px', fontSize: '15px' }}>Upload Media or Video (.mp4)</h3>
               <p style={{ fontSize: '12.5px', color: 'var(--muted-foreground)', margin: '0 0 18px', maxWidth: '380px' }}>
-                PNG, JPG, JPEG, WebP. High resolution images are automatically optimized for fast storefront performance.
+                PNG, JPG, WebP images and MP4 videos. High resolution media files are automatically processed and stored in your library.
               </p>
               <button
                 type="button"
@@ -254,12 +294,12 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {uploading ? 'Processing Image...' : 'Choose File to Upload'}
+                {uploading ? 'Processing & Uploading...' : 'Choose Media / Video to Upload'}
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*,.mp4,.webm,.mov,.ogg"
                 style={{ display: 'none' }}
                 onChange={handleFileUpload}
               />
@@ -439,6 +479,9 @@ export function VideoPickerField({
     try {
       const newItem = await uploadMediaFile(file, 'Videos');
       onChange(newItem.url);
+      if (onPosterChange && newItem.posterUrl) {
+        onPosterChange(newItem.posterUrl);
+      }
     } catch (err) {
       console.error('Video upload failed:', err);
       alert('Failed to upload video: ' + (err.message || 'Unknown error'));
@@ -521,7 +564,7 @@ export function VideoPickerField({
           <input
             type="file"
             ref={fileInputRef}
-            accept="video/*"
+            accept="video/*,.mp4,.webm,.mov,.ogg"
             style={{ display: 'none' }}
             onChange={handleVideoUpload}
           />

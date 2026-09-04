@@ -75,16 +75,25 @@ export default function MediaLibraryPage() {
 
   const copyToClipboard = (url) => {
     navigator.clipboard.writeText(url);
-    showToast('✓ Image URL copied to clipboard!');
+    showToast('✓ Media URL copied to clipboard!');
   };
 
-  const categories = ['all', 'Hero', 'Men', 'Women', 'Kids', 'Products', 'Uploads'];
+  const categories = ['all', 'Videos', 'Hero', 'Men', 'Women', 'Kids', 'Products', 'Uploads'];
 
   const filteredItems = items.filter(item => {
     const matchCat = filterCategory === 'all' || item.category?.toLowerCase() === filterCategory.toLowerCase();
     const matchSearch = !searchQuery || item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || item.url?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchSearch;
   });
+
+  const isVideoItem = (item) => {
+    if (!item) return false;
+    return (
+      item.type?.startsWith('video/') ||
+      item.category === 'Videos' ||
+      /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(item.url)
+    );
+  };
 
   return (
     <div>
@@ -112,7 +121,7 @@ export default function MediaLibraryPage() {
       <div className="page-head">
         <div>
           <h2>Media Library</h2>
-          <p>Manage, upload, and organize images and assets for your storefront and CMS builder.</p>
+          <p>Manage, upload, and organize MP4 videos and images for your storefront and CMS builder.</p>
         </div>
       </div>
 
@@ -122,7 +131,7 @@ export default function MediaLibraryPage() {
         <div style={{ position: 'relative', width: '260px' }}>
           <input
             type="text"
-            placeholder="Search media files..."
+            placeholder="Search media files / videos..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: '100%', paddingLeft: '32px' }}
@@ -142,7 +151,7 @@ export default function MediaLibraryPage() {
               onClick={() => setFilterCategory(cat)}
               style={{ textTransform: 'capitalize' }}
             >
-              {cat}
+              {cat === 'Videos' ? '🎬 Videos' : cat}
             </button>
           ))}
         </div>
@@ -160,13 +169,13 @@ export default function MediaLibraryPage() {
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
           >
-            {uploading ? 'Processing...' : '⬆ Upload Media'}
+            {uploading ? 'Processing & Uploading...' : '⬆ Upload Media / .mp4'}
           </button>
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,video/*,.mp4,.webm,.mov,.ogg"
             style={{ display: 'none' }}
             onChange={handleFileUpload}
           />
@@ -180,101 +189,149 @@ export default function MediaLibraryPage() {
             <Icon name="image" size={40} style={{ color: 'var(--muted-foreground)', marginBottom: '12px' }} />
             <h3>No media assets found</h3>
             <p style={{ color: 'var(--muted-foreground)', fontSize: '13px', margin: '4px 0 16px' }}>
-              Upload new images or adjust your category filter to see available assets.
+              Upload new images or MP4 videos, or adjust your category filter to see available assets.
             </p>
             <button type="button" className="btn btn-primary" onClick={() => fileInputRef.current?.click()}>
-              Upload Image
+              Upload Media / Video
             </button>
           </div>
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: '16px'
           }}>
-            {filteredItems.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  background: 'var(--surface)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  cursor: 'pointer',
-                  transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s'
-                }}
-                onClick={() => setSelectedItem(item)}
-              >
-                <div style={{
-                  width: '100%',
-                  aspectRatio: '4/3',
-                  background: `url('${item.url}') center / cover no-repeat`,
-                  backgroundColor: '#222',
-                  position: 'relative'
-                }}>
-                  <span style={{
-                    position: 'absolute',
-                    top: '6px',
-                    left: '6px',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    background: 'rgba(0,0,0,0.7)',
-                    color: '#fff',
-                    padding: '2px 6px',
-                    borderRadius: '4px'
-                  }}>
-                    {item.category || 'Media'}
-                  </span>
-                </div>
+            {filteredItems.map(item => {
+              const isVid = isVideoItem(item);
+              const bgStyle = item.posterUrl
+                ? { background: `url('${item.posterUrl}') center / cover no-repeat` }
+                : !isVid && item.url
+                ? { background: `url('${item.url}') center / cover no-repeat` }
+                : { background: '#111' };
 
-                <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    background: 'var(--surface)',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--primary)'
-                  }} title={item.name}>
-                    {item.name}
-                  </span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--muted-foreground)' }}>
-                    <span>{item.size}</span>
-                    <span>{item.date}</span>
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s'
+                  }}
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <div style={{
+                    width: '100%',
+                    aspectRatio: '4/3',
+                    ...bgStyle,
+                    backgroundColor: '#111',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {isVid && !item.posterUrl && (
+                      <video
+                        src={item.url}
+                        preload="metadata"
+                        muted
+                        playsInline
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+
+                    {isVid && (
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.3)'
+                      }}>
+                        <div style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.9)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                          paddingLeft: '3px'
+                        }}>
+                          <span style={{ color: '#111', fontSize: '15px' }}>▶</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <span style={{
+                      position: 'absolute',
+                      top: '6px',
+                      left: '6px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      background: isVid ? '#dc2626' : 'rgba(0,0,0,0.7)',
+                      color: '#fff',
+                      padding: '2px 6px',
+                      borderRadius: '4px'
+                    }}>
+                      {isVid ? '🎬 Video' : (item.category || 'Media')}
+                    </span>
+                  </div>
+
+                  <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <span style={{
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--primary)'
+                    }} title={item.name}>
+                      {item.name}
+                    </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--muted-foreground)' }}>
+                      <span>{item.size}</span>
+                      <span>{item.date}</span>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '6px 8px',
+                    borderTop: '1px solid var(--border)',
+                    background: 'var(--canvas)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      style={{ fontSize: '11px', height: '24px', padding: '0 8px' }}
+                      onClick={(e) => { e.stopPropagation(); copyToClipboard(item.url); }}
+                    >
+                      Copy Link
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      style={{ width: '24px', height: '24px', padding: 0 }}
+                      title="Delete"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                    >
+                      <Icon name="trash" size={13} />
+                    </button>
                   </div>
                 </div>
-
-                <div style={{
-                  padding: '6px 8px',
-                  borderTop: '1px solid var(--border)',
-                  background: 'var(--canvas)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    style={{ fontSize: '11px', height: '24px', padding: '0 8px' }}
-                    onClick={(e) => { e.stopPropagation(); copyToClipboard(item.url); }}
-                  >
-                    Copy Link
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    style={{ width: '24px', height: '24px', padding: 0 }}
-                    title="Delete"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
-                  >
-                    <Icon name="trash" size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -282,9 +339,16 @@ export default function MediaLibraryPage() {
       {/* Asset Preview Modal */}
       {selectedItem && (
         <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) setSelectedItem(null); }}>
-          <div className="modal" style={{ maxWidth: '680px' }}>
+          <div className="modal" style={{ maxWidth: '720px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ margin: 0, fontSize: '16px' }}>{selectedItem.name}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isVideoItem(selectedItem) && (
+                  <span style={{ background: '#dc2626', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                    VIDEO
+                  </span>
+                )}
+                <h2 style={{ margin: 0, fontSize: '16px' }}>{selectedItem.name}</h2>
+              </div>
               <button type="button" className="icon-btn" onClick={() => setSelectedItem(null)}>
                 <Icon name="close" size={16} />
               </button>
@@ -292,21 +356,36 @@ export default function MediaLibraryPage() {
 
             <div style={{
               width: '100%',
-              maxHeight: '360px',
+              maxHeight: '380px',
               borderRadius: '8px',
               overflow: 'hidden',
-              background: '#111',
+              background: '#0a0a0a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '16px'
             }}>
-              <img src={selectedItem.url} alt={selectedItem.name} style={{ maxWidth: '100%', maxHeight: '360px', objectFit: 'contain' }} />
+              {isVideoItem(selectedItem) ? (
+                <video
+                  src={selectedItem.url}
+                  poster={selectedItem.posterUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain' }}
+                />
+              ) : (
+                <img
+                  src={selectedItem.url}
+                  alt={selectedItem.name}
+                  style={{ maxWidth: '100%', maxHeight: '380px', objectFit: 'contain' }}
+                />
+              )}
             </div>
 
             <div className="form-grid-2" style={{ marginBottom: '16px' }}>
               <div className="field">
-                <label>Asset URL</label>
+                <label>Media URL</label>
                 <input value={selectedItem.url} readOnly />
               </div>
               <div className="field">
@@ -320,6 +399,16 @@ export default function MediaLibraryPage() {
                 Delete Asset
               </button>
               <div style={{ display: 'flex', gap: '8px' }}>
+                <a
+                  href={selectedItem.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  download={selectedItem.name}
+                  className="btn"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Open / Download ↗
+                </a>
                 <button type="button" className="btn" onClick={() => copyToClipboard(selectedItem.url)}>
                   Copy URL
                 </button>
@@ -343,17 +432,25 @@ export default function MediaLibraryPage() {
                 <input
                   value={newUrlData.name}
                   onChange={(e) => setNewUrlData({ ...newUrlData, name: e.target.value })}
-                  placeholder="e.g. Summer Banner 2026"
+                  placeholder="e.g. Brand Film or Summer Banner"
                   required
                 />
               </div>
 
               <div className="field" style={{ marginBottom: '12px' }}>
-                <label>Direct Image URL</label>
+                <label>Direct Media URL (.mp4, image URL, etc.)</label>
                 <input
                   value={newUrlData.url}
-                  onChange={(e) => setNewUrlData({ ...newUrlData, url: e.target.value })}
-                  placeholder="https://images.unsplash.com/... or /assets/..."
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    const isVid = /\.(mp4|webm|mov|ogg|m4v)($|\?)/i.test(url);
+                    setNewUrlData({
+                      ...newUrlData,
+                      url,
+                      category: isVid ? 'Videos' : newUrlData.category
+                    });
+                  }}
+                  placeholder="https://... or /videos/..."
                   required
                 />
               </div>
@@ -364,6 +461,7 @@ export default function MediaLibraryPage() {
                   value={newUrlData.category}
                   onChange={(e) => setNewUrlData({ ...newUrlData, category: e.target.value })}
                 >
+                  <option value="Videos">Videos</option>
                   <option value="Hero">Hero</option>
                   <option value="Men">Men</option>
                   <option value="Women">Women</option>
