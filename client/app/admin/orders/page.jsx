@@ -25,13 +25,27 @@ export default function AdminOrdersPage() {
           ...it,
           rate: it.unitPrice != null ? Math.round(it.unitPrice / 100) : (Number(it.rate) || 0)
         }));
+        const rawDate = o.createdAt || o.placedAt || o.date;
+        const d = rawDate ? new Date(rawDate) : new Date();
+        const isValid = !isNaN(d.getTime());
+        const pad = (n) => String(n).padStart(2, '0');
+        const dateStr = isValid
+          ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+          : (o.date || new Date().toISOString().slice(0, 10));
+        const timeStr = isValid
+          ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
+          : '';
+        const dateTimeStr = timeStr ? `${dateStr} ${timeStr}` : dateStr;
+
         return {
           ...o,
           no: o.orderNo || o.no,
           orderNo: o.orderNo || o.no,
           customer: o.shippingAddress?.fullName || o.customer || o.guestEmail || 'Storefront Customer',
           phone: o.shippingAddress?.phone || o.guestPhone || o.phone || '',
-          date: o.createdAt ? o.createdAt.slice(0, 10) : (o.date || new Date().toISOString().slice(0, 10)),
+          date: dateStr,
+          time: timeStr,
+          dateTime: dateTimeStr,
           total: grand,
           pay: (o.paymentMethod || o.pay || 'COD').toUpperCase(),
           status: o.fulfillmentStatus || o.status || 'pending',
@@ -74,8 +88,8 @@ export default function AdminOrdersPage() {
   const totalVolume = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
   const exportCsv = () => {
-    const headers = ['Order No', 'Customer', 'Date', 'Total', 'Payment', 'Status'];
-    const rows = filtered.map(o => [o.no, `"${o.customer}"`, o.date, o.total, o.pay, o.status]);
+    const headers = ['Order No', 'Customer', 'Date', 'Time', 'Total', 'Payment', 'Status'];
+    const rows = filtered.map(o => [o.no, `"${o.customer}"`, o.date, `"${o.time || ''}"`, o.total, o.pay, o.status]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -150,7 +164,7 @@ export default function AdminOrdersPage() {
             <tr>
               <th>Order No</th>
               <th>Customer</th>
-              <th>Date</th>
+              <th>Date &amp; Time</th>
               <th className="num">Total</th>
               <th>Payment</th>
               <th>Status</th>
@@ -162,9 +176,19 @@ export default function AdminOrdersPage() {
             {filtered.length > 0 ? (
               filtered.map(o => (
                 <tr key={o.no}>
-                  <td><code>{o.no}</code></td>
+                  <td style={{ cursor: 'pointer' }} onClick={() => setSelectedOrder(o)} title="Click to view order details">
+                    <code style={{ color: 'var(--primary, #0284c7)', fontWeight: 600 }}>{o.no}</code>
+                  </td>
                   <td>{o.customer}</td>
-                  <td>{o.date}</td>
+                  <td>
+                    <div style={{ fontWeight: 500, color: 'inherit', whiteSpace: 'nowrap' }}>{o.date}</div>
+                    {o.time && (
+                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '10px' }}>🕒</span>
+                        <span>{o.time}</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="num">{money(o.total)}</td>
                   <td><span className="badge badge-accent">{o.pay}</span></td>
                   <td>
@@ -188,6 +212,13 @@ export default function AdminOrdersPage() {
                     </select>
                   </td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button
+                      className="icon-btn"
+                      title="View Order Details"
+                      onClick={() => setSelectedOrder(o)}
+                    >
+                      <Icon name="info" size={15} />
+                    </button>
                     <button
                       className="icon-btn"
                       title="View Receipt"
@@ -250,7 +281,9 @@ export default function AdminOrdersPage() {
                   )}
                 </div>
               )}
-              <p style={{ margin: '4px 0' }}><strong>Order Date:</strong> {selectedOrder.date}</p>
+              <p style={{ margin: '4px 0' }}>
+                <strong>Order Date &amp; Time:</strong> {selectedOrder.date} {selectedOrder.time ? `at ${selectedOrder.time}` : ''}
+              </p>
               <p style={{ margin: '4px 0' }}><strong>Payment Method:</strong> {selectedOrder.pay}</p>
               <p style={{ margin: '4px 0' }}><strong>Fulfillment Status:</strong> <span className={`badge ${badgeForStatus[selectedOrder.status] || 'badge-muted'}`}>{selectedOrder.status}</span></p>
 

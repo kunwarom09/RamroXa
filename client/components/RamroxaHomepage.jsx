@@ -221,6 +221,18 @@ function HeroSection({ section, onNav }) {
 
   const handleCta = (url) => {
     if (!url) return;
+    if (url.includes('category=')) {
+      const match = url.match(/category=([a-zA-Z0-9_-]+)/);
+      if (match) {
+        const cat = match[1].toLowerCase() === 'footwear' || match[1].toLowerCase() === 'shoes' ? 'c_footwear' : match[1];
+        onNav('collections', { filterCategory: cat, colFilter: 'all' });
+        return;
+      }
+    }
+    if (url.includes('footwear') || url.includes('shoes')) {
+      onNav('collections', { filterCategory: 'c_footwear', colFilter: 'all' });
+      return;
+    }
     if (url.includes('/shop')) onNav('collections', { colFilter: 'all' });
     else if (url === '/contact') onNav('contact');
     else if (url.startsWith('http')) window.open(url, '_blank');
@@ -599,6 +611,18 @@ function CategoriesSection({ section, onNav }) {
 
   const handleCatClick = (url) => {
     if (!url) return;
+    if (url.includes('category=')) {
+      const match = url.match(/category=([a-zA-Z0-9_-]+)/);
+      if (match) {
+        const cat = match[1].toLowerCase() === 'footwear' || match[1].toLowerCase() === 'shoes' ? 'c_footwear' : match[1];
+        onNav('collections', { filterCategory: cat, colFilter: 'all' });
+        return;
+      }
+    }
+    if (url.includes('footwear') || url.includes('shoes')) {
+      onNav('collections', { filterCategory: 'c_footwear', colFilter: 'all' });
+      return;
+    }
     if (url.includes('gender=men')) onNav('collections', { colFilter: 'men' });
     else if (url.includes('gender=women')) onNav('collections', { colFilter: 'women' });
     else if (url.includes('gender=kids')) onNav('collections', { colFilter: 'kids' });
@@ -944,6 +968,18 @@ function EditorialBlocks({ section, onNav }) {
 
   const handleCta = (url) => {
     if (!url) return;
+    if (url.includes('category=')) {
+      const match = url.match(/category=([a-zA-Z0-9_-]+)/);
+      if (match) {
+        const cat = match[1].toLowerCase() === 'footwear' || match[1].toLowerCase() === 'shoes' ? 'c_footwear' : match[1];
+        onNav('collections', { filterCategory: cat, colFilter: 'all' });
+        return;
+      }
+    }
+    if (url.includes('footwear') || url.includes('shoes')) {
+      onNav('collections', { filterCategory: 'c_footwear', colFilter: 'all' });
+      return;
+    }
     if (url.includes('gender=men')) onNav('collections', { colFilter: 'men' });
     else if (url.includes('gender=women')) onNav('collections', { colFilter: 'women' });
     else if (url.includes('gender=kids')) onNav('collections', { colFilter: 'kids' });

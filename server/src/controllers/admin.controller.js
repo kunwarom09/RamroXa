@@ -246,7 +246,7 @@ export const createSalesReturn = asyncHandler(async (req, res) => {
 
 export const updateSalesReturnStatus = asyncHandler(async (req, res) => {
   const { updateSalesReturnStatus: updateStatus } = await import('../services/adminReturn.service.js');
-  const result = await updateStatus(req.params.id, req.body);
+  const result = await updateStatus(req.params.id, req.body, req.user);
   res.status(200).json({ message: 'Sales return status updated.', data: result });
 });
 

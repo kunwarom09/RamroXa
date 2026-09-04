@@ -3,7 +3,7 @@ import React from 'react';
 import Landing from './Landing';
 import RamroxaHomepage from './RamroxaHomepage';
 import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
-import { fetchProducts } from '../services/productService';
+import { fetchProducts, fetchCategories } from '../services/productService';
 import { api } from '../services/apiClient';
 import { loadHomepageConfig } from '../services/homepageCms';
 
@@ -896,7 +896,7 @@ const DEFAULT_CATALOG = [
     slug: "solstice-chunky-platform-leather-loafer",
     sku: "RMX-SHOE-00101",
     brand: "Ramroxa Footwear",
-    categoryId: "c_acc",
+    categoryId: "c_footwear",
     gender: "Women",
     season: "SS26",
     tags: ["loafer", "shoes", "footwear", "platform", "leather"],
@@ -930,12 +930,55 @@ const DEFAULT_CATALOG = [
 
 const slugForProduct = (p, i) => (p?.slug || (p?.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || String(i));
 
+function matchesCategory(p, filterCat) {
+  if (!filterCat || filterCat === 'all') return true;
+  const pCatId = String(p.categoryId || '').toLowerCase();
+  const pCat = String(p.category || '').toLowerCase();
+  const fCat = String(filterCat).toLowerCase();
+
+  // Direct ID or name/slug match
+  if (pCatId === fCat || pCat === fCat) return true;
+  if ((fCat === 'c_footwear' || fCat === 'footwear' || fCat === 'shoes') &&
+      (pCatId === 'c_footwear' || pCatId.includes('foot') || pCatId.includes('shoe') || pCat.includes('foot') || pCat.includes('shoe'))) {
+    return true;
+  }
+
+  const tags = (p.tags || []).map(t => String(t).toLowerCase());
+
+  if (fCat === 'c_tops' || fCat === 'tops') {
+    return pCatId === 'c_tops' || pCatId.includes('top') || pCat.includes('top') || tags.some(t => ['tee', 'tshirt', 'hoodie', 'shirt', 'sweater', 'crewneck', 'fleece'].includes(t));
+  }
+  if (fCat === 'c_bottoms' || fCat === 'bottoms') {
+    return pCatId === 'c_bottoms' || pCatId.includes('bot') || pCat.includes('bot') || tags.some(t => ['trousers', 'cargo', 'denim', 'jeans', 'shorts', 'overalls', 'leggings', 'pants'].includes(t));
+  }
+  if (fCat === 'c_out' || fCat === 'outerwear') {
+    return pCatId === 'c_out' || pCatId.includes('out') || pCat.includes('out') || tags.some(t => ['jacket', 'bomber', 'trench', 'windbreaker', 'coat', 'outerwear', 'vest'].includes(t));
+  }
+  if (fCat === 'c_footwear' || fCat === 'footwear' || fCat === 'shoes') {
+    return pCatId === 'c_footwear' || pCatId.includes('foot') || pCatId.includes('shoe') || pCat.includes('foot') || pCat.includes('shoe') || tags.some(t => ['footwear', 'shoe', 'shoes', 'sneakers', 'runner', 'loafer', 'boot', 'boots', 'sandal'].includes(t));
+  }
+  if (fCat === 'c_bags' || fCat === 'bags') {
+    return pCatId === 'c_bags' || pCatId.includes('bag') || pCat.includes('bag') || tags.some(t => ['bag', 'crossbody', 'sling', 'tote', 'backpack'].includes(t));
+  }
+  if (fCat === 'c_acc' || fCat === 'accessories') {
+    return pCatId === 'c_acc' || pCatId.includes('acc') || pCat.includes('acc') || tags.some(t => ['cap', 'hat', 'beanie', 'belt', 'accessories'].includes(t));
+  }
+
+  return false;
+}
+
 function formatProductItem(p, i) {
   const featuredImg = (p.images || []).find((img) => img.isFeatured) || (p.images || [])[0];
   const secondImg = (p.images || [])[1] || featuredImg;
   const priceNpr = p.basePrice !== undefined ? Math.round(p.basePrice / 100) : (p.price || 0);
   const mrpNpr = p.mrp !== undefined ? Math.round(p.mrp / 100) : (p.compare || priceNpr);
   const idx = p.idx !== undefined ? p.idx : (typeof i === 'number' ? i : 0);
+  const catIdVal = typeof p.categoryId === 'object' && p.categoryId !== null
+    ? (p.categoryId.id || p.categoryId._id || p.categoryId.slug || '')
+    : String(p.categoryId || '');
+  const catVal = typeof p.category === 'object' && p.category !== null
+    ? (p.category.name || p.category.slug || p.category.id || '')
+    : String(p.category || catIdVal);
   return {
     idx,
     id: p.id || p._id || `p_${idx}`,
@@ -951,8 +994,8 @@ function formatProductItem(p, i) {
     slug: p.slug || slugForProduct(p, idx),
     gender: p.gender || 'Unisex',
     brand: p.brand || p.brandName || (p.tags && p.tags.length ? p.tags[0] : 'Ramroxa'),
-    category: p.category || p.categoryId || '',
-    categoryId: p.categoryId || '',
+    category: catVal || catIdVal || '',
+    categoryId: catIdVal || '',
     tags: p.tags || [],
     options: p.options || {},
     variantGroups: p.variantGroups || [],
@@ -1052,7 +1095,7 @@ const COLOR_HEX_MAP = {
 function getProductCardVariants(p, selectedSize = null) {
   if (!p) return { sizes: [], colours: [] };
 
-  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', '28', '30', '32', '34', '36', '38', '40'];
+  const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13', '28', '30', '32', '34', '36', '38', '40'];
 
   const clean = (s) => String(s || '').trim();
   const cleanKey = (s) => clean(s).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1565,7 +1608,14 @@ export default class StoreApp extends React.Component {
     };
 
     let targetUrl = urlMap[v] || '/';
-    if (v === 'account') {
+    if (v === 'collections') {
+      const fCat = extraState.filterCategory !== undefined ? extraState.filterCategory : this.state.filterCategory;
+      const cFilter = extraState.colFilter !== undefined ? extraState.colFilter : this.state.colFilter;
+      const qParams = [];
+      if (fCat && fCat !== 'all') qParams.push(`category=${encodeURIComponent(fCat)}`);
+      if (cFilter && cFilter !== 'all') qParams.push(`gender=${encodeURIComponent(cFilter)}`);
+      targetUrl = qParams.length > 0 ? `/shop?${qParams.join('&')}` : '/shop';
+    } else if (v === 'account') {
       const tab = extraState.accountTab !== undefined ? extraState.accountTab : this.state.accountTab;
       if (tab === 'orders') {
         targetUrl = '/account/orders';
@@ -1640,7 +1690,32 @@ export default class StoreApp extends React.Component {
   componentDidMount() {
     const loadDynamicCatalog = async () => {
       try {
-        const apiProds = await fetchProducts({ limit: 100 });
+        const [apiProds, apiCats] = await Promise.all([
+          fetchProducts({ limit: 100 }).catch(() => []),
+          fetchCategories().catch(() => [])
+        ]);
+
+        if (Array.isArray(apiCats) && apiCats.length > 0) {
+          this.setState({ apiCategories: apiCats });
+        }
+
+        // Support initial category or gender query params from URL
+        if (typeof window !== 'undefined' && window.location.search) {
+          const sParams = new URLSearchParams(window.location.search);
+          const cParam = sParams.get('category');
+          const gParam = sParams.get('gender');
+          const updates = {};
+          if (cParam && (this.state.filterCategory === 'all' || !this.props.initialFilterCategory)) {
+            updates.filterCategory = (cParam.toLowerCase() === 'footwear' || cParam.toLowerCase() === 'shoes') ? 'c_footwear' : cParam;
+          }
+          if (gParam && (this.state.colFilter === 'all' || !this.props.initialColFilter)) {
+            updates.colFilter = gParam.toLowerCase();
+          }
+          if (Object.keys(updates).length > 0) {
+            this.setState(updates);
+          }
+        }
+
         if (Array.isArray(apiProds) && apiProds.length > 0) {
           const apiCatalog = apiProds.map((p, idx) => formatProductItem(p, idx));
 
@@ -1806,11 +1881,23 @@ export default class StoreApp extends React.Component {
     this._popstateHandler = () => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
+      const search = window.location.search || '';
+      const params = new URLSearchParams(search);
+      const catParam = params.get('category');
+      const genderParam = params.get('gender');
+      const navUpdates = { mobileMenuOpen: false };
+      if (catParam) {
+        navUpdates.filterCategory = (catParam.toLowerCase() === 'footwear' || catParam.toLowerCase() === 'shoes') ? 'c_footwear' : catParam;
+      }
+      if (genderParam) {
+        navUpdates.colFilter = genderParam.toLowerCase();
+      }
+
       const cat = this.getCatalog();
       if (path === '/' || path === '') {
-        this.setState({ view: 'shop', mobileMenuOpen: false });
+        this.setState({ ...navUpdates, view: 'shop' });
       } else if (path === '/shop' || path.startsWith('/shop')) {
-        this.setState({ view: 'collections', mobileMenuOpen: false });
+        this.setState({ ...navUpdates, view: 'collections' });
       } else if (path === '/cart') {
         this.setState({ view: 'cart', mobileMenuOpen: false });
       } else if (path === '/wishlist') {
@@ -2581,6 +2668,17 @@ export default class StoreApp extends React.Component {
                             </li>
                             <li>
                               <button
+                                onClick={() => this.goToView('collections', { filterCategory: 'c_footwear', colFilter: 'all', collectionsDropdownOpen: false })}
+                                className="zylo-cat-item-btn"
+                              >
+                                <div>
+                                  <span className="zylo-cat-name">Footwear &amp; Shoes</span>
+                                  <span className="zylo-cat-sub">Sneakers, runners, loafers &amp; boots</span>
+                                </div>
+                              </button>
+                            </li>
+                            <li>
+                              <button
                                 onClick={() => this.goToView('collections', { filterCategory: 'c_bags', colFilter: 'all', collectionsDropdownOpen: false })}
                                 className="zylo-cat-item-btn"
                               >
@@ -2949,6 +3047,7 @@ export default class StoreApp extends React.Component {
                 <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_tops', colFilter: 'all', mobileMenuOpen: false })}>Tops &amp; Tees</button>
                 <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_bottoms', colFilter: 'all', mobileMenuOpen: false })}>Bottoms &amp; Denim</button>
                 <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_out', colFilter: 'all', mobileMenuOpen: false })}>Outerwear &amp; Jackets</button>
+                <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_footwear', colFilter: 'all', mobileMenuOpen: false })}>Footwear &amp; Shoes</button>
                 <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_bags', colFilter: 'all', mobileMenuOpen: false })}>Bags &amp; Slings</button>
                 <button className="mobile-nav-sub-link" onClick={() => this.goToView('collections', { filterCategory: 'c_acc', colFilter: 'all', mobileMenuOpen: false })}>Accessories &amp; Headwear</button>
               </div>
@@ -3042,10 +3141,11 @@ export default class StoreApp extends React.Component {
 
           <div style={{ marginTop: 28, borderTop: '1px solid #222', paddingTop: 20 }}>
             <div style={{ fontSize: 12, color: '#888', letterSpacing: 1.5, marginBottom: 16 }}>QUICK CATEGORIES</div>
-            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'all' })}>✦ All Products</button>
-            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'men' })}>✦ Men's Wear</button>
-            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'women' })}>✦ Women's Wear</button>
-            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'kids' })}>✦ Children's Wear</button>
+            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'all', filterCategory: 'all', mobileMenuOpen: false })}>✦ All Products</button>
+            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { filterCategory: 'c_footwear', colFilter: 'all', mobileMenuOpen: false })}>✦ Footwear &amp; Shoes</button>
+            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'men', filterCategory: 'all', mobileMenuOpen: false })}>✦ Men's Wear</button>
+            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'women', filterCategory: 'all', mobileMenuOpen: false })}>✦ Women's Wear</button>
+            <button className="mobile-drawer-cat-btn" onClick={() => this.goToView('collections', { colFilter: 'kids', filterCategory: 'all', mobileMenuOpen: false })}>✦ Children's Wear</button>
           </div>
         </div>
         {mobileMenuOpen && <div className="mobile-nav-overlay" onClick={this.closeMobileMenu} />}
@@ -3067,10 +3167,11 @@ export default class StoreApp extends React.Component {
             <div>
               <div style={{ fontSize: 12, letterSpacing: 2, marginBottom: 16, color: '#aaa' }}>SHOP</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                <span onClick={() => this.goToView('collections', { colFilter: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>All collections</span>
-                <span onClick={() => this.goToView('collections', { colFilter: 'men' })} style={{ cursor: 'pointer', color: '#888' }}>Men</span>
-                <span onClick={() => this.goToView('collections', { colFilter: 'women' })} style={{ cursor: 'pointer', color: '#888' }}>Women</span>
-                <span onClick={() => this.goToView('collections', { colFilter: 'kids' })} style={{ cursor: 'pointer', color: '#888' }}>Kids</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'all', filterCategory: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>All collections</span>
+                <span onClick={() => this.goToView('collections', { filterCategory: 'c_footwear', colFilter: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>Footwear</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'men', filterCategory: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>Men</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'women', filterCategory: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>Women</span>
+                <span onClick={() => this.goToView('collections', { colFilter: 'kids', filterCategory: 'all' })} style={{ cursor: 'pointer', color: '#888' }}>Kids</span>
               </div>
             </div>
             <div>
@@ -3246,40 +3347,19 @@ export default class StoreApp extends React.Component {
     // 3b. Dynamic Category Counts
     const categoryCounts = {
       all: catList.length,
-      c_tops: catList.filter(p => {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        return catId === 'c_tops' || catId.includes('top') || (p.tags || []).some(t => ['tee', 'tshirt', 'hoodie', 'shirt', 'sweater', 'crewneck', 'fleece'].includes(t.toLowerCase()));
-      }).length,
-      c_bottoms: catList.filter(p => {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        return catId === 'c_bottoms' || catId.includes('bot') || (p.tags || []).some(t => ['trousers', 'cargo', 'denim', 'jeans', 'shorts', 'overalls', 'leggings', 'pants'].includes(t.toLowerCase()));
-      }).length,
-      c_out: catList.filter(p => {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        return catId === 'c_out' || catId.includes('out') || (p.tags || []).some(t => ['jacket', 'bomber', 'trench', 'windbreaker', 'coat', 'outerwear', 'vest'].includes(t.toLowerCase()));
-      }).length,
-      c_bags: catList.filter(p => {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        return catId === 'c_bags' || catId.includes('bag') || (p.tags || []).some(t => ['bag', 'crossbody', 'sling', 'tote', 'backpack'].includes(t.toLowerCase()));
-      }).length,
-      c_acc: catList.filter(p => {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        return catId === 'c_acc' || catId.includes('acc') || (p.tags || []).some(t => ['cap', 'hat', 'beanie', 'belt', 'accessories'].includes(t.toLowerCase()));
-      }).length,
+      c_tops: catList.filter(p => matchesCategory(p, 'c_tops')).length,
+      c_bottoms: catList.filter(p => matchesCategory(p, 'c_bottoms')).length,
+      c_out: catList.filter(p => matchesCategory(p, 'c_out')).length,
+      c_footwear: catList.filter(p => matchesCategory(p, 'c_footwear')).length,
+      c_bags: catList.filter(p => matchesCategory(p, 'c_bags')).length,
+      c_acc: catList.filter(p => matchesCategory(p, 'c_acc')).length,
     };
 
     // 4. Filter Items
     let items = catList.filter(p => {
       // Category Filter
       if (filterCategory && filterCategory !== 'all') {
-        const catId = (p.categoryId || p.category || '').toLowerCase();
-        const catMatch = catId === filterCategory.toLowerCase() ||
-          (filterCategory === 'c_tops' && (catId.includes('top') || (p.tags || []).some(t => ['tee', 'tshirt', 'hoodie', 'shirt', 'sweater', 'crewneck', 'fleece'].includes(t.toLowerCase())))) ||
-          (filterCategory === 'c_bottoms' && (catId.includes('bot') || (p.tags || []).some(t => ['trousers', 'cargo', 'denim', 'jeans', 'shorts', 'overalls', 'leggings', 'pants'].includes(t.toLowerCase())))) ||
-          (filterCategory === 'c_out' && (catId.includes('out') || (p.tags || []).some(t => ['jacket', 'bomber', 'trench', 'windbreaker', 'coat', 'outerwear', 'vest'].includes(t.toLowerCase())))) ||
-          (filterCategory === 'c_bags' && (catId.includes('bag') || (p.tags || []).some(t => ['bag', 'crossbody', 'sling', 'tote', 'backpack'].includes(t.toLowerCase())))) ||
-          (filterCategory === 'c_acc' && (catId.includes('acc') || (p.tags || []).some(t => ['cap', 'hat', 'beanie', 'belt', 'accessories'].includes(t.toLowerCase()))));
-        if (!catMatch) return false;
+        if (!matchesCategory(p, filterCategory)) return false;
       }
 
       // Gender Filter
@@ -3389,6 +3469,7 @@ export default class StoreApp extends React.Component {
               { id: 'c_tops', label: 'Tops & Tees', count: categoryCounts.c_tops },
               { id: 'c_bottoms', label: 'Bottoms & Denim', count: categoryCounts.c_bottoms },
               { id: 'c_out', label: 'Outerwear & Jackets', count: categoryCounts.c_out },
+              { id: 'c_footwear', label: 'Footwear', count: categoryCounts.c_footwear },
               { id: 'c_bags', label: 'Bags & Slings', count: categoryCounts.c_bags },
               { id: 'c_acc', label: 'Accessories & Headwear', count: categoryCounts.c_acc }
             ].map(({ id, label, count }) => (
@@ -3750,10 +3831,18 @@ export default class StoreApp extends React.Component {
                   const genNames = { men: "Men's Collection", women: "Women's Collection", kids: "Kids' Collection", unisex: 'Unisex Collection' };
                   const catNames = {
                     c_tops: 'Tops & Tees',
+                    tops: 'Tops & Tees',
                     c_bottoms: 'Bottoms & Denim',
+                    bottoms: 'Bottoms & Denim',
                     c_out: 'Outerwear & Jackets',
+                    outerwear: 'Outerwear & Jackets',
+                    c_footwear: 'Footwear',
+                    footwear: 'Footwear',
+                    shoes: 'Footwear',
                     c_bags: 'Bags & Slings',
-                    c_acc: 'Accessories & Headwear'
+                    bags: 'Bags & Slings',
+                    c_acc: 'Accessories & Headwear',
+                    accessories: 'Accessories & Headwear'
                   };
                   if (filterCategory && filterCategory !== 'all' && catNames[filterCategory]) {
                     if (colFilter && colFilter !== 'all' && genNames[colFilter]) {
@@ -3830,7 +3919,10 @@ export default class StoreApp extends React.Component {
               )}
               {filterCategory !== 'all' && (
                 <span className="zylo-filter-chip">
-                  Category: {categoryCounts[filterCategory] ? filterCategory.replace('c_', '').toUpperCase() : filterCategory}
+                  Category: {(() => {
+                    const catNames = { c_tops: 'Tops & Tees', c_bottoms: 'Bottoms & Denim', c_out: 'Outerwear & Jackets', c_footwear: 'Footwear', c_bags: 'Bags & Slings', c_acc: 'Accessories & Headwear' };
+                    return catNames[filterCategory] || (filterCategory.replace('c_', '').toUpperCase());
+                  })()}
                   <button onClick={() => this.setState({ filterCategory: 'all', currentPage: 1 })}>&times;</button>
                 </span>
               )}
@@ -4295,11 +4387,18 @@ export default class StoreApp extends React.Component {
             {(() => {
               const { stock: availableStock, isOutOfStock } = getVariantStock(p, currentSize, currentColor);
               const effectiveQty = isOutOfStock ? 0 : Math.min(selQty || 1, Math.max(1, availableStock));
+              const isFootwearProd = p.categoryId === 'c_footwear' ||
+                (p.category || '').toLowerCase().includes('foot') ||
+                (p.category || '').toLowerCase().includes('shoe') ||
+                (p.tags || []).some(t => ['footwear', 'shoe', 'shoes', 'sneakers', 'runner', 'loafer', 'boot'].includes(String(t).toLowerCase())) ||
+                availableSizes.some(s => String(s).startsWith('UK '));
 
               return (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>SIZE</div>
+                    <div style={{ fontSize: 12, letterSpacing: 2, color: '#888' }}>
+                      {isFootwearProd ? 'UK SIZE' : 'SIZE'}
+                    </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {availableSizes.map(sz => {
                         const { colours: szColours } = getProductCardVariants(p, sz);
@@ -5184,11 +5283,17 @@ export default class StoreApp extends React.Component {
         </p>
 
         <div style={{ background: '#fafafa', border: '1px solid #e5e5e5', padding: 24, borderRadius: 14, marginBottom: 28, textAlign: 'left' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: 14, marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: 14, marginBottom: 14, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#888', display: 'block', letterSpacing: 0.5 }}>CURRENT STATUS</span>
               <span style={{ fontSize: 12, fontWeight: 700, background: '#fef9c3', color: '#854d0e', border: '1px solid #fde047', padding: '3px 10px', borderRadius: 999, display: 'inline-block', marginTop: 4 }}>
                 PENDING FULFILLMENT
+              </span>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#888', display: 'block', letterSpacing: 0.5 }}>ORDER DATE &amp; TIME</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#222', display: 'inline-block', marginTop: 4 }}>
+                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
               </span>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -5887,7 +5992,13 @@ export default class StoreApp extends React.Component {
                   };
                   const currentStatusKey = (ord.fulfillmentStatus || 'pending').toLowerCase();
                   const st = statusColors[currentStatusKey] || statusColors.pending;
-                  const orderDate = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+                  const orderDateObj = ord.createdAt ? new Date(ord.createdAt) : (ord.placedAt ? new Date(ord.placedAt) : null);
+                  const orderDate = orderDateObj && !isNaN(orderDateObj.getTime())
+                    ? orderDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Recent';
+                  const orderTime = orderDateObj && !isNaN(orderDateObj.getTime())
+                    ? orderDateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                    : '';
                   const totalNpr = ord.grandTotal != null ? Math.round(ord.grandTotal / 100) : (ord.total || 0);
 
                   const catalog = this.getCatalog();
@@ -5925,7 +6036,15 @@ export default class StoreApp extends React.Component {
                           </div>
                           <div>
                             <span style={{ fontSize: 11, fontWeight: 700, color: '#888', display: 'block', letterSpacing: 0.5 }}>PLACED ON</span>
-                            <span style={{ fontSize: 13, color: '#333' }}>{orderDate}</span>
+                            <div style={{ fontSize: 13, color: '#333', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 500 }}>{orderDate}</span>
+                              {orderTime && (
+                                <span style={{ fontSize: 11.5, color: '#6b7280', display: 'inline-flex', alignItems: 'center', gap: 3, background: '#f3f4f6', padding: '1px 6px', borderRadius: 4 }}>
+                                  <span style={{ fontSize: 10 }}>🕒</span>
+                                  <span>{orderTime}</span>
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <span style={{ fontSize: 11, fontWeight: 700, color: '#888', display: 'block', letterSpacing: 0.5 }}>PAYMENT</span>

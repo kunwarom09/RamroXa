@@ -70,6 +70,12 @@ export function formatReceiptDate(dateInput) {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
+export function formatReceiptTime(dateInput) {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+}
+
 export function adToBs(dateInput) {
   const d = dateInput ? new Date(dateInput) : new Date();
   if (isNaN(d.getTime())) return '27.05.2083';
@@ -146,9 +152,10 @@ export function normalizeOrderForReceipt(order = {}) {
   // Bill No
   const billNo = order.orderNo || order.invoice || order.no || (order._id ? `54${String(order._id).slice(-10).replace(/[^0-9]/g, '1')}` : '541254876166');
 
-  // Dates
+  // Dates & Time
   const rawDate = order.createdAt || order.date || order.placedAt || new Date();
   const dateStr = formatReceiptDate(rawDate);
+  const timeStr = order.time || formatReceiptTime(rawDate);
   const mitiStr = order.miti || adToBs(rawDate);
 
   // Payment method
@@ -275,6 +282,7 @@ export function normalizeOrderForReceipt(order = {}) {
   return {
     billNo,
     date: dateStr,
+    time: timeStr,
     miti: mitiStr,
     paymentMethod,
     customerName,
@@ -400,6 +408,13 @@ export function generateThermalReceiptHtml(receipt) {
             Miti&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(receipt.miti)}
           </td>
         </tr>
+        ${receipt.time ? `
+        <tr>
+          <td colspan="2" style="padding: 1px 0; vertical-align: top;">
+            Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(receipt.time)}
+          </td>
+        </tr>
+        ` : ''}
         <tr>
           <td colspan="2" style="padding: 1px 0; vertical-align: top;">
             Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(receipt.customerName)}
@@ -680,6 +695,7 @@ export async function downloadReceiptPdf(rawOrder, targetElementId = null) {
 export default {
   numberToWords,
   formatReceiptDate,
+  formatReceiptTime,
   adToBs,
   detectProductType,
   formatVariantDetails,

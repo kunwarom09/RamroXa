@@ -92,8 +92,17 @@ export async function listAdminInventory(query = {}) {
       variantLabel = 'Default';
     }
 
-    let sizeVal = combinedOpts.Size || combinedOpts.size || '';
+    const cleanPrefix = (str) => String(str || '').replace(/^((Size|UK Size|Variant|Colour|Color|Sub\s*\d+):\s*)+/gi, '').trim();
+
+    let sizeVal = combinedOpts.Size || combinedOpts.size || combinedOpts['UK Size'] || '';
     let colorVal = combinedOpts.Colour || combinedOpts.colour || combinedOpts.Color || combinedOpts.color || '';
+
+    // If variant name has "Size: UK 7 / Black" or "UK 7 / Black"
+    if (v.name && v.name.includes('/')) {
+      const nameParts = v.name.split('/');
+      if (!sizeVal) sizeVal = nameParts[0].trim();
+      if (!colorVal) colorVal = nameParts[nameParts.length - 1].trim();
+    }
 
     // If parentVar is Size (e.g. UK 3) and child is Colour (e.g. Blue)
     if (!sizeVal && parentVar && parentVar.name) {
@@ -102,13 +111,9 @@ export async function listAdminInventory(query = {}) {
     if (!colorVal && v.parentVariantId && v.name && v.name !== 'Default') {
       colorVal = v.name;
     }
-    if (!sizeVal && v.name && v.name.includes('/')) {
-      const nameParts = v.name.split('/');
-      sizeVal = nameParts[0].trim();
-      if (!colorVal) colorVal = nameParts[1].trim();
-    }
-    if (!sizeVal) sizeVal = 'Standard';
-    if (!colorVal) colorVal = 'Default';
+
+    sizeVal = cleanPrefix(sizeVal) || 'Standard';
+    colorVal = cleanPrefix(colorVal) || 'Default';
 
     enriched.push({
       id: inv.id || inv._id.toString(),

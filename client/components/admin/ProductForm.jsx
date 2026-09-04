@@ -51,7 +51,6 @@ export default function ProductForm({ productId = null }) {
     name: '',
     slug: '',
     sku: '',
-    productType: 'Top Wear',
     brand: 'Zylo',
     categoryId: '',
     status: 'draft',
@@ -146,18 +145,28 @@ export default function ProductForm({ productId = null }) {
           if (target) {
             setEditingProd(target);
             const labels = target.labels || {};
-            const detectedProductType = target.productType || (
-              (target.categoryId === 'c_shoes' || target.categoryId === 'c_footwear' || (target.name || '').toLowerCase().includes('shoe') || (target.name || '').toLowerCase().includes('sneaker'))
-                ? 'Footwear'
-                : ((target.categoryId === 'c_bottoms' || target.categoryId === 'c_pants') ? 'Bottom Wear' : 'Top Wear')
-            );
+            let resolvedCategoryId = target.categoryId || (cats[0]?.id || '');
+            const isTargetFootwear = target.productType === 'Footwear' ||
+              target.categoryId === 'c_shoes' ||
+              target.categoryId === 'c_footwear' ||
+              (target.name || '').toLowerCase().includes('shoe') ||
+              (target.name || '').toLowerCase().includes('sneaker');
+
+            if (isTargetFootwear) {
+              const footwearCat = cats.find(c => c.slug === 'footwear' || c.id === 'c_footwear' || (c.name || '').toLowerCase() === 'footwear');
+              if (footwearCat) {
+                resolvedCategoryId = footwearCat.id;
+              } else if (!resolvedCategoryId) {
+                resolvedCategoryId = 'c_footwear';
+              }
+            }
+
             setFormData({
               name: target.name || '',
               slug: target.slug || '',
               sku: target.sku || '',
-              productType: detectedProductType,
               brand: target.brand || 'Zylo',
-              categoryId: target.categoryId || (cats[0]?.id || ''),
+              categoryId: resolvedCategoryId,
               status: target.status || 'draft',
               gender: target.gender || '',
               season: target.season || '',
@@ -191,24 +200,34 @@ export default function ProductForm({ productId = null }) {
                     id: 'vg_' + target.id,
                     name: 'Size',
                     sizeType: hasUkSizes ? 'UK Shoe Size' : 'Custom Size',
-                    values: topVars.map(v => ({
-                      id: v.id,
-                      name: v.name || '',
-                      amount: v.price != null ? Math.round(v.price / 100) : '',
-                      image: v.image || '',
-                      stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
-                      sku: v.sku || '',
-                      status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
-                      subsets: (subsByParent[v.id] || []).map(sv => ({
-                        id: sv.id,
-                        name: sv.name || '',
-                        amount: sv.price != null ? Math.round(sv.price / 100) : '',
-                        image: sv.image || '',
-                        stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
-                        sku: sv.sku || '',
-                        status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft'))
-                      }))
-                    }))
+                    values: topVars.map(v => {
+                      const cleanName = String(v.name || v.options?.Size || v.options?.['UK Size'] || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+                      return {
+                        id: v.id,
+                        name: cleanName,
+                        amount: v.price != null ? Math.round(v.price / 100) : '',
+                        image: v.image || '',
+                        stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
+                        sku: v.sku || '',
+                        status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
+                        subsets: (subsByParent[v.id] || []).map(sv => {
+                          let cleanSub = String(sv.name || sv.options?.Colour || sv.options?.Color || '').trim();
+                          if (cleanSub.includes('/')) {
+                            cleanSub = cleanSub.split('/').pop().trim();
+                          }
+                          cleanSub = cleanSub.replace(/^((Colour|Color|Sub\s*\d+):\s*)+/gi, '').trim();
+                          return {
+                            id: sv.id,
+                            name: cleanSub,
+                            amount: sv.price != null ? Math.round(sv.price / 100) : '',
+                            image: sv.image || '',
+                            stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
+                            sku: sv.sku || '',
+                            status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft'))
+                          };
+                        })
+                      };
+                    })
                   }
                 ]);
               }
@@ -557,6 +576,15 @@ export default function ProductForm({ productId = null }) {
     });
   };
 
+  // Category-based configuration helpers
+  const selectedCat = categories.find(c => c.id === formData.categoryId || c._id === formData.categoryId || c.slug === formData.categoryId);
+  const isFootwear = selectedCat
+    ? (selectedCat.slug === 'footwear' || (selectedCat.name || '').toLowerCase() === 'footwear' || selectedCat.id === 'c_footwear' || selectedCat.id === 'c_shoes')
+    : (formData.categoryId === 'c_footwear' || formData.categoryId === 'c_shoes' || String(formData.categoryId).toLowerCase() === 'footwear');
+  const isBottoms = selectedCat
+    ? (selectedCat.slug === 'bottoms' || (selectedCat.name || '').toLowerCase() === 'bottoms' || selectedCat.id === 'c_bottoms' || selectedCat.id === 'c_pants')
+    : (formData.categoryId === 'c_bottoms' || formData.categoryId === 'c_pants' || String(formData.categoryId).toLowerCase() === 'bottoms');
+
   // Total sellable combinations calculation
   const totalCombinations = variantGroups.reduce((acc, vg) => {
     return acc + (vg.values || []).reduce((vAcc, val) => {
@@ -626,7 +654,7 @@ export default function ProductForm({ productId = null }) {
       name: formData.name.trim(),
       slug: prodSlug,
       sku: formData.sku.trim(),
-      productType: formData.productType || 'Top Wear',
+      productType: isFootwear ? 'Footwear' : (editingProd?.productType || 'Top Wear'),
       brand: formData.brand.trim() || 'Zylo',
       categoryId: formData.categoryId || 'c_tops',
       status: shouldPublish ? 'published' : 'draft',
@@ -681,6 +709,8 @@ export default function ProductForm({ productId = null }) {
         usedLocalSkus.add(candidateValSku);
         valSku = candidateValSku;
 
+        const cleanValName = String(val.name || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+
         const subList = (val.subsets || []).map((sub, subIndex) => {
           const subAmt = sub.amount !== '' && sub.amount != null ? Number(sub.amount) : topAmount;
           const isHidden = sub.status === 'Hidden';
@@ -695,10 +725,20 @@ export default function ProductForm({ productId = null }) {
           usedLocalSkus.add(candidateSubSku);
           subSku = candidateSubSku;
 
+          let cleanSubName = String(sub.name || '').trim();
+          if (cleanSubName.includes('/')) {
+            cleanSubName = cleanSubName.split('/').pop().trim();
+          }
+          cleanSubName = cleanSubName.replace(/^((Colour|Color|Sub\s*\d+):\s*)+/gi, '').trim();
+
           return {
             id: sub.id,
-            name: `${vg.name || 'Variant'}: ${val.name || 'Value'} / ${sub.name || `Sub ${subIndex + 1}`}`,
+            name: `${vg.name || 'Size'}: ${cleanValName || 'Standard'} / ${cleanSubName || `Colour ${subIndex + 1}`}`,
             sku: subSku,
+            options: {
+              [vg.name || 'Size']: cleanValName,
+              Colour: cleanSubName
+            },
             price: Math.round(subAmt * 100),
             amount: Math.round(subAmt * 100),
             stock: Number(sub.stock) || 0,
@@ -712,8 +752,11 @@ export default function ProductForm({ productId = null }) {
         const isValHidden = val.status === 'Hidden';
         newVariants.push({
           id: val.id,
-          name: `${vg.name || 'Variant'}: ${val.name || `Value ${valIndex + 1}`}`,
+          name: `${vg.name || 'Size'}: ${cleanValName || `Value ${valIndex + 1}`}`,
           sku: valSku,
+          options: {
+            [vg.name || 'Size']: cleanValName
+          },
           price: topPricePaisa,
           amount: topPricePaisa,
           stock: Number(val.stock) || 0,
@@ -978,17 +1021,6 @@ export default function ProductForm({ productId = null }) {
                   {formErrors.categoryId}
                 </span>
               )}
-            </div>
-            <div className="field">
-              <label>Product Type</label>
-              <select
-                value={formData.productType || 'Top Wear'}
-                onChange={(e) => setFormData({ ...formData, productType: e.target.value })}
-              >
-                <option value="Footwear">Footwear</option>
-                <option value="Top Wear">Top Wear</option>
-                <option value="Bottom Wear">Bottom Wear</option>
-              </select>
             </div>
             <div className="field">
               <label>Status</label>
@@ -1317,8 +1349,8 @@ export default function ProductForm({ productId = null }) {
               </div>
 
               {/* Footwear Size Type Option */}
-              {/* Unified Size Pills (Footwear UK 3-12, Apparel S-XL, etc.) */}
-              {(vg.name || '').trim().toLowerCase() === 'size' && (
+              {/* Unified Size Pills (Footwear UK 3-13, Apparel S-XL, etc.) */}
+              {((vg.name || '').trim().toLowerCase() === 'size' || (vg.name || '').trim().toLowerCase() === 'uk size') && (
                 <div style={{
                   marginBottom: '14px',
                   display: 'flex',
@@ -1327,11 +1359,11 @@ export default function ProductForm({ productId = null }) {
                   gap: '6px'
                 }}>
                   <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)', marginRight: '6px' }}>
-                    Size:
+                    {isFootwear ? 'UK Size:' : 'Size:'}
                   </span>
-                  {(formData.productType === 'Footwear'
-                    ? ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12']
-                    : (formData.productType === 'Bottom Wear'
+                  {(isFootwear
+                    ? ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13']
+                    : (isBottoms
                       ? ['28', '30', '32', '34', '36', '38']
                       : ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
                   ).map((sizeName) => {

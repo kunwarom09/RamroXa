@@ -240,6 +240,13 @@ export default function RamroxaReceiptModal({ order, isOpen, onClose }) {
                     Miti&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {receipt.miti}
                   </td>
                 </tr>
+                {receipt.time ? (
+                  <tr>
+                    <td colSpan={2} style={{ padding: '1px 0', verticalAlign: 'top' }}>
+                      Time&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {receipt.time}
+                    </td>
+                  </tr>
+                ) : null}
                 <tr>
                   <td colSpan={2} style={{ padding: '1px 0', verticalAlign: 'top' }}>
                     Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {receipt.customerName}

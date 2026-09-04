@@ -82,9 +82,9 @@ export default function AdminInventoryPage() {
     setLoading(true);
     try {
       const [prodRes, invRes, moveRes] = await Promise.allSettled([
-        api.get('/api/admin/products'),
+        api.get('/api/admin/products?limit=500'),
         api.get('/api/admin/inventory'),
-        api.get('/api/admin/inventory/moves')
+        api.get('/api/admin/inventory/moves?limit=500')
       ]);
 
       let rawProds = [];
@@ -94,19 +94,39 @@ export default function AdminInventoryPage() {
         rawProds = prodVal?.data?.products || prodVal?.products || prodVal?.data || (Array.isArray(prodVal) ? prodVal : []);
         rawProds.forEach((p) => {
           const pId = p.id || String(p._id);
-          if (p.allVariants && p.allVariants.length) {
-            extractedVars = [...extractedVars, ...p.allVariants.map(v => ({ ...v, id: v.id || String(v._id), productId: pId }))];
-          } else if (p.variants && p.variants.length) {
-            p.variants.forEach(v => {
-              const vId = v.id || String(v._id);
-              extractedVars.push({ ...v, id: vId, productId: pId });
-              if (v.subVariants && v.subVariants.length) {
-                v.subVariants.forEach(sv => {
-                  extractedVars.push({ ...sv, id: sv.id || String(sv._id), productId: pId, parentVariant: v });
-                });
-              }
+          const allVars = (p.allVariants && p.allVariants.length) ? p.allVariants : (p.variants || []);
+          const topMap = new Map();
+
+          allVars.forEach(v => {
+            const vId = v.id || String(v._id);
+            if (!v.parentVariantId) {
+              topMap.set(vId, v);
+            }
+          });
+
+          allVars.forEach(v => {
+            const vId = v.id || String(v._id);
+            const parent = v.parentVariantId ? (topMap.get(v.parentVariantId) || v.parentVariant) : null;
+            extractedVars.push({
+              ...v,
+              id: vId,
+              productId: pId,
+              parentVariant: parent
             });
-          }
+            if (v.subVariants && v.subVariants.length) {
+              v.subVariants.forEach(sv => {
+                const svId = sv.id || String(sv._id);
+                if (!allVars.some(av => (av.id || String(av._id)) === svId)) {
+                  extractedVars.push({
+                    ...sv,
+                    id: svId,
+                    productId: pId,
+                    parentVariant: v
+                  });
+                }
+              });
+            }
+          });
         });
       }
 
@@ -142,6 +162,76 @@ export default function AdminInventoryPage() {
 
   const warehouseById = (id) => warehouses.find(w => w.id === id) || { id, name: id || 'Kathmandu DC' };
 
+  const COLOR_HEX_MAP = {
+    black: '#111111',
+    jetblack: '#111111',
+    'jet black': '#111111',
+    matteblack: '#1a1a1a',
+    'matte black': '#1a1a1a',
+    washedblack: '#2d2d2d',
+    'washed black': '#2d2d2d',
+    white: '#ffffff',
+    vintagewhite: '#f4f1ea',
+    'vintage white': '#f4f1ea',
+    cream: '#fffdd0',
+    sand: '#d7c4b7',
+    oatmeal: '#ded6c9',
+    red: '#dc2626',
+    blue: '#2563eb',
+    navy: '#1e3a8a',
+    deepnavy: '#172554',
+    'deep navy': '#172554',
+    green: '#16a34a',
+    olive: '#65a30d',
+    olivedrab: '#556b2f',
+    'olive drab': '#556b2f',
+    sage: '#84a98c',
+    yellow: '#facc15',
+    orange: '#ea580c',
+    brown: '#78350f',
+    beige: '#d4b996',
+    tan: '#d2b48c',
+    cameltan: '#c19a6b',
+    'camel tan': '#c19a6b',
+    desertkhaki: '#c3b091',
+    'desert khaki': '#c3b091',
+    khaki: '#c3b091',
+    grey: '#9ca3af',
+    gray: '#9ca3af',
+    heathergray: '#9ca3af',
+    'heather gray': '#9ca3af',
+    shadowgray: '#4b5563',
+    'shadow gray': '#4b5563',
+    charcoal: '#374151',
+    washedcharcoal: '#4b5563',
+    'washed charcoal': '#4b5563',
+    pink: '#ec4899',
+    purple: '#9333ea',
+    maroon: '#800000',
+    burgundy: '#800020',
+    rawindigo: '#1a2a44',
+    'raw indigo': '#1a2a44',
+    stonewashed: '#5b7c99',
+    'stone washed': '#5b7c99'
+  };
+
+  const getColorHex = (name) => {
+    if (!name) return '#9ca3af';
+    const clean = String(name).toLowerCase().trim();
+    if (COLOR_HEX_MAP[clean]) return COLOR_HEX_MAP[clean];
+    for (const [k, v] of Object.entries(COLOR_HEX_MAP)) {
+      if (clean.includes(k)) return v;
+    }
+    return '#6366f1';
+  };
+
+  const cleanPrefix = (str) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/^((Size|UK Size|Variant|Colour|Color|Sub\s*\d+):\s*)+/gi, '')
+      .trim();
+  };
+
   const getVariantLabel = (v) => {
     if (!v) return 'Default';
     if (v.variantLabel) return v.variantLabel;
@@ -155,25 +245,35 @@ export default function AdminInventoryPage() {
     return parts.join(' / ') || v.name || 'Default';
   };
 
-  const getVariantSize = (v) => {
-    if (v?.options?.Size || v?.options?.size) return v.options.Size || v.options.size;
-    if (v?.parentVariant?.options?.Size || v?.parentVariant?.options?.size) {
-      return v.parentVariant.options.Size || v.parentVariant.options.size;
+  const getVariantSize = (v, parent) => {
+    const optSize = v?.options?.Size || v?.options?.size || v?.options?.['UK Size'] ||
+      v?.parentVariant?.options?.Size || v?.parentVariant?.options?.size || v?.parentVariant?.options?.['UK Size'] ||
+      parent?.options?.Size || parent?.options?.size || parent?.options?.['UK Size'];
+    if (optSize) return cleanPrefix(optSize);
+    if (v?.name && v.name.includes('/')) {
+      return cleanPrefix(v.name.split('/')[0]);
     }
-    if (v?.parentVariant?.name) return v.parentVariant.name;
-    if (v?.name && v.name.includes('/')) return v.name.split('/')[0].trim();
-    return v?.name || 'Standard';
+    if (v?.parentVariant?.name) {
+      return cleanPrefix(v.parentVariant.name);
+    }
+    if (parent?.name) {
+      return cleanPrefix(parent.name);
+    }
+    return cleanPrefix(v?.name) || 'Standard';
   };
 
-  const getVariantColor = (v) => {
-    if (v?.options?.Colour || v?.options?.colour || v?.options?.Color || v?.options?.color) {
-      return v.options.Colour || v.options.colour || v.options.Color || v.options.color;
+  const getVariantColor = (v, parent) => {
+    const optColor = v?.options?.Colour || v?.options?.colour || v?.options?.Color || v?.options?.color ||
+      v?.parentVariant?.options?.Colour || v?.parentVariant?.options?.colour || v?.parentVariant?.options?.Color || v?.parentVariant?.options?.color ||
+      parent?.options?.Colour || parent?.options?.colour || parent?.options?.Color || parent?.options?.color;
+    if (optColor) return cleanPrefix(optColor);
+    if (v?.name && v.name.includes('/')) {
+      const parts = v.name.split('/');
+      return cleanPrefix(parts[parts.length - 1]);
     }
-    if (v?.parentVariant?.options?.Colour || v?.parentVariant?.options?.colour) {
-      return v.parentVariant.options.Colour || v.parentVariant.options.colour;
+    if (v?.parentVariantId && v?.name) {
+      return cleanPrefix(v.name);
     }
-    if (v?.parentVariantId && v?.name) return v.name;
-    if (v?.name && v.name.includes('/')) return v.name.split('/')[1].trim();
     return 'Default';
   };
 
@@ -217,9 +317,32 @@ export default function AdminInventoryPage() {
     return map;
   }, [inventoryList]);
 
+  // Ensure all products from both products list and inventory documents are represented
+  const allProductList = useMemo(() => {
+    const list = [...products];
+    const knownIds = new Set(list.map(p => p.id || String(p._id)));
+    if (Array.isArray(inventoryList)) {
+      inventoryList.forEach(inv => {
+        if (inv.productId && !knownIds.has(inv.productId)) {
+          knownIds.add(inv.productId);
+          list.push({
+            id: inv.productId,
+            name: inv.name || 'Product',
+            sku: inv.sku ? inv.sku.split('-').slice(0, 3).join('-') : 'ZYL-PROD',
+            price: inv.price,
+            basePrice: inv.price,
+            brand: 'Zylo',
+            status: 'published'
+          });
+        }
+      });
+    }
+    return list;
+  }, [products, inventoryList]);
+
   // Group variants directly under their Master Product with Size → Colour hierarchy
   const groupedProducts = useMemo(() => {
-    return products.map(prod => {
+    return allProductList.map(prod => {
       const pId = prod.id || String(prod._id);
       const prodVariants = variants.filter(v => v.productId === pId && v.status !== 'archived');
 
@@ -227,16 +350,18 @@ export default function AdminInventoryPage() {
       const childVars = prodVariants.filter(v => !!v.parentVariantId);
       const activeVars = childVars.length > 0 ? childVars : prodVariants;
 
-      // Group by Size → Colour
+      // Group by Size → Colour & track Colour stock totals
       const sizeGroups = {};
+      const colorStockMap = {};
       let totalProdStock = 0;
       let totalProdReserved = 0;
       const sizeSet = new Set();
       const colorSet = new Set();
 
       activeVars.forEach(v => {
-        const size = getVariantSize(v);
-        const color = getVariantColor(v);
+        const parentVar = v.parentVariant || prodVariants.find(pv => pv.id === v.parentVariantId || String(pv._id) === v.parentVariantId);
+        const size = getVariantSize(v, parentVar);
+        const color = getVariantColor(v, parentVar);
         sizeSet.add(size);
         colorSet.add(color);
 
@@ -248,12 +373,12 @@ export default function AdminInventoryPage() {
 
         if (warehouseFilter && warehouseFilter !== 'all') {
           invDoc = invData?.byWarehouse[warehouseFilter] || null;
-          available = invDoc ? Number(invDoc.available) || 0 : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0));
+          available = invDoc ? Number(invDoc.available) || 0 : 0;
           reserved = invDoc ? Number(invDoc.reserved) || 0 : 0;
         } else {
           invDoc = invData?.byWarehouse['w1'] || (invData ? Object.values(invData.byWarehouse)[0] : null);
-          available = invDoc ? Number(invDoc.available) || 0 : (invData ? invData.totalAvailable : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0)));
-          reserved = invDoc ? Number(invDoc.reserved) || 0 : (invData ? invData.totalReserved : 0);
+          available = invData ? Number(invData.totalAvailable) || 0 : (v.availableStock !== undefined ? Number(v.availableStock) : (v.stock !== undefined ? Number(v.stock) : 0));
+          reserved = invData ? Number(invData.totalReserved) || 0 : 0;
         }
 
         const price = getVariantPrice(v, prod);
@@ -283,9 +408,19 @@ export default function AdminInventoryPage() {
           published: v.published !== false && v.status !== 'draft',
           warehouse: invDoc ? warehouseById(invDoc.warehouseId) : { id: 'w1', name: 'Kathmandu DC' }
         });
+
+        if (!colorStockMap[color]) {
+          colorStockMap[color] = {
+            color,
+            quantity: 0,
+            reserved: 0
+          };
+        }
+        colorStockMap[color].quantity += available;
+        colorStockMap[color].reserved += reserved;
       });
 
-      const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', '28', '30', '32', '34', '36', '38', '40'];
+      const sizeOrder = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', 'UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13', '28', '30', '32', '34', '36', '38', '40'];
       const sizesList = Object.values(sizeGroups).sort((a, b) => {
         const idxA = sizeOrder.indexOf(a.size);
         const idxB = sizeOrder.indexOf(b.size);
@@ -295,6 +430,11 @@ export default function AdminInventoryPage() {
         return a.size.localeCompare(b.size, undefined, { numeric: true });
       });
       const isOutOfStock = totalProdStock <= 0;
+
+      const colorBreakdown = Object.values(colorStockMap).sort((a, b) => b.quantity - a.quantity || a.color.localeCompare(b.color));
+      const coloursListSummary = colorBreakdown.length > 0
+        ? colorBreakdown.map(c => `${c.color} (${c.quantity})`).join(', ')
+        : (Array.from(colorSet).join(', ') || 'Standard');
 
       return {
         product: prod,
@@ -309,7 +449,8 @@ export default function AdminInventoryPage() {
         sizesCount: sizeSet.size,
         coloursCount: colorSet.size,
         sizesListSummary: Array.from(sizeSet).join(', ') || 'Standard',
-        coloursListSummary: Array.from(colorSet).join(', ') || 'Standard',
+        coloursListSummary,
+        colorBreakdown,
         sizeGroups: sizesList,
         variantsCount: activeVars.length,
         published: prod.status === 'published'
@@ -362,7 +503,8 @@ export default function AdminInventoryPage() {
         const matchName = p.name.toLowerCase().includes(q);
         const matchSku = p.sku.toLowerCase().includes(q);
         const matchSize = p.sizesListSummary.toLowerCase().includes(q);
-        const matchColor = p.coloursListSummary.toLowerCase().includes(q);
+        const matchColor = p.coloursListSummary.toLowerCase().includes(q) ||
+          (p.colorBreakdown && p.colorBreakdown.some(c => c.color.toLowerCase().includes(q)));
         return matchName || matchSku || matchSize || matchColor;
       }
       return true;
@@ -803,7 +945,7 @@ export default function AdminInventoryPage() {
               <th>Master Product</th>
               <th>SKU</th>
               <th>Sizes Available</th>
-              <th>Colours</th>
+              <th>Colours &amp; Quantity</th>
               <th className="num">Price</th>
               <th className="num">Total Stock</th>
               <th>Status</th>
@@ -849,8 +991,51 @@ export default function AdminInventoryPage() {
                       <td style={{ fontSize: '12.5px' }}>
                         {p.sizesListSummary}
                       </td>
-                      <td style={{ fontSize: '12.5px', color: 'var(--muted-foreground)' }}>
-                        {p.coloursListSummary}
+                      <td style={{ fontSize: '12.5px' }}>
+                        {p.colorBreakdown && p.colorBreakdown.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center' }}>
+                            {p.colorBreakdown.map((cb, cIdx) => (
+                              <span
+                                key={cIdx}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  background: 'var(--canvas)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '5px',
+                                  padding: '2px 7px',
+                                  fontSize: '11.5px',
+                                  lineHeight: '1.4'
+                                }}
+                                title={`${cb.color}: ${cb.quantity} units available`}
+                              >
+                                <span
+                                  style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    background: getColorHex(cb.color),
+                                    border: '1px solid rgba(0,0,0,0.15)',
+                                    display: 'inline-block',
+                                    flexShrink: 0
+                                  }}
+                                />
+                                <span style={{ fontWeight: 500 }}>{cb.color}</span>
+                                <span
+                                  style={{
+                                    fontWeight: 700,
+                                    color: cb.quantity <= 0 ? 'var(--danger)' : 'var(--primary)'
+                                  }}
+                                >
+                                  ({cb.quantity})
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--muted-foreground)' }}>{p.coloursListSummary}</span>
+                        )}
                       </td>
                       <td className="num" style={{ fontWeight: 600 }}>
                         {money(p.price)}
@@ -876,8 +1061,47 @@ export default function AdminInventoryPage() {
                       <tr>
                         <td colSpan="9" style={{ padding: '0', background: 'var(--canvas)', borderBottom: '2px solid var(--border)' }}>
                           <div style={{ padding: '14px 18px' }}>
-                            <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-foreground)', marginBottom: '10px' }}>
-                              Variant Breakdown for {p.name} (Size → Colour → Quantity)
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              marginBottom: '12px',
+                              flexWrap: 'wrap',
+                              gap: '8px',
+                              background: 'var(--surface)',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border)'
+                            }}>
+                              <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted-foreground)' }}>
+                                Variant Breakdown for {p.name} (Size &rarr; Colour &rarr; Quantity)
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>
+                                  Stock by Colour:
+                                </span>
+                                {p.colorBreakdown && p.colorBreakdown.map((cb, idx) => (
+                                  <span
+                                    key={idx}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      background: 'var(--canvas)',
+                                      border: '1px solid var(--border)',
+                                      borderRadius: '4px',
+                                      padding: '2px 8px',
+                                      fontSize: '11.5px'
+                                    }}
+                                  >
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: getColorHex(cb.color), border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                                    <span>{cb.color}:</span>
+                                    <strong style={{ color: cb.quantity <= 0 ? 'var(--danger)' : 'var(--primary)' }}>
+                                      {cb.quantity} units
+                                    </strong>
+                                  </span>
+                                ))}
+                              </div>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
@@ -937,9 +1161,10 @@ export default function AdminInventoryPage() {
                                                 width: '10px',
                                                 height: '10px',
                                                 borderRadius: '50%',
-                                                background: item.color.toLowerCase().includes('white') ? '#eee' : (item.color.toLowerCase().includes('black') || item.color.toLowerCase().includes('charcoal') ? '#222' : 'var(--accent)'),
+                                                background: getColorHex(item.color),
                                                 border: '1px solid var(--border)',
-                                                display: 'inline-block'
+                                                display: 'inline-block',
+                                                flexShrink: 0
                                               }} />
                                               <strong style={{ fontSize: '13px' }}>{item.color}</strong>
                                             </div>

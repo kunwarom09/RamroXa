@@ -34,6 +34,35 @@ export function offsetDate(days) {
   return d.toISOString().slice(0, 10);
 }
 
+export function formatDate(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return String(dateInput);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function formatTime(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+export function formatDateTime(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return String(dateInput);
+  const dateStr = formatDate(d);
+  const timeStr = formatTime(d);
+  return timeStr ? `${dateStr} ${timeStr}` : dateStr;
+}
+
 export function getProductThumbnail(p) {
   if (!p) return '/assets/98eab38550301ca9.q.jpg';
   if (p.images && p.images.length) {
@@ -82,5 +111,8 @@ export default {
   getProductThumbnail,
   docSubtotal,
   docVat,
-  docTotal
+  docTotal,
+  formatDate,
+  formatTime,
+  formatDateTime
 };

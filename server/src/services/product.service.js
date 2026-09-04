@@ -107,7 +107,7 @@ export async function listProducts(params = {}) {
   const productIds = products.map((p) => p.id || p._id.toString());
   const [variants, inventories] = await Promise.all([
     Variant.find({ productId: { $in: productIds }, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
-    Inventory.find({ $or: [{ warehouseId: 'w1' }, { warehouseId: null }], archived: false }).lean()
+    Inventory.find({ archived: false }).lean()
   ]);
 
   const invByVariantId = inventories.reduce((acc, inv) => {
@@ -187,7 +187,7 @@ export async function getProductBySlug(slug) {
   const [category, variants, inventories] = await Promise.all([
     Category.findOne({ id: product.categoryId }).lean(),
     Variant.find({ productId: pId, status: { $ne: 'archived' }, hidden: { $ne: true } }).lean(),
-    Inventory.find({ $or: [{ warehouseId: 'w1' }, { warehouseId: null }], archived: false }).lean()
+    Inventory.find({ archived: false }).lean()
   ]);
 
   const invByVariantId = inventories.reduce((acc, inv) => {

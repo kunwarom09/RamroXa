@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { money, today } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
@@ -97,6 +97,12 @@ export default function AdminReturnsPage() {
   const [selectedReturn, setSelectedReturn] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, isErr = false) => {
+    setToast({ msg, isErr });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const refreshData = useCallback(async () => {
     setLoading(true);
@@ -276,11 +282,19 @@ export default function AdminReturnsPage() {
 
   const updateReturnStatus = async (retId, newStatus) => {
     try {
-      await api.patch(`/api/admin/returns/${retId}/status`, { status: newStatus });
-      const upd = r => (r.id === retId || r._id === retId) ? { ...r, status: newStatus } : r;
+      const res = await api.patch(`/api/admin/returns/${retId}/status`, { status: newStatus });
+      const updated = res.data?.data || res.data;
+      const upd = r => (r.id === retId || r._id === retId || r.no === retId)
+        ? { ...r, ...(updated || {}), status: newStatus }
+        : r;
       setReturns(prev => prev.map(upd));
-      setSelectedReturn(prev => prev && (prev.id === retId || prev._id === retId) ? { ...prev, status: newStatus } : prev);
-    } catch (err) { alert('Failed to update status: ' + (err.message || 'Error')); }
+      setSelectedReturn(prev => prev && (prev.id === retId || prev._id === retId || prev.no === retId)
+        ? { ...prev, ...(updated || {}), status: newStatus }
+        : prev);
+      showToast(`Return ${newStatus === 'approved' ? 'approved successfully!' : newStatus === 'refunded' ? 'marked as refunded!' : 'status updated to ' + newStatus + '.'}`);
+    } catch (err) {
+      showToast('Failed to update status: ' + (err.response?.data?.message || err.message || 'Error'), true);
+    }
   };
 
   const handleDeleteReturn = async (retId) => {
@@ -349,8 +363,36 @@ export default function AdminReturnsPage() {
                 <td>{r.reason}</td>
                 <td className="num">{money(r.refundAmount)}</td>
                 <td><span className={`badge ${STATUS_BADGE[r.status] || 'badge-muted'}`}>{(r.status||'').replace(/_/g,' ')}</span></td>
-                <td style={{ textAlign: 'right' }}>
-                  <button className="btn btn-sm" onClick={() => { setSelectedReturn(r); setViewModalOpen(true); }}>View</button>
+                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                    {r.status === 'pending' && (
+                      <button
+                        className="btn btn-sm btn-primary"
+                        style={{ padding: '3px 8px', fontSize: '11px', whiteSpace: 'nowrap' }}
+                        title="Approve return"
+                        onClick={() => updateReturnStatus(r.id || r._id || r.no, 'approved')}
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {r.status === 'approved' && (
+                      <button
+                        className="btn btn-sm"
+                        style={{ padding: '3px 8px', fontSize: '11px', background: '#10b981', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}
+                        title="Process refund"
+                        onClick={() => updateReturnStatus(r.id || r._id || r.no, 'refunded')}
+                      >
+                        Refund
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-sm"
+                      style={{ padding: '3px 8px', fontSize: '11px' }}
+                      onClick={() => { setSelectedReturn(r); setViewModalOpen(true); }}
+                    >
+                      View
+                    </button>
+                  </div>
                 </td>
               </tr>
             )) : (
@@ -716,25 +758,43 @@ export default function AdminReturnsPage() {
             </div>
             <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end', flexWrap:'wrap', marginTop:'16px', paddingTop:'14px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
               {selectedReturn.status === 'pending' && (
-                <button className="btn btn-sm" onClick={() => updateReturnStatus(selectedReturn.id||selectedReturn._id, 'inspected')}>Mark Inspected</button>
+                <button className="btn btn-sm" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'inspected')}>Mark Inspected</button>
               )}
               {['pending','inspected'].includes(selectedReturn.status) && (
-                <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id||selectedReturn._id, 'approved')}>Approve</button>
+                <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'approved')}>Approve Return</button>
               )}
               {selectedReturn.status === 'approved' && (
-                <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id||selectedReturn._id, 'refunded')}>Mark Refunded</button>
+                <button className="btn btn-sm" style={{ background: '#10b981', color: '#fff', border: 'none' }} onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'refunded')}>Mark Refunded</button>
               )}
               {selectedReturn.status === 'refunded' && (
-                <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id||selectedReturn._id, 'completed')}>Complete</button>
+                <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'completed')}>Complete Return</button>
               )}
               {!['rejected','completed'].includes(selectedReturn.status) && (
-                <button className="btn btn-sm btn-danger" onClick={() => updateReturnStatus(selectedReturn.id||selectedReturn._id, 'rejected')}>Reject</button>
+                <button className="btn btn-sm btn-danger" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'rejected')}>Reject</button>
               )}
               <button className="btn btn-sm" onClick={() => window.print()}>Print Credit Note</button>
-              <button className="btn btn-sm btn-danger" onClick={() => handleDeleteReturn(selectedReturn.id||selectedReturn._id)}>Delete</button>
+              <button className="btn btn-sm btn-danger" onClick={() => handleDeleteReturn(selectedReturn.id || selectedReturn._id || selectedReturn.no)}>Delete</button>
               <button className="btn btn-sm" onClick={() => setViewModalOpen(false)}>Close</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          background: toast.isErr ? '#ef4444' : '#10b981',
+          color: '#fff',
+          padding: '10px 18px',
+          borderRadius: 8,
+          fontWeight: 600,
+          fontSize: 13,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          zIndex: 99999
+        }}>
+          {toast.msg}
         </div>
       )}
     </div>
