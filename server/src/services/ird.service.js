@@ -1,5 +1,6 @@
 import { Order } from '../models/Order.js';
 import { Purchase } from '../models/Purchase.js';
+import { SalesReturn } from '../models/SalesReturn.js';
 import { VAT_RATE } from '../utils/money.js';
 
 export async function getIrdVatSummary(monthStr) {
@@ -12,14 +13,18 @@ export async function getIrdVatSummary(monthStr) {
   const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
-  const [orders, purchases] = await Promise.all([
+  const [orders, purchases, returns] = await Promise.all([
     Order.find({
       createdAt: { $gte: startDate, $lte: endDate },
       fulfillmentStatus: { $ne: 'cancelled' }
     }).sort({ createdAt: 1 }).lean(),
     Purchase.find({
       date: { $gte: startDate, $lte: endDate }
-    }).sort({ date: 1 }).lean()
+    }).sort({ date: 1 }).lean(),
+    SalesReturn.find({
+      createdAt: { $gte: startDate, $lte: endDate },
+      status: { $in: ['approved', 'refunded', 'completed', 'refund_processed'] }
+    }).sort({ createdAt: 1 }).lean()
   ]);
 
   // Sales Register (Bikri Khata)
@@ -42,6 +47,28 @@ export async function getIrdVatSummary(monthStr) {
   const salesVat = salesRegister.reduce((sum, s) => sum + s.vat, 0);
   const salesGross = salesRegister.reduce((sum, s) => sum + s.total, 0);
 
+  // Credit Notes / Sales Returns Register (Anusuchi 10)
+  const returnsRegister = (returns || []).map((r) => {
+    const gross = r.refundAmount || 0;
+    const vat = r.refundVat || 0;
+    const taxable = r.refundNet || (gross - vat);
+
+    return {
+      date: r.date || (r.createdAt ? r.createdAt.toISOString().slice(0, 10) : ''),
+      creditNoteNo: r.no,
+      orderNo: r.orderNo || '',
+      customer: r.customer || 'Customer',
+      taxable,
+      vat,
+      total: gross,
+      reason: r.reason || ''
+    };
+  });
+
+  const returnsTaxable = returnsRegister.reduce((sum, r) => sum + r.taxable, 0);
+  const returnsVat = returnsRegister.reduce((sum, r) => sum + r.vat, 0);
+  const returnsGross = returnsRegister.reduce((sum, r) => sum + r.total, 0);
+
   // Purchase Register (Kharid Khata)
   const purchaseRegister = purchases.map((p) => {
     return {
@@ -61,7 +88,8 @@ export async function getIrdVatSummary(monthStr) {
   const purchasesVat = purchaseRegister.reduce((sum, p) => sum + p.vat, 0);
   const purchasesGross = purchaseRegister.reduce((sum, p) => sum + p.total, 0);
 
-  const netVatPayable = salesVat - purchasesVat;
+  const netSalesVat = salesVat - returnsVat;
+  const netVatPayable = netSalesVat - purchasesVat;
 
   return {
     month: currentMonth,
@@ -73,6 +101,12 @@ export async function getIrdVatSummary(monthStr) {
         gross: salesGross,
         count: salesRegister.length
       },
+      returns: {
+        taxable: returnsTaxable,
+        vat: returnsVat,
+        gross: returnsGross,
+        count: returnsRegister.length
+      },
       purchases: {
         taxable: purchasesTaxable,
         exempt: purchasesExempt,
@@ -83,6 +117,7 @@ export async function getIrdVatSummary(monthStr) {
       netVatPayable
     },
     salesRegister,
+    returnsRegister,
     purchaseRegister
   };
 }
