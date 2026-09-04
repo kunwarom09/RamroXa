@@ -163,4 +163,14 @@ router.post('/purchases', createPurchase);
 router.get('/purchases/:id', getPurchase);
 router.delete('/purchases/:id', deletePurchase);
 
+// Email Diagnostic & Testing (Admin)
+router.get('/email/diagnostic', async (req, res, next) => {
+  const { getEmailDiagnostic } = await import('../controllers/auth.controller.js');
+  return getEmailDiagnostic(req, res, next);
+});
+router.post('/email/test', async (req, res, next) => {
+  const { sendTestEmail } = await import('../controllers/auth.controller.js');
+  return sendTestEmail(req, res, next);
+});
+
 export default router;

@@ -79,9 +79,48 @@ npm run dev
 cd server
 npm test
 ```
-- Runs the comprehensive test suite (113/113 passing tests) across auth, orders, payments (eSewa/Fonepay), inventory reservation, and customer features.
+- Runs the comprehensive test suite (117/117 passing tests) across auth, email verification, orders, payments (eSewa/Fonepay), inventory reservation, and customer features.
 
 ---
+
+## 📧 Email Verification System & Diagnostics
+
+The RamroXa email verification system is architected for seamless collaboration and production readiness:
+
+### 1. Zero-Friction Development Mode (Default)
+- When starting fresh with default `.env` placeholders, the server operates in **Development Preview Mode**.
+- Verification emails generate a clickable verification link displayed directly in the backend terminal with box formatting:
+  ```text
+  ┌────────────────────────────────────────────────────────────────────┐
+  │  📧 [DEV PREVIEW] EMAIL VERIFICATION LINK GENERATED                 │
+  │  Recipient: customer@example.com                                   │
+  │  Clickable URL:                                                    │
+  │  http://localhost:3000/verify-email?token=...                      │
+  └────────────────────────────────────────────────────────────────────┘
+  ```
+- Click the URL or paste it into your browser to verify the account instantly.
+
+### 2. Live SMTP Setup (Gmail / Custom SMTP)
+To deliver real emails to actual user inboxes:
+1. In `server/.env`, set:
+   ```env
+   SMTP_SERVICE=gmail
+   SMTP_USER=your_real_email@gmail.com
+   SMTP_PASS=your_16_char_app_password
+   ```
+   > **Note on Gmail:** Requires 2-Step Verification enabled on your Google Account. Generate an App Password at [Google Account App Passwords](https://myaccount.google.com/apppasswords). Normal Google account passwords will be rejected by Google's SMTP servers.
+
+### 3. Safe Email Diagnostic Tool
+Run the diagnostic suite anytime to verify SMTP connectivity without exposing secrets:
+```bash
+cd server
+
+# Verify SMTP socket and credentials only
+npm run email:test -- --verify-only
+
+# Or send a live test message to your email
+npm run email:test -- --to=your_email@gmail.com
+```
 
 ## 📂 Project Architecture
 

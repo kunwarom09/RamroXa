@@ -97,8 +97,9 @@ export async function seedProductsAndInventory() {
 }
 
 export async function seedDatabase() {
+  await connectDB();
   const { populate20ProductsWithVariantsAndOrders } = await import('../services/populateCatalog.service.js');
-  await populate20ProductsWithVariantsAndOrders(false);
+  await populate20ProductsWithVariantsAndOrders(true);
   logger.info('✅ Seeding completed.');
 }
 

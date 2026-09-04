@@ -8,9 +8,11 @@ import {
   me,
   updateMe,
   verifyEmail,
-  resendVerification
+  resendVerification,
+  getEmailDiagnostic,
+  sendTestEmail
 } from '../controllers/auth.controller.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 
 export const router = express.Router();
@@ -26,5 +28,13 @@ router.post('/logout', logout);
 router.get('/me', requireAuth, me);
 router.put('/me', requireAuth, updateMe);
 router.patch('/me', requireAuth, updateMe);
+
+// Safe diagnostic endpoint: available in development/test, or protected by admin in production
+router.get('/email-diagnostic', (req, res, next) => {
+  if (process.env.NODE_ENV === 'production') {
+    return requireAuth(req, res, () => requireAdmin(req, res, next));
+  }
+  next();
+}, getEmailDiagnostic);
 
 export default router;

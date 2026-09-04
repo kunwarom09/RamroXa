@@ -1,71 +1,199 @@
 import nodemailer from 'nodemailer';
 import env from '../config/env.js';
+import { getEmailConfig, maskEmail } from '../config/email.config.js';
+import logger from '../config/logger.js';
 
 let transporter = null;
+let currentTransporterMode = null;
 
-async function getTransporter() {
-  if (transporter) return transporter;
+/**
+ * Categorize error for clear diagnostic output
+ */
+export function categorizeEmailError(err) {
+  if (!err) return { code: 'UNKNOWN_ERROR', message: 'Unknown email error' };
 
-  const isConfigured =
-    env.SMTP_USER &&
-    env.SMTP_PASS &&
-    !env.SMTP_USER.includes('your_email') &&
-    env.SMTP_PASS !== 'your_app_password';
+  const message = err.message || String(err);
+  const code = err.code || '';
 
-  if (isConfigured) {
-    if (env.SMTP_SERVICE && env.SMTP_SERVICE.toLowerCase() === 'gmail') {
+  if (
+    code === 'EAUTH' ||
+    message.includes('535') ||
+    message.toLowerCase().includes('badcredentials') ||
+    message.toLowerCase().includes('username and password not accepted')
+  ) {
+    return {
+      code: 'AUTH_FAILED',
+      message: 'SMTP authentication failed. If using Gmail, ensure 2-Step Verification is enabled and a 16-character App Password is used instead of your account password.'
+    };
+  }
+
+  if (
+    code === 'ESOCKET' ||
+    code === 'ECONNREFUSED' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ENOTFOUND' ||
+    message.toLowerCase().includes('connection timeout')
+  ) {
+    return {
+      code: 'CONNECTION_FAILED',
+      message: `Failed to connect to SMTP server: ${message}`
+    };
+  }
+
+  if (message.includes('550') || message.includes('553') || message.includes('501')) {
+    return {
+      code: 'INVALID_SENDER',
+      message: `Sender address or domain rejected by mail server: ${message}`
+    };
+  }
+
+  return {
+    code: code || 'PROVIDER_ERROR',
+    message
+  };
+}
+
+/**
+ * Initialize and cache the appropriate Nodemailer transporter based on active configuration
+ */
+export async function getTransporter() {
+  const config = getEmailConfig();
+
+  if (transporter && currentTransporterMode === config.mode) {
+    return transporter;
+  }
+
+  currentTransporterMode = config.mode;
+
+  if (config.mode === 'TEST_MOCK') {
+    transporter = nodemailer.createTransport({
+      jsonTransport: true
+    });
+    return transporter;
+  }
+
+  if (config.mode === 'LIVE_SMTP') {
+    if (config.service === 'gmail') {
       transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASS
+          user: config.user,
+          pass: config.pass
         }
       });
-      console.log(`📧 Configured Gmail transporter for: ${env.SMTP_USER}`);
-    } else if (env.SMTP_HOST) {
+      logger.info({ user: maskEmail(config.user) }, 'Configured Gmail SMTP transporter');
+    } else {
       transporter = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT || 587,
-        secure: env.SMTP_SECURE || false,
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
         auth: {
-          user: env.SMTP_USER,
-          pass: env.SMTP_PASS
+          user: config.user,
+          pass: config.pass
         }
       });
-      console.log(`📧 Configured custom SMTP transporter: ${env.SMTP_HOST}:${env.SMTP_PORT}`);
+      logger.info({ host: config.host, port: config.port, user: maskEmail(config.user) }, 'Configured custom SMTP transporter');
     }
-  } else {
-    // Graceful fallback for local development / testing
-    try {
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
-        }
-      });
-      console.log('📧 Ethereal test email account initialized for development:', testAccount.user);
-    } catch (err) {
-      transporter = nodemailer.createTransport({
-        streamTransport: true,
-        newline: 'unix',
-        buffer: true
-      });
-    }
+    return transporter;
+  }
+
+  // Development Fallback: Attempt Ethereal test inbox, fallback to stream
+  try {
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass
+      }
+    });
+    logger.info({ testAccount: testAccount.user }, 'Initialized Ethereal development test account');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Could not initialize Ethereal test account; falling back to stream transport');
+    transporter = nodemailer.createTransport({
+      streamTransport: true,
+      newline: 'unix',
+      buffer: true
+    });
   }
 
   return transporter;
 }
 
-export async function sendEmail({ to, subject, html, text }) {
+/**
+ * Reset active transporter (used by tests or environment reloading)
+ */
+export function resetTransporter() {
+  transporter = null;
+  currentTransporterMode = null;
+}
+
+/**
+ * Test SMTP connection and verify credentials
+ */
+export async function verifyTransporter() {
+  const config = getEmailConfig();
+
+  if (config.mode === 'UNCONFIGURED') {
+    return {
+      success: false,
+      code: 'CONFIG_INCOMPLETE',
+      message: 'SMTP credentials are not configured or are placeholder values.',
+      mode: config.mode
+    };
+  }
+
   try {
-    const transport = await getTransporter();
-    const fromAddress = env.SMTP_FROM || (env.SMTP_USER ? `"Ramroxa" <${env.SMTP_USER}>` : '"Ramroxa" <noreply@ramroxa.com>');
+    const transport = await emailService.getTransporter();
+    if (transport.verify) {
+      await transport.verify();
+    }
+    return {
+      success: true,
+      mode: config.mode,
+      provider: config.service || config.host,
+      message: 'SMTP connection verified successfully.'
+    };
+  } catch (err) {
+    const categorized = categorizeEmailError(err);
+    return {
+      success: false,
+      mode: config.mode,
+      code: categorized.code,
+      message: categorized.message
+    };
+  }
+}
+
+/**
+ * Send an email with complete error diagnostic reporting
+ */
+export async function sendEmail({ to, subject, html, text }) {
+  const config = getEmailConfig();
+
+  if (config.mode === 'UNCONFIGURED') {
+    const errObj = {
+      code: 'CONFIG_MISSING',
+      message: 'Email service cannot send in production without valid SMTP_USER and SMTP_PASS.'
+    };
+    logger.error({ to, subject }, errObj.message);
+    if (env.NODE_ENV === 'production') {
+      throw new Error(errObj.message);
+    }
+    return {
+      success: false,
+      error: errObj.message,
+      code: errObj.code,
+      mode: config.mode
+    };
+  }
+
+  try {
+    const transport = await emailService.getTransporter();
     const mailOptions = {
-      from: fromAddress,
+      from: config.from,
       to,
       subject,
       text,
@@ -73,29 +201,76 @@ export async function sendEmail({ to, subject, html, text }) {
     };
 
     const info = await transport.sendMail(mailOptions);
+    let previewUrl = null;
+
     if (nodemailer.getTestMessageUrl && info) {
-      const previewUrl = nodemailer.getTestMessageUrl(info);
+      previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log(`✉️ Email preview URL (Ethereal test mailbox): ${previewUrl}`);
+        logger.info({ previewUrl }, 'Ethereal email preview URL generated');
       }
     }
-    return info;
+
+    return {
+      success: true,
+      messageId: info?.messageId || 'mock-id',
+      previewUrl,
+      mode: config.mode,
+      info
+    };
   } catch (error) {
-    console.warn(`⚠️ Email delivery notice for ${to}:`, error.message);
-    return null;
+    const categorized = categorizeEmailError(error);
+    logger.error(
+      {
+        to,
+        subject,
+        code: categorized.code,
+        err: categorized.message
+      },
+      'Failed to deliver email'
+    );
+
+    if (env.NODE_ENV === 'production') {
+      const prodErr = new Error(categorized.message);
+      prodErr.code = categorized.code;
+      throw prodErr;
+    }
+
+    return {
+      success: false,
+      error: categorized.message,
+      code: categorized.code,
+      mode: config.mode
+    };
   }
 }
 
+/**
+ * Send account verification email with security tokens and fallback links
+ */
 export async function sendVerificationEmail({ user, token, redirect = '/checkout' }) {
-  const baseUrl = env.FRONTEND_URL || 'http://localhost:3000';
+  const config = getEmailConfig();
+  const baseUrl = config.frontendUrl;
   const encodedRedirect = encodeURIComponent(redirect || '/checkout');
   const verificationUrl = `${baseUrl}/verify-email?token=${token}&redirect=${encodedRedirect}`;
 
-  console.log('\n======================================================');
-  console.log('📧 EMAIL VERIFICATION LINK (For Testing / Dev):');
-  console.log(`Recipient: ${user.email}`);
-  console.log(`Verification URL: ${verificationUrl}`);
-  console.log('======================================================\n');
+  logger.info(
+    {
+      recipient: user.email,
+      mode: config.mode,
+      verificationUrl
+    },
+    'Initiating verification email dispatch'
+  );
+
+  // If in dev fallback, print a very visible terminal box with 1-click verification link
+  if (config.mode === 'DEV_FALLBACK') {
+    console.log('\n┌────────────────────────────────────────────────────────────────────┐');
+    console.log('│  📧 [DEV PREVIEW] EMAIL VERIFICATION LINK GENERATED                 │');
+    console.log(`│  Recipient: ${user.email.padEnd(54)} │`);
+    console.log(`│  Clickable URL:                                                    │`);
+    console.log(`│  ${verificationUrl.padEnd(66)}│`);
+    console.log('└────────────────────────────────────────────────────────────────────┘\n');
+  }
 
   const userName = user.name || 'Valued Customer';
 
@@ -220,7 +395,7 @@ export async function sendVerificationEmail({ user, token, redirect = '/checkout
   </div>
 </body>
 </html>
-  `;
+  `.trim();
 
   const text = `
 Hi ${userName},
@@ -236,15 +411,26 @@ Regards,
 Ramroxa Team
   `.trim();
 
-  return sendEmail({
+  const result = await emailService.sendEmail({
     to: user.email,
     subject: 'Verify Your Email to Complete Checkout — Ramroxa',
     html,
     text
   });
+
+  return {
+    ...result,
+    verificationUrl
+  };
 }
 
-export default {
+const emailService = {
   sendEmail,
-  sendVerificationEmail
+  sendVerificationEmail,
+  verifyTransporter,
+  resetTransporter,
+  categorizeEmailError,
+  getTransporter
 };
+
+export default emailService;

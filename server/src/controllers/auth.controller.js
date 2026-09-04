@@ -12,12 +12,17 @@ export const register = asyncHandler(async (req, res) => {
   const result = await authService.register({ ...req.body, userAgent, ip });
 
   res.status(201).json({
-    message: 'Account created! Please check your email and click the verification link to activate your account.',
+    message: result.emailVerificationSent
+      ? 'Account created! Please check your email and click the verification link to activate your account.'
+      : 'Account created! Verification link generated.',
     data: {
       user: result.user,
-      emailVerificationSent: true,
+      emailVerificationSent: result.emailVerificationSent,
       verificationToken: result.verificationToken,
-      verificationUrl: result.verificationUrl
+      verificationUrl: result.verificationUrl,
+      deliveryStatus: result.deliveryStatus,
+      deliveryMode: result.deliveryMode,
+      deliveryError: result.deliveryError
     }
   });
 });
@@ -56,7 +61,12 @@ export const resendVerification = asyncHandler(async (req, res) => {
   const { email, redirect } = req.body;
   const result = await authService.resendVerificationEmail({ email, redirect });
   res.status(200).json({
-    message: result.message
+    message: result.message,
+    data: {
+      deliveryStatus: result.deliveryStatus,
+      deliveryMode: result.deliveryMode,
+      deliveryError: result.deliveryError
+    }
   });
 });
 
@@ -179,5 +189,58 @@ export const updateMe = asyncHandler(async (req, res) => {
   });
 });
 
-export default { register, login, adminLogin, refresh, logout, me, updateMe, verifyEmail, resendVerification };
+export const getEmailDiagnostic = asyncHandler(async (req, res) => {
+  const { getEmailConfig, maskEmail } = await import('../config/email.config.js');
+  const { verifyTransporter } = await import('../services/email.service.js');
+
+  const config = getEmailConfig();
+  const verifyResult = await verifyTransporter();
+
+  res.status(200).json({
+    data: {
+      mode: config.mode,
+      provider: config.service || config.host,
+      port: config.port,
+      secure: config.secure,
+      sender: config.from,
+      user: maskEmail(config.user),
+      isConfigured: config.hasValidCredentials,
+      verification: verifyResult
+    }
+  });
+});
+
+export const sendTestEmail = asyncHandler(async (req, res) => {
+  const { sendEmail } = await import('../services/email.service.js');
+  const targetEmail = req.body?.to || req.user?.email;
+  if (!targetEmail) {
+    return res.status(400).json({ error: { message: 'Recipient email address (to) is required.' } });
+  }
+
+  const result = await sendEmail({
+    to: targetEmail,
+    subject: `Ramroxa Test Email [${new Date().toISOString()}]`,
+    text: 'This is a diagnostic test email from the Ramroxa API server.',
+    html: '<p>This is a diagnostic test email from the <strong>Ramroxa API server</strong>.</p>'
+  });
+
+  res.status(200).json({
+    message: result.success ? 'Test email sent successfully.' : 'Failed to send test email.',
+    data: result
+  });
+});
+
+export default {
+  register,
+  login,
+  adminLogin,
+  refresh,
+  logout,
+  me,
+  updateMe,
+  verifyEmail,
+  resendVerification,
+  getEmailDiagnostic,
+  sendTestEmail
+};
 

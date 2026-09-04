@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch-path=src/routes --watch-path=src/controllers --watch-path=src/services --watch-path=src/models --watch-path=src/middleware src/server.js",
+    "dev": "node --watch-path=.env --watch-path=src/routes --watch-path=src/controllers --watch-path=src/services --watch-path=src/models --watch-path=src/middleware src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -13,6 +13,7 @@
     "db:seed": "node src/scripts/seed.js",
     "db:reset": "node src/scripts/reset.js",
     "db:create-admin": "node src/scripts/createAdmin.js",
+    "email:test": "node src/scripts/testEmail.js",
     "migrate:up": "migrate-mongo up",
     "migrate:down": "migrate-mongo down",
     "migrate:status": "migrate-mongo status"

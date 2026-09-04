@@ -48,7 +48,6 @@ function SignupContent() {
 
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
-  const [verificationLink, setVerificationLink] = useState('');
 
   // Live password validation rules
   const hasMinLen = formData.password.length >= 8;
@@ -104,11 +103,6 @@ function SignupContent() {
 
       setRegisteredEmail(targetEmail);
       setVerificationSent(true);
-
-      const vUrl = res?.data?.verificationUrl || (res?.data?.verificationToken ? `/verify-email?token=${res.data.verificationToken}&redirect=${encodeURIComponent(redirect)}` : '');
-      if (vUrl) {
-        setVerificationLink(vUrl);
-      }
     } catch (err) {
       const errMsg =
         err.message ||
@@ -264,31 +258,6 @@ function SignupContent() {
                 marginBottom: 16
               }}>
                 {resendMessage}
-              </div>
-            )}
-
-            {verificationLink && (
-              <div style={{ margin: '16px 0 14px' }}>
-                <a
-                  href={verificationLink}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '100%',
-                    height: 44,
-                    background: '#000',
-                    color: '#fff',
-                    borderRadius: 8,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    letterSpacing: 0.5,
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  COMPLETE ACCOUNT CREATION &rarr;
-                </a>
               </div>
             )}
 

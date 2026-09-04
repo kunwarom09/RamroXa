@@ -8,7 +8,7 @@ import {
   hashToken,
   REFRESH_TOKEN_EXPIRY_DAYS
 } from '../utils/token.js';
-import { sendVerificationEmail } from './email.service.js';
+import emailService from './email.service.js';
 
 export async function register(data) {
   const { email, password, name, phone, receiverPhone, permanentAddress, temporaryAddress, redirect } = data;
@@ -65,20 +65,36 @@ export async function register(data) {
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const verificationUrl = `${baseUrl}/verify-email?token=${rawToken}&redirect=${encodeURIComponent(targetRedirect)}`;
 
-  // Send verification email (delivers via SMTP if configured, logs link to console/preview for dev)
-  sendVerificationEmail({
-    user,
-    token: rawToken,
-    redirect: targetRedirect
-  }).catch((err) => {
-    console.warn('⚠️ Background email send warning:', err.message);
-  });
+  // Send verification email
+  let emailDeliveryResult = null;
+  try {
+    emailDeliveryResult = await emailService.sendVerificationEmail({
+      user,
+      token: rawToken,
+      redirect: targetRedirect
+    });
+  } catch (emailErr) {
+    console.error('❌ Failed to dispatch verification email:', emailErr.message);
+    if (process.env.NODE_ENV === 'production') {
+      throw ApiError.internal(`Could not send verification email: ${emailErr.message}`);
+    }
+    emailDeliveryResult = {
+      success: false,
+      error: emailErr.message,
+      mode: 'FAILED'
+    };
+  }
+
+  const isDelivered = Boolean(emailDeliveryResult?.success);
 
   return {
     user,
-    emailVerificationSent: true,
+    emailVerificationSent: isDelivered,
     verificationToken: rawToken,
-    verificationUrl
+    verificationUrl,
+    deliveryStatus: isDelivered ? (emailDeliveryResult.mode === 'LIVE_SMTP' ? 'sent' : 'preview') : 'failed',
+    deliveryMode: emailDeliveryResult?.mode || 'UNKNOWN',
+    deliveryError: isDelivered ? null : emailDeliveryResult?.error
   };
 }
 
@@ -189,15 +205,37 @@ export async function resendVerificationEmail({ email, redirect = '/checkout' })
     expiresAt
   });
 
-  sendVerificationEmail({
-    user,
-    token: rawToken,
-    redirect: redirect || '/checkout'
-  }).catch((err) => {
-    console.warn('⚠️ Background email resend warning:', err.message);
-  });
+  // Send verification email
+  let emailDeliveryResult = null;
+  try {
+    emailDeliveryResult = await emailService.sendVerificationEmail({
+      user,
+      token: rawToken,
+      redirect: redirect || '/checkout'
+    });
+  } catch (emailErr) {
+    console.error('❌ Failed to resend verification email:', emailErr.message);
+    if (process.env.NODE_ENV === 'production') {
+      throw ApiError.internal(`Could not send verification email: ${emailErr.message}`);
+    }
+    emailDeliveryResult = {
+      success: false,
+      error: emailErr.message,
+      mode: 'FAILED'
+    };
+  }
 
-  return { message: 'A new verification link has been sent to your email address.' };
+  const isDelivered = Boolean(emailDeliveryResult?.success);
+
+  return {
+    success: isDelivered,
+    message: isDelivered
+      ? 'A new verification link has been sent to your email address.'
+      : `Verification email could not be delivered: ${emailDeliveryResult?.error || 'Provider rejected message'}`,
+    deliveryStatus: isDelivered ? (emailDeliveryResult.mode === 'LIVE_SMTP' ? 'sent' : 'preview') : 'failed',
+    deliveryMode: emailDeliveryResult?.mode || 'UNKNOWN',
+    deliveryError: isDelivered ? null : emailDeliveryResult?.error
+  };
 }
 
 export async function login({ email, password, userAgent = '', ip = '', requireAdminRole = false }) {

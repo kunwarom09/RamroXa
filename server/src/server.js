@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import env from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import logger from './config/logger.js';
+import { validateEmailConfig } from './config/email.config.js';
 
 const app = createApp();
 
@@ -9,6 +10,13 @@ let server = null;
 
 async function startServer() {
   try {
+    // Validate email configuration on startup
+    const emailValidation = validateEmailConfig();
+    if (!emailValidation.valid && env.NODE_ENV === 'production') {
+      logger.fatal(emailValidation.error);
+      process.exit(1);
+    }
+
     server = app.listen(env.PORT, () => {
       logger.info(`🚀 Zylo Backend API server running on port ${env.PORT} in ${env.NODE_ENV} mode`);
       logger.info(`Health check: http://localhost:${env.PORT}/health`);

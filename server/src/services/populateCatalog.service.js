@@ -976,6 +976,20 @@ export async function populate20ProductsWithVariantsAndOrders(force = false) {
     await Warehouse.findOneAndUpdate({ id: wh.id }, wh, { upsert: true, new: true });
   }
 
+  const defaultCategories = [
+    { id: 'c_men', name: 'Men', slug: 'men', parentId: null, sortOrder: 0, featured: true, visible: true, status: 'active', description: 'Menswear' },
+    { id: 'c_app', name: 'Apparel', slug: 'apparel', parentId: 'c_men', sortOrder: 0, featured: true, visible: true, status: 'active', description: 'Tops, bottoms and layers' },
+    { id: 'c_tops', name: 'Tops', slug: 'tops', parentId: 'c_app', sortOrder: 0, featured: false, visible: true, status: 'active', description: 'T-shirts, shirts and tops' },
+    { id: 'c_bottoms', name: 'Bottoms', slug: 'bottoms', parentId: 'c_app', sortOrder: 1, featured: false, visible: true, status: 'active', description: 'Trousers, pants and denim' },
+    { id: 'c_out', name: 'Outerwear', slug: 'outerwear', parentId: 'c_men', sortOrder: 1, featured: false, visible: true, status: 'active', description: 'Shells and jackets' },
+    { id: 'c_footwear', name: 'Footwear', slug: 'footwear', parentId: null, sortOrder: 1, featured: true, visible: true, status: 'active', description: 'Sneakers, boots and runners' },
+    { id: 'c_acc', name: 'Accessories', slug: 'accessories', parentId: null, sortOrder: 1, featured: true, visible: true, status: 'active', description: 'Caps, socks and small goods' },
+    { id: 'c_bags', name: 'Bags', slug: 'bags', parentId: null, sortOrder: 2, featured: false, visible: true, status: 'active', description: 'Backpacks and totes' }
+  ];
+  for (const cat of defaultCategories) {
+    await Category.findOneAndUpdate({ id: cat.id }, cat, { upsert: true, new: true });
+  }
+
   // Purge any existing products and inventory if empty or force=true
   await Promise.all([
     Product.deleteMany({}),
