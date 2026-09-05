@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import env from '../config/env.js';
 
-export const ACCESS_TOKEN_EXPIRY = '15m';
+export const ACCESS_TOKEN_EXPIRY = env.NODE_ENV === 'development' ? '7d' : '15m';
 export const REFRESH_TOKEN_EXPIRY_DAYS = 7;
 
 export function generateAccessToken(user, sessionId) {
@@ -41,15 +41,18 @@ export function generateCsrfToken() {
 
 export function getCookieOptions(isRefresh = false) {
   const isProd = env.NODE_ENV === 'production';
+  const devAccessExpiryMs = 7 * 24 * 60 * 60 * 1000;
+  const prodAccessExpiryMs = 15 * 60 * 1000;
+
   return {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
     domain: env.COOKIE_DOMAIN === 'localhost' ? undefined : env.COOKIE_DOMAIN,
-    path: isRefresh ? '/api/auth' : '/',
+    path: '/',
     maxAge: isRefresh
       ? REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000
-      : 15 * 60 * 1000
+      : (isProd ? prodAccessExpiryMs : devAccessExpiryMs)
   };
 }
 

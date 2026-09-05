@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../../services/apiClient';
 
@@ -50,7 +51,15 @@ function LoginForm() {
           />
         </div>
         <div className="field">
-          <label htmlFor="password">Password</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label htmlFor="password" style={{ marginBottom: 0 }}>Password</label>
+            <Link
+              href="/forgot-password?redirect=/admin/dashboard"
+              style={{ fontSize: '12px', color: 'var(--primary, #2563eb)', textDecoration: 'none' }}
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"

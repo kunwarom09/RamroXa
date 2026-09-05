@@ -424,9 +424,190 @@ Ramroxa Team
   };
 }
 
+/**
+ * Send password reset email with secure one-time token link
+ */
+export async function sendPasswordResetEmail({ user, token, redirect = '/login' }) {
+  const config = getEmailConfig();
+  const baseUrl = config.frontendUrl;
+  const encodedRedirect = encodeURIComponent(redirect || '/login');
+  const resetUrl = `${baseUrl}/reset-password?token=${token}&redirect=${encodedRedirect}`;
+
+  logger.info(
+    {
+      recipient: user.email,
+      mode: config.mode,
+      resetUrl
+    },
+    'Initiating password reset email dispatch'
+  );
+
+  // If in dev fallback, print a prominent terminal box with clickable reset link
+  if (config.mode === 'DEV_FALLBACK') {
+    console.log('\n┌────────────────────────────────────────────────────────────────────┐');
+    console.log('│  🔑 [DEV PREVIEW] PASSWORD RESET LINK GENERATED                    │');
+    console.log(`│  Recipient: ${user.email.padEnd(54)} │`);
+    console.log(`│  Clickable URL:                                                    │`);
+    console.log(`│  ${resetUrl.padEnd(66)}│`);
+    console.log('└────────────────────────────────────────────────────────────────────┘\n');
+  }
+
+  const userName = user.name || 'Valued Customer';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your Password - Ramroxa</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      background: #000000;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .brand-title {
+      color: #ffffff;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      margin: 0;
+    }
+    .content {
+      padding: 36px 32px;
+      line-height: 1.6;
+    }
+    .greeting {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    .message {
+      font-size: 15px;
+      color: #475569;
+      margin-bottom: 28px;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      background-color: #000000;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      padding: 16px 36px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .fallback-link {
+      font-size: 12px;
+      color: #94a3b8;
+      word-break: break-all;
+      margin-top: 24px;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 16px;
+    }
+    .fallback-link a {
+      color: #2563eb;
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 20px 32px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="brand-title">RAMROXA</h1>
+    </div>
+    <div class="content">
+      <h2 class="greeting">Hi ${userName},</h2>
+      <p class="message">
+        We received a request to reset your password for your Ramroxa account. Click the button below to choose a new password:
+      </p>
+
+      <div class="btn-container">
+        <a href="${resetUrl}" class="cta-btn" target="_blank">Reset Password</a>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; margin-top: 28px;">
+        For your security, this password reset link will expire in <strong>1 hour</strong>. If you did not make this request, you can safely ignore this email and your password will remain unchanged.
+      </p>
+
+      <div class="fallback-link">
+        <p style="margin: 0 0 6px;">If the button above doesn't work, copy and paste this link into your browser:</p>
+        <a href="${resetUrl}">${resetUrl}</a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} RAMROXA Nepal. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+Hi ${userName},
+
+We received a request to reset your Ramroxa account password.
+
+Please use the following link to choose a new password:
+${resetUrl}
+
+This link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email.
+
+Regards,
+Ramroxa Security Team
+  `.trim();
+
+  const result = await emailService.sendEmail({
+    to: user.email,
+    subject: 'Reset Your Ramroxa Password',
+    html,
+    text
+  });
+
+  return {
+    ...result,
+    resetUrl
+  };
+}
+
 const emailService = {
   sendEmail,
   sendVerificationEmail,
+  sendPasswordResetEmail,
   verifyTransporter,
   resetTransporter,
   categorizeEmailError,

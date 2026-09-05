@@ -353,6 +353,159 @@ export async function logout({ sessionId, rawRefreshToken }) {
   return true;
 }
 
+export async function requestPasswordReset({ email, redirect = '/login' }) {
+  if (!email || typeof email !== 'string') {
+    throw ApiError.badRequest('Email address is required.');
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    throw ApiError.badRequest('A valid email address is required.');
+  }
+
+  const user = await User.findOne({ email: cleanEmail, deletedAt: null });
+  if (!user) {
+    // For security against user enumeration, return generic success message
+    return {
+      success: true,
+      message: 'If an account exists with that email address, a password reset link has been sent.',
+      deliveryStatus: 'sent'
+    };
+  }
+
+  if (!user.isActive) {
+    throw ApiError.forbidden('This account has been deactivated.');
+  }
+
+  // Remove previous password reset tokens for this user
+  await VerificationToken.deleteMany({ user: user._id, type: 'password_reset' });
+
+  // Generate secure random token (expires in 1 hour)
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  const targetRedirect = redirect || '/login';
+
+  await VerificationToken.create({
+    user: user._id,
+    token: rawToken,
+    type: 'password_reset',
+    redirect: targetRedirect,
+    expiresAt
+  });
+
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const resetUrl = `${baseUrl}/reset-password?token=${rawToken}&redirect=${encodeURIComponent(targetRedirect)}`;
+
+  let emailDeliveryResult = null;
+  try {
+    emailDeliveryResult = await emailService.sendPasswordResetEmail({
+      user,
+      token: rawToken,
+      redirect: targetRedirect
+    });
+  } catch (emailErr) {
+    console.error('❌ Failed to dispatch password reset email:', emailErr.message);
+    if (process.env.NODE_ENV === 'production') {
+      throw ApiError.internal(`Could not send password reset email: ${emailErr.message}`);
+    }
+    emailDeliveryResult = {
+      success: false,
+      error: emailErr.message,
+      mode: 'FAILED'
+    };
+  }
+
+  const isDelivered = Boolean(emailDeliveryResult?.success);
+
+  return {
+    success: isDelivered,
+    message: 'If an account exists with that email address, a password reset link has been sent.',
+    resetToken: rawToken,
+    resetUrl,
+    deliveryStatus: isDelivered ? (emailDeliveryResult.mode === 'LIVE_SMTP' ? 'sent' : 'preview') : 'failed',
+    deliveryMode: emailDeliveryResult?.mode || 'UNKNOWN',
+    deliveryError: isDelivered ? null : emailDeliveryResult?.error
+  };
+}
+
+export async function resetPassword({ token, password, userAgent = '', ip = '' }) {
+  if (!token || typeof token !== 'string') {
+    throw ApiError.badRequest('Password reset token is required.');
+  }
+
+  if (!password) {
+    throw ApiError.badRequest('New password is required.');
+  }
+
+  const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/;
+  if (typeof password !== 'string' || !passwordRegex.test(password)) {
+    throw ApiError.badRequest('Password must be at least 8 characters long and contain at least 1 alphabet, 1 number, and 1 special character.');
+  }
+
+  const cleanToken = token.trim();
+  const tokenDoc = await VerificationToken.findOne({
+    token: cleanToken,
+    type: 'password_reset'
+  });
+
+  if (!tokenDoc) {
+    throw ApiError.badRequest('Invalid or expired password reset link. Please request a new link.');
+  }
+
+  if (tokenDoc.expiresAt < new Date()) {
+    await VerificationToken.deleteOne({ _id: tokenDoc._id });
+    throw ApiError.badRequest('Password reset link has expired. Please request a new link.');
+  }
+
+  const user = await User.findById(tokenDoc.user);
+  if (!user || user.deletedAt) {
+    throw ApiError.notFound('User account associated with this reset link was not found.');
+  }
+
+  if (!user.isActive) {
+    throw ApiError.forbidden('This account has been deactivated.');
+  }
+
+  // Update password
+  const salt = await bcrypt.genSalt(12);
+  user.passwordHash = await bcrypt.hash(password, salt);
+  user.isEmailVerified = true;
+  user.isVerified = true;
+  if (!user.emailVerifiedAt) user.emailVerifiedAt = new Date();
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  // Invalidate all previous sessions for this user (prevent hijack from old sessions)
+  await Session.updateMany({ user: user._id }, { revokedAt: new Date() });
+
+  // Delete password reset token
+  await VerificationToken.deleteMany({ user: user._id, type: 'password_reset' });
+
+  // Generate new login session
+  const rawRefreshToken = generateRefreshToken();
+  const refreshTokenHash = hashToken(rawRefreshToken);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+  const session = await Session.create({
+    user: user._id,
+    refreshTokenHash,
+    userAgent,
+    ip,
+    expiresAt
+  });
+
+  const accessToken = generateAccessToken(user, session._id);
+
+  return {
+    user,
+    accessToken,
+    refreshToken: rawRefreshToken,
+    sessionId: session._id,
+    redirect: tokenDoc.redirect || '/shop'
+  };
+}
+
 export async function updateProfile(userId, data) {
   const { name, phone, receiverPhone, permanentAddress, temporaryAddress } = data;
   const user = await User.findById(userId);
@@ -375,6 +528,8 @@ export default {
   login, 
   verifyEmail,
   resendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
   refreshTokens, 
   logout,
   updateProfile 

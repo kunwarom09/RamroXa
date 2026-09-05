@@ -115,52 +115,22 @@ export const DEFAULT_MEDIA_ASSETS = [
     type: 'image/jpeg'
   },
   {
-    id: 'med_vid_1',
-    name: 'Neon Streetwear & Urban Glow (Brand Film)',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-neon-illuminated-city-43644-large.mp4',
-    posterUrl: '/assets/59a3737ee018272f.q.jpg',
-    category: 'Videos',
-    size: '1.8 MB (Stream)',
-    date: '2026-08-30',
-    type: 'video/mp4'
-  },
-  {
-    id: 'med_vid_2',
-    name: 'Sneakers In Motion (Footwear Showcase)',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-feet-of-a-person-walking-in-sneakers-42930-large.mp4',
-    posterUrl: '/assets/98eab38550301ca9.q.jpg',
-    category: 'Videos',
-    size: '1.2 MB (Stream)',
-    date: '2026-08-30',
-    type: 'video/mp4'
-  },
-  {
-    id: 'med_vid_3',
-    name: 'Artisan Workshop & Fabric Crafting',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-cutting-fabric-in-a-tailoring-workshop-43759-large.mp4',
-    posterUrl: '/assets/44312e50fe56c782.q.jpg',
-    category: 'Videos',
-    size: '1.5 MB (Stream)',
-    date: '2026-08-30',
-    type: 'video/mp4'
-  },
-  {
     id: 'med_vid_local_1',
     name: 'Ramroxa Brand Narrative Film',
     url: '/videos/ramroxa-brand-video.mp4',
     posterUrl: '/assets/59a3737ee018272f.q.jpg',
     category: 'Videos',
-    size: '1.1 MB (Local)',
+    size: '1.1 MB (Local MP4)',
     date: '2026-08-30',
     type: 'video/mp4'
   },
   {
     id: 'med_vid_local_2',
-    name: 'Sample Motion Video',
+    name: 'Everyday Motion Showcase',
     url: '/videos/sample-video.mp4',
     posterUrl: '/assets/98eab38550301ca9.q.jpg',
     category: 'Videos',
-    size: '1.1 MB (Local)',
+    size: '1.1 MB (Local MP4)',
     date: '2026-08-30',
     type: 'video/mp4'
   }

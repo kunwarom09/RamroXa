@@ -3833,7 +3833,7 @@ export default class StoreApp extends React.Component {
 
         <div className="zylo-collections-content">
           {/* Top Header / Toolbar */}
-          <div className="zylo-shop-toolbar">
+          <div className="zylo-shop-toolbar zylo-collections-toolbar">
             <div className="zylo-toolbar-left">
               <h2 className="zylo-toolbar-title">
                 {(() => {

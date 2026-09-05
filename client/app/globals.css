@@ -1102,7 +1102,8 @@ tbody tr:hover {
    Collections Toolbar, Left Sidebar Filters, and Products Grid
    ========================================================================== */
 
-.zylo-collections-toolbar {
+.zylo-collections-toolbar,
+.zylo-shop-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1196,8 +1197,9 @@ tbody tr:hover {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 18px;
   margin-bottom: 24px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px dashed #e5e5e5;
 }
 

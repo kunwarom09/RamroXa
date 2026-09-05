@@ -9,6 +9,8 @@ import {
   updateMe,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPassword,
   getEmailDiagnostic,
   sendTestEmail
 } from '../controllers/auth.controller.js';
@@ -21,6 +23,8 @@ router.post('/register', authLimiter, register);
 router.get('/verify-email', verifyEmail);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', authLimiter, resendVerification);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 router.post('/login', authLimiter, login);
 router.post('/admin/login', authLimiter, adminLogin);
 router.post('/refresh', refresh);

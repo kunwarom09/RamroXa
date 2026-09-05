@@ -3,7 +3,7 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { createApp } from '../../src/app.js';
 import { connectDB, disconnectDB } from '../../src/config/db.js';
-import { User, Session } from '../../src/models/index.js';
+import { User, Session, VerificationToken } from '../../src/models/index.js';
 import { createAdminUser } from '../../src/scripts/createAdmin.js';
 
 describe('Phase 2 - Authentication & Session Lifecycle API', () => {
@@ -249,6 +249,108 @@ describe('Phase 2 - Authentication & Session Lifecycle API', () => {
       const logoutCookies = logoutRes.headers['set-cookie'] || [];
       const clearedAccess = logoutCookies.some((c) => c.includes('zylo_access_token=;'));
       expect(clearedAccess).toBe(true);
+    });
+  });
+
+  describe('Forgot Password & Reset Password Lifecycle', () => {
+    it('POST /api/auth/forgot-password with registered email should generate a reset token', async () => {
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({
+          email: 'sita.rai@example.com'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('password reset link has been sent');
+
+      const sita = await User.findOne({ email: 'sita.rai@example.com' });
+      const tokenDoc = await VerificationToken.findOne({ user: sita._id, type: 'password_reset' });
+      expect(tokenDoc).toBeDefined();
+      expect(tokenDoc.token).toBeDefined();
+      expect(tokenDoc.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('POST /api/auth/forgot-password with non-existent email should return generic 200 without creating token', async () => {
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({
+          email: 'nonexistent.user@example.com'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('password reset link has been sent');
+    });
+
+    it('POST /api/auth/reset-password should reject weak passwords', async () => {
+      const sita = await User.findOne({ email: 'sita.rai@example.com' });
+      const tokenDoc = await VerificationToken.findOne({ user: sita._id, type: 'password_reset' });
+
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({
+          token: tokenDoc.token,
+          password: 'weak'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('BAD_REQUEST');
+    });
+
+    it('POST /api/auth/reset-password should reject invalid tokens', async () => {
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({
+          token: 'invalid-non-existent-token-12345',
+          password: 'NewStrongPassword123!'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('BAD_REQUEST');
+    });
+
+    it('POST /api/auth/reset-password with valid token and strong password should reset password, log user in, and invalidate token', async () => {
+      const sita = await User.findOne({ email: 'sita.rai@example.com' });
+      const tokenDoc = await VerificationToken.findOne({ user: sita._id, type: 'password_reset' });
+      const validToken = tokenDoc.token;
+
+      const res = await request(app)
+        .post('/api/auth/reset-password')
+        .send({
+          token: validToken,
+          password: 'BrandNewPassword123!'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.accessToken).toBeDefined();
+      expect(res.body.data.user.email).toBe('sita.rai@example.com');
+
+      // Check cookies
+      const cookies = res.headers['set-cookie'] || [];
+      const hasAccessToken = cookies.some((c) => c.includes('zylo_access_token='));
+      expect(hasAccessToken).toBe(true);
+
+      // Verify token has been deleted / consumed
+      const consumedToken = await VerificationToken.findOne({ token: validToken });
+      expect(consumedToken).toBeNull();
+
+      // Verify old password fails
+      const oldLoginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'sita.rai@example.com',
+          password: 'CustomerPass123!'
+        });
+      expect(oldLoginRes.status).toBe(401);
+
+      // Verify new password succeeds
+      const newLoginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'sita.rai@example.com',
+          password: 'BrandNewPassword123!'
+        });
+      expect(newLoginRes.status).toBe(200);
+      expect(newLoginRes.body.data.user.email).toBe('sita.rai@example.com');
     });
   });
 });

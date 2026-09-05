@@ -2,8 +2,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   DEFAULT_HOMEPAGE_CONFIG,
-  loadHomepageConfig
+  loadHomepageConfig,
+  fetchHomepageConfig
 } from '../services/homepageCms';
+import { parseVideoSource } from './admin/MediaPickerModal';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const rs = (n) => 'Rs ' + (n || 0).toLocaleString('en-US');
@@ -773,27 +775,37 @@ function VideoSection({ section, onNav }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(config.muted !== false);
+  const [videoError, setVideoError] = useState(false);
 
   // ONLY play video if explicitly uploaded or configured in the Brand video narrative
   const hasUploadedVideo = !!(config.videoUrl && config.videoUrl.trim());
   const activeVideoUrl = hasUploadedVideo ? config.videoUrl.trim() : '';
   const activePoster = config.posterImage || '/assets/59a3737ee018272f.q.jpg';
+  const videoSource = parseVideoSource(activeVideoUrl);
+  const isEmbed = videoSource.type === 'youtube' || videoSource.type === 'vimeo';
 
   useEffect(() => {
-    if (videoRef.current && hasUploadedVideo && config.autoplay !== false) {
-      videoRef.current.defaultMuted = true;
-      videoRef.current.muted = true;
-      const p = videoRef.current.play();
-      if (p !== undefined) {
-        p.then(() => setPlaying(true)).catch(() => {
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            videoRef.current.play().catch(() => {});
-          }
-        });
+    setVideoError(false);
+    if (videoRef.current && hasUploadedVideo && !isEmbed) {
+      try {
+        videoRef.current.load();
+      } catch (e) {}
+
+      if (config.autoplay !== false) {
+        videoRef.current.defaultMuted = true;
+        videoRef.current.muted = true;
+        const p = videoRef.current.play();
+        if (p !== undefined) {
+          p.then(() => setPlaying(true)).catch(() => {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              videoRef.current.play().catch(() => {});
+            }
+          });
+        }
       }
     }
-  }, [activeVideoUrl, hasUploadedVideo, config.autoplay]);
+  }, [activeVideoUrl, hasUploadedVideo, isEmbed, config.autoplay]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -824,22 +836,35 @@ function VideoSection({ section, onNav }) {
         <div className="rmx-section-inner">
           <div className="rmx-video-split-grid">
             <div className="rmx-video-split-media">
-              {hasUploadedVideo ? (
-                <video
-                  ref={videoRef}
-                  key={activeVideoUrl}
-                  src={activeVideoUrl}
-                  poster={activePoster}
-                  autoPlay={config.autoplay !== false}
-                  muted={muted}
-                  loop={config.loop !== false}
-                  playsInline
-                  preload="auto"
-                  controls
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  className="rmx-video-el"
-                />
+              {hasUploadedVideo && !videoError ? (
+                isEmbed ? (
+                  <iframe
+                    key={activeVideoUrl}
+                    src={videoSource.embedUrl}
+                    className="rmx-video-el"
+                    style={{ width: '100%', height: '100%', minHeight: '340px', border: 'none' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    key={activeVideoUrl}
+                    poster={activePoster}
+                    autoPlay={config.autoplay !== false}
+                    muted={muted}
+                    loop={config.loop !== false}
+                    playsInline
+                    preload="auto"
+                    controls
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    onError={() => setVideoError(true)}
+                    className="rmx-video-el"
+                  >
+                    <source src={activeVideoUrl} />
+                  </video>
+                )
               ) : (
                 <div
                   className="rmx-video-placeholder"
@@ -855,7 +880,7 @@ function VideoSection({ section, onNav }) {
                 <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
                   {config.cta || 'Explore Collection'}
                 </button>
-                {hasUploadedVideo && (
+                {hasUploadedVideo && !isEmbed && !videoError && (
                   <button className="rmx-btn-outline" onClick={togglePlay}>
                     {playing ? 'Pause' : 'Play'}
                   </button>
@@ -872,21 +897,33 @@ function VideoSection({ section, onNav }) {
   return (
     <section className="rmx-video-section">
       <div className="rmx-video-wrap">
-        {hasUploadedVideo ? (
-          <video
-            ref={videoRef}
-            key={activeVideoUrl}
-            src={activeVideoUrl}
-            poster={activePoster}
-            autoPlay={config.autoplay !== false}
-            muted={muted}
-            loop={config.loop !== false}
-            playsInline
-            preload="auto"
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            className="rmx-video-el"
-          />
+        {hasUploadedVideo && !videoError ? (
+          isEmbed ? (
+            <iframe
+              key={activeVideoUrl}
+              src={videoSource.embedUrl}
+              className="rmx-video-el"
+              style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none', transform: 'scale(1.25)', transformOrigin: 'center center' }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              key={activeVideoUrl}
+              poster={activePoster}
+              autoPlay={config.autoplay !== false}
+              muted={muted}
+              loop={config.loop !== false}
+              playsInline
+              preload="auto"
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onError={() => setVideoError(true)}
+              className="rmx-video-el"
+            >
+              <source src={activeVideoUrl} />
+            </video>
+          )
         ) : (
           <div
             className="rmx-video-placeholder"
@@ -902,7 +939,7 @@ function VideoSection({ section, onNav }) {
             <button className="rmx-btn-primary" onClick={() => handleCta(config.ctaUrl)}>
               {config.cta || 'Explore Collection'}
             </button>
-            {hasUploadedVideo && (
+            {hasUploadedVideo && !isEmbed && !videoError && (
               <>
                 <button className="rmx-btn-outline" onClick={togglePlay} style={{ minWidth: '100px' }}>
                   {playing ? '⏸ Pause' : '▶ Play'}
@@ -1165,13 +1202,21 @@ export default function RamroxaHomepage({
   });
 
   useEffect(() => {
+    let mounted = true;
     const refresh = (e) => {
       const latest = (e && e.detail && e.detail.sections) ? e.detail : loadHomepageConfig();
-      setCmsConfig(latest);
+      if (mounted) setCmsConfig(latest);
     };
 
-    // Initial load
+    // Initial load from local storage
     refresh();
+
+    // Fetch authoritative server CMS config
+    fetchHomepageConfig().then(serverCfg => {
+      if (mounted && serverCfg && Array.isArray(serverCfg.sections) && serverCfg.sections.length > 0) {
+        setCmsConfig(serverCfg);
+      }
+    });
 
     // Listen to live CMS updates from Admin
     window.addEventListener('rmx-homepage-updated', refresh);
@@ -1179,6 +1224,7 @@ export default function RamroxaHomepage({
     window.addEventListener('focus', refresh);
 
     return () => {
+      mounted = false;
       window.removeEventListener('rmx-homepage-updated', refresh);
       window.removeEventListener('storage', refresh);
       window.removeEventListener('focus', refresh);

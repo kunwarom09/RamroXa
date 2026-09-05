@@ -189,6 +189,54 @@ export const updateMe = asyncHandler(async (req, res) => {
   });
 });
 
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email, redirect } = req.body;
+  const result = await authService.requestPasswordReset({ email, redirect });
+
+  res.status(200).json({
+    message: result.message,
+    data: {
+      deliveryStatus: result.deliveryStatus,
+      deliveryMode: result.deliveryMode,
+      deliveryError: result.deliveryError,
+      ...(process.env.NODE_ENV !== 'production' && {
+        resetToken: result.resetToken,
+        resetUrl: result.resetUrl
+      })
+    }
+  });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const token = req.body?.token || req.query?.token;
+  const password = req.body?.password;
+  const userAgent = req.headers['user-agent'] || '';
+  const ip = req.ip || req.connection.remoteAddress || '';
+
+  const { user, accessToken, refreshToken, redirect: finalRedirect } = await authService.resetPassword({
+    token,
+    password,
+    userAgent,
+    ip
+  });
+
+  const csrfToken = generateCsrfToken();
+
+  res.cookie('zylo_access_token', accessToken, getCookieOptions(false));
+  res.cookie('zylo_refresh_token', refreshToken, getCookieOptions(true));
+  res.cookie('XSRF-TOKEN', csrfToken, getCsrfCookieOptions());
+
+  res.status(200).json({
+    message: 'Password has been reset successfully.',
+    data: {
+      user,
+      accessToken,
+      csrfToken,
+      redirect: finalRedirect || '/shop'
+    }
+  });
+});
+
 export const getEmailDiagnostic = asyncHandler(async (req, res) => {
   const { getEmailConfig, maskEmail } = await import('../config/email.config.js');
   const { verifyTransporter } = await import('../services/email.service.js');
@@ -240,6 +288,8 @@ export default {
   updateMe,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPassword,
   getEmailDiagnostic,
   sendTestEmail
 };

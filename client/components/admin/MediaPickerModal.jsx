@@ -7,6 +7,39 @@ import {
   addExternalMedia
 } from '../../services/mediaLibrary';
 
+// Helper: Detect and format video URLs (YouTube, Vimeo, or direct video file)
+export function parseVideoSource(url) {
+  if (!url || typeof url !== 'string') return { type: 'none', url: '' };
+  const trimmed = url.trim();
+
+  // YouTube match: standard watch, watch with extra params, shorts, mobile, embed, youtu.be, live, v
+  const ytMatch = trimmed.match(/(?:(?:www\.|m\.|music\.)?youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    const id = ytMatch[1];
+    return {
+      type: 'youtube',
+      id,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1&controls=0&rel=0&enablejsapi=1`
+    };
+  }
+
+  // Vimeo match: standard, player, channels, groups
+  const vimeoMatch = trimmed.match(/(?:vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)|player\.vimeo\.com\/video\/)(\d+)/i);
+  if (vimeoMatch && (vimeoMatch[1] || vimeoMatch[2])) {
+    const id = vimeoMatch[1] || vimeoMatch[2];
+    return {
+      type: 'vimeo',
+      id,
+      embedUrl: `https://player.vimeo.com/video/${id}?autoplay=1&muted=1&loop=1&background=1&playsinline=1`
+    };
+  }
+
+  return {
+    type: 'direct',
+    url: trimmed
+  };
+}
+
 export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Image from Library' }) {
   const [activeTab, setActiveTab] = useState('library'); // 'library' | 'upload' | 'url'
   const [items, setItems] = useState([]);
@@ -24,8 +57,13 @@ export function MediaPickerModal({ isOpen, onClose, onSelect, title = 'Choose Im
       setSelectedItem(null);
       setCustomUrl('');
       setActiveTab('library');
+      if (title && title.toLowerCase().includes('video')) {
+        setFilterCategory('Videos');
+      } else {
+        setFilterCategory('all');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, title]);
 
   if (!isOpen) return null;
 
@@ -460,14 +498,24 @@ export function VideoPickerField({
 
   const presets = [
     {
-      name: '🎬 Ramroxa Brand Narrative Film',
+      name: '🎬 Local Brand Video',
       url: '/videos/ramroxa-brand-video.mp4',
       poster: '/assets/59a3737ee018272f.q.jpg'
     },
     {
-      name: '👟 Everyday Motion Showcase',
+      name: '🏃 Everyday Motion MP4',
       url: '/videos/sample-video.mp4',
       poster: '/assets/98eab38550301ca9.q.jpg'
+    },
+    {
+      name: '👟 Fashion & Sneakers (YouTube)',
+      url: 'https://www.youtube.com/watch?v=nwtw4FwH7d0',
+      poster: '/assets/98eab38550301ca9.q.jpg'
+    },
+    {
+      name: '✨ Modern Apparel Showcase (YouTube)',
+      url: 'https://www.youtube.com/watch?v=Fj-y57K4zjg',
+      poster: '/assets/44312e50fe56c782.q.jpg'
     }
   ];
 
@@ -596,49 +644,102 @@ export function VideoPickerField({
         </div>
 
         {/* Live Video Preview Box */}
-        {value ? (
-          <div style={{
-            position: 'relative',
-            borderRadius: '6px',
-            overflow: 'hidden',
-            background: '#0a0a0a',
-            border: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ position: 'relative', width: '100%', maxHeight: '240px', background: '#000' }}>
-              <video
-                key={value}
-                ref={videoRef}
-                src={value}
-                poster={posterValue || undefined}
-                controls
-                playsInline
-                preload="metadata"
-                style={{ width: '100%', maxHeight: '240px', display: 'block', margin: '0 auto', objectFit: 'contain' }}
-                onError={() => setLoadError('Could not load or decode video from this source.')}
-                onLoadedData={() => setLoadError(null)}
-              />
-            </div>
+        {value ? (() => {
+          const videoSource = parseVideoSource(value);
+          const isEmbed = videoSource.type === 'youtube' || videoSource.type === 'vimeo';
+
+          return (
             <div style={{
+              position: 'relative',
+              borderRadius: '6px',
+              overflow: 'hidden',
+              background: '#0a0a0a',
+              border: '1px solid var(--border)',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '6px 10px',
-              background: 'rgba(0,0,0,0.85)',
-              borderTop: '1px solid var(--border)',
-              fontSize: '11px',
-              color: 'var(--muted-foreground)'
+              flexDirection: 'column'
             }}>
-              <span>🎬 Preview Source: <code style={{ color: '#fff' }}>{value.length > 50 ? value.slice(0, 47) + '...' : value}</code></span>
-              {loadError ? (
-                <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ {loadError}</span>
-              ) : (
-                <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Video Preview Ready</span>
+              <div style={{ position: 'relative', width: '100%', minHeight: isEmbed ? '240px' : 'auto', maxHeight: '260px', background: '#000' }}>
+                {isEmbed ? (
+                  <iframe
+                    key={value}
+                    src={videoSource.embedUrl}
+                    style={{ width: '100%', height: '240px', border: 'none', display: 'block', margin: '0 auto' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    key={value}
+                    ref={videoRef}
+                    src={value}
+                    poster={posterValue || undefined}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    style={{ width: '100%', maxHeight: '240px', display: 'block', margin: '0 auto', objectFit: 'contain' }}
+                    onError={() => setLoadError('Could not load or decode video from this source.')}
+                    onLoadedData={() => setLoadError(null)}
+                  />
+                )}
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '6px 10px',
+                background: 'rgba(0,0,0,0.85)',
+                borderTop: '1px solid var(--border)',
+                fontSize: '11px',
+                color: 'var(--muted-foreground)'
+              }}>
+                <span>🎬 Preview Source: <code style={{ color: '#fff' }}>{value.length > 50 ? value.slice(0, 47) + '...' : value}</code></span>
+                {isEmbed ? (
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>✓ {videoSource.type === 'youtube' ? 'YouTube' : 'Vimeo'} Embed Connected</span>
+                ) : loadError ? (
+                  <span style={{ color: '#ef4444', fontWeight: 600 }}>⚠️ {loadError}</span>
+                ) : (
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>✓ Video Preview Ready</span>
+                )}
+              </div>
+
+              {loadError && !isEmbed && (
+                <div style={{
+                  padding: '8px 12px',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  borderTop: '1px solid rgba(239, 68, 68, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  fontSize: '11.5px'
+                }}>
+                  <span style={{ color: '#fca5a5' }}>
+                    Source URL was blocked or could not be decoded. Select a working local video:
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={{
+                      fontSize: '11px',
+                      padding: '3px 10px',
+                      background: '#ffffff',
+                      color: '#000000',
+                      fontWeight: 600
+                    }}
+                    onClick={() => {
+                      setLoadError(null);
+                      onChange('/videos/ramroxa-brand-video.mp4');
+                      if (onPosterChange) onPosterChange('/assets/59a3737ee018272f.q.jpg');
+                    }}
+                  >
+                    ✨ Use Official Brand Video (/videos/ramroxa-brand-video.mp4)
+                  </button>
+                </div>
               )}
             </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <div style={{
             padding: '20px',
             border: '1px dashed var(--border)',

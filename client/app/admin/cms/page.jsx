@@ -10,6 +10,7 @@ import {
   createDefaultHeroSection,
   createDefaultHeroSlide,
   loadHomepageConfig,
+  fetchHomepageConfig,
   saveHomepageConfig,
   resetHomepageConfig
 } from '../../../services/homepageCms';
@@ -43,8 +44,17 @@ export default function AdminCmsPage() {
   const initialLoadedRef = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
     const config = loadHomepageConfig();
     setSections(config.sections || DEFAULT_HOMEPAGE_CONFIG.sections);
+
+    fetchHomepageConfig().then(serverCfg => {
+      if (mounted && serverCfg && Array.isArray(serverCfg.sections) && serverCfg.sections.length > 0) {
+        setSections(serverCfg.sections);
+      }
+    });
+
+    return () => { mounted = false; };
   }, []);
 
   // Automatically save and broadcast changes in real-time

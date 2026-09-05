@@ -32,6 +32,34 @@ function getStoredToken() {
   return null;
 }
 
+function getStoredRefreshToken() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const local = localStorage.getItem('zylo_refresh_token');
+    if (local) return local;
+
+    if (document.cookie) {
+      const match = document.cookie.match(/(?:^|;\s*)zylo_refresh_token=([^;]+)/);
+      if (match) return decodeURIComponent(match[1]);
+    }
+  } catch (e) {}
+  return null;
+}
+
+export function clearStoredAuth() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('zylo_access_token');
+    localStorage.removeItem('zylo_admin_token');
+    localStorage.removeItem('zylo_refresh_token');
+    localStorage.removeItem('zylo_user');
+    localStorage.removeItem('zylo_csrf_token');
+    document.cookie = 'zylo_access_token=; path=/; max-age=0;';
+    document.cookie = 'zylo_refresh_token=; path=/; max-age=0;';
+    document.cookie = 'XSRF-TOKEN=; path=/; max-age=0;';
+  } catch (e) {}
+}
+
 function getStoredCsrfToken() {
   if (typeof window === 'undefined') return null;
   try {
@@ -56,6 +84,12 @@ function persistTokens(data) {
       localStorage.setItem('zylo_access_token', token);
       localStorage.setItem('zylo_admin_token', token);
       document.cookie = `zylo_access_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+    }
+
+    const refreshToken = data?.data?.refreshToken || data?.refreshToken;
+    if (refreshToken) {
+      localStorage.setItem('zylo_refresh_token', refreshToken);
+      document.cookie = `zylo_refresh_token=${refreshToken}; path=/; max-age=604800; SameSite=Lax;`;
     }
 
     const csrfToken = data?.data?.csrfToken || data?.csrfToken;
@@ -131,15 +165,22 @@ export async function apiRequest(endpoint, options = {}, isRetry = false) {
       // Handle 401 Unauthorized with automatic single retry via refresh token if not already an auth endpoint
       if (res.status === 401 && !isRetry && !endpoint.includes('/auth/')) {
         try {
+          const storedRefresh = getStoredRefreshToken();
           const refreshRes = await fetch('/api/auth/refresh', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
+            credentials: 'include',
+            body: storedRefresh ? JSON.stringify({ refreshToken: storedRefresh }) : undefined
           });
           if (refreshRes.ok) {
             const refreshData = await refreshRes.json();
             persistTokens(refreshData);
             return await apiRequest(endpoint, options, true);
+          } else {
+            // If refresh explicitly failed with 401/403, clean up stale tokens
+            if (refreshRes.status === 401 || refreshRes.status === 403) {
+              clearStoredAuth();
+            }
           }
         } catch (refreshErr) {
           // Fall through to throw original 401

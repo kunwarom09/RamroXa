@@ -153,7 +153,7 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
       enabled: true,
       widgetType: 'video_bg',
       config: {
-        videoUrl: '',
+        videoUrl: '/videos/ramroxa-brand-video.mp4',
         posterImage: '/assets/59a3737ee018272f.q.jpg',
         autoplay: true,
         muted: true,
@@ -324,16 +324,44 @@ export function loadHomepageConfig() {
   }
 }
 
+export async function fetchHomepageConfig() {
+  if (typeof window === 'undefined') return DEFAULT_HOMEPAGE_CONFIG;
+  try {
+    const res = await fetch('/api/cms', { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.data && Array.isArray(json.data.sections) && json.data.sections.length > 0) {
+        // Synchronize server config to local storage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
+        return json.data;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch homepage config from server, falling back to local cache:', err);
+  }
+  return loadHomepageConfig();
+}
+
 export function saveHomepageConfig(config) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !config) return;
   try {
     const payload = JSON.stringify(config);
     localStorage.setItem(STORAGE_KEY, payload);
+
     // Dispatch local events so open tabs and storefront immediately update
     window.dispatchEvent(new CustomEvent('rmx-homepage-updated', { detail: config }));
     window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: payload }));
+
+    // Asynchronously persist to server so it is permanent across browsers/sessions
+    fetch('/api/cms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).catch(err => {
+      console.warn('Server sync for homepage config encountered a network issue:', err);
+    });
   } catch (e) {
-    console.error('Failed to save homepage config to localStorage:', e);
+    console.error('Failed to save homepage config:', e);
   }
 }
 
@@ -341,10 +369,12 @@ export function resetHomepageConfig() {
   if (typeof window === 'undefined') return DEFAULT_HOMEPAGE_CONFIG;
   try {
     localStorage.removeItem(STORAGE_KEY);
+    fetch('/api/cms', { method: 'DELETE' }).catch(() => {});
     saveHomepageConfig(DEFAULT_HOMEPAGE_CONFIG);
     return DEFAULT_HOMEPAGE_CONFIG;
   } catch {
     return DEFAULT_HOMEPAGE_CONFIG;
   }
 }
+
 

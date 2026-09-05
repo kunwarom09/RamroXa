@@ -224,6 +224,20 @@ function LoginContent() {
                 <label style={{ fontSize: 12, fontWeight: 600, letterSpacing: 0.5, color: '#333' }}>
                   PASSWORD
                 </label>
+                <Link
+                  href={`/forgot-password?redirect=${encodeURIComponent(redirect)}`}
+                  style={{
+                    fontSize: 12,
+                    color: '#666',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    transition: 'color 0.15s ease'
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = '#000')}
+                  onMouseOut={(e) => (e.currentTarget.style.color = '#666')}
+                >
+                  Forgot password?
+                </Link>
               </div>
               <input
                 type="password"
