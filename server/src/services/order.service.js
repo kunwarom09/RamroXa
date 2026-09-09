@@ -441,7 +441,7 @@ export async function listUserOrders(user) {
   return Order.find({ $or: orConditions }).sort({ createdAt: -1 }).lean();
 }
 
-export async function updateFulfillmentStatus({ orderId, newStatus, user, note = '' }) {
+export async function updateFulfillmentStatus({ orderId, newStatus, user, note = '', allowAdminOverride = false }) {
   const order = await findOrder(orderId);
   if (!order) {
     throw ApiError.notFound('Order not found.');
@@ -454,7 +454,7 @@ export async function updateFulfillmentStatus({ orderId, newStatus, user, note =
 
   const currentStatus = order.fulfillmentStatus;
 
-  if (currentStatus !== newStatus) {
+  if (currentStatus !== newStatus && !allowAdminOverride) {
     const allowed = ALLOWED_FULFILLMENT_TRANSITIONS[currentStatus] || [];
     if (!allowed.includes(newStatus)) {
       throw ApiError.conflict(

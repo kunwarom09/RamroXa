@@ -162,12 +162,13 @@ export const getOrder = asyncHandler(async (req, res) => {
 });
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-  const { fulfillmentStatus, note } = req.body;
+  const { fulfillmentStatus, note, force } = req.body;
   const order = await updateFulfillmentStatus({
     orderId: req.params.id,
     newStatus: fulfillmentStatus,
     note,
-    user: req.user
+    user: req.user,
+    allowAdminOverride: Boolean(force)
   });
   res.status(200).json({ message: 'Order status updated.', data: { order } });
 });

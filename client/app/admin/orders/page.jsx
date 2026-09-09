@@ -13,6 +13,12 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [receiptOrder, setReceiptOrder] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, isError = false) => {
+    setToast({ msg, isError });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const refreshData = async () => {
     setLoading(true);
@@ -67,11 +73,17 @@ export default function AdminOrdersPage() {
   }, []);
 
   const handleStatusChange = async (no, newStatus) => {
+    const previousOrders = [...orders];
+    setOrders(prev => prev.map(o => o.no === no ? { ...o, status: newStatus } : o));
     try {
-      await api.patch(`/api/admin/orders/${no}/status`, { fulfillmentStatus: newStatus });
+      await api.patch(`/api/admin/orders/${no}/status`, { fulfillmentStatus: newStatus, force: true });
+      showToast(`✓ Order ${no} status updated to ${newStatus}`);
       refreshData();
     } catch (e) {
       console.error('Failed to update order status:', e);
+      setOrders(previousOrders);
+      const errMsg = e?.response?.data?.message || e.message || 'Failed to update order status';
+      showToast(`Failed: ${errMsg}`, true);
     }
   };
 
@@ -112,6 +124,29 @@ export default function AdminOrdersPage() {
 
   return (
     <div>
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 24,
+          zIndex: 10000,
+          background: toast.isError ? '#ef4444' : '#10b981',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: 8,
+          fontSize: 13.5,
+          fontWeight: 600,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <span>{toast.isError ? '⚠️' : '✓'}</span>
+          <span>{toast.msg}</span>
+        </div>
+      )}
+
       <div className="page-head">
         <h2>Orders</h2>
         <p>Storefront online order fulfillment and tracking registry.</p>

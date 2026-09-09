@@ -6,6 +6,8 @@ import { placeOrderApi, fetchUserOrdersApi } from '../services/orderService';
 import { fetchProducts, fetchCategories, fetchProductReviews, submitProductReview } from '../services/productService';
 import { api } from '../services/apiClient';
 import { loadHomepageConfig } from '../services/homepageCms';
+import RamroxaReceiptModal from './admin/RamroxaReceiptModal';
+import { downloadReceiptPdf } from '../services/ramroxaReceiptService';
 
 const DEFAULT_CATALOG = [
   {
@@ -1555,10 +1557,13 @@ export default class StoreApp extends React.Component {
       reviewsLoading: false,
       reviewsLoadedProductId: null,
       writeReviewOpen: false,
+      reviewTarget: null,
       reviewFormRating: 5,
       reviewFormTitle: '',
       reviewFormComment: '',
-      submittingReview: false
+      submittingReview: false,
+      reviewedItems: [],
+      invoiceModalOrder: null
     };
   }
 
@@ -1697,6 +1702,15 @@ export default class StoreApp extends React.Component {
   closeMobileMenu = () => this.setState({ mobileMenuOpen: false });
 
   componentDidMount() {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedReviewed = JSON.parse(localStorage.getItem('zylo_reviewed_items') || '[]');
+        if (Array.isArray(storedReviewed)) {
+          this.setState({ reviewedItems: storedReviewed });
+        }
+      } catch (e) {}
+    }
+
     const loadDynamicCatalog = async () => {
       try {
         const [apiProds, apiCats] = await Promise.all([
@@ -4713,32 +4727,96 @@ export default class StoreApp extends React.Component {
     }
   };
 
-  handleReviewSubmit = async (productIdOrSlug) => {
-    const { reviewFormRating, reviewFormTitle, reviewFormComment } = this.state;
-    if (!reviewFormComment.trim()) {
+  openWriteReviewForItem = (it, ord, catItem) => {
+    const prodKey = catItem?.slug || it.productId || it.product || catItem?.id || it.sku;
+    const itemImg = it.image || it.img || it.imageUrl || catItem?.img1 || catItem?.img || (catItem?.images && (catItem.images.find(img => img.isFeatured)?.url || catItem.images[0]?.url)) || '/assets/ea97fe30fd8d1dfc.q.jpg';
+    const variantLabel = it.variantLabel || [it.size ? `Size: ${it.size}` : '', it.color || it.colour ? `Colour: ${it.color || it.colour}` : ''].filter(Boolean).join(' • ');
+    const itemKey = `${ord.orderNo}_${it.productId || it.sku || it.name}`;
+
+    this.setState({
+      writeReviewOpen: true,
+      reviewTarget: {
+        productId: it.productId || it.product || catItem?.id,
+        productSlug: catItem?.slug || it.productId,
+        name: it.name || catItem?.name || 'Ramroxa Item',
+        image: itemImg,
+        variantLabel,
+        color: it.color || it.colour || '',
+        size: it.size || '',
+        orderNo: ord.orderNo,
+        itemKey
+      },
+      reviewFormRating: 5,
+      reviewFormTitle: '',
+      reviewFormComment: ''
+    });
+  };
+
+  isItemReviewed = (it, ord) => {
+    const itemKey = `${ord.orderNo}_${it.productId || it.sku || it.name}`;
+    const reviewed = this.state.reviewedItems || [];
+    return reviewed.includes(itemKey) || reviewed.includes(it.productId) || (it.product && reviewed.includes(String(it.product)));
+  };
+
+  handleReviewSubmit = async () => {
+    const { reviewTarget, reviewFormRating, reviewFormTitle, reviewFormComment } = this.state;
+    if (!reviewTarget || (!reviewTarget.productId && !reviewTarget.productSlug)) {
+      alert('Product details missing.');
+      return;
+    }
+    if (!reviewFormComment || !reviewFormComment.trim()) {
       alert('Please enter your review feedback.');
       return;
     }
+    const targetKey = reviewTarget.productSlug || reviewTarget.productId;
     this.setState({ submittingReview: true });
     try {
-      await submitProductReview(productIdOrSlug, {
+      await submitProductReview(targetKey, {
         rating: reviewFormRating,
         title: reviewFormTitle.trim(),
-        comment: reviewFormComment.trim()
+        comment: reviewFormComment.trim(),
+        color: reviewTarget.color || '',
+        size: reviewTarget.size || '',
+        variantLabel: reviewTarget.variantLabel || ''
       });
+      const itemKey = reviewTarget.itemKey || `${reviewTarget.orderNo}_${targetKey}`;
+      const updatedReviewed = [...new Set([...(this.state.reviewedItems || []), itemKey, targetKey, reviewTarget.productId])];
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem('zylo_reviewed_items', JSON.stringify(updatedReviewed)); } catch (e) {}
+      }
       this.showToast('✓ Review submitted successfully! Thank you.');
       this.setState({
         writeReviewOpen: false,
+        reviewTarget: null,
         reviewFormRating: 5,
         reviewFormTitle: '',
         reviewFormComment: '',
-        submittingReview: false
+        submittingReview: false,
+        reviewedItems: updatedReviewed
       });
-      this.loadProductReviews(productIdOrSlug);
+      if (this.state.reviewsLoadedProductId === targetKey) {
+        this.loadProductReviews(targetKey);
+      }
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to submit review. You may need to sign in or have purchased this item.';
-      alert(msg);
-      this.setState({ submittingReview: false });
+      const isDuplicate = err.status === 409 || err.response?.status === 409 || (err.message && err.message.toLowerCase().includes('already submitted'));
+      if (isDuplicate) {
+        const itemKey = reviewTarget.itemKey || `${reviewTarget.orderNo}_${targetKey}`;
+        const updatedReviewed = [...new Set([...(this.state.reviewedItems || []), itemKey, targetKey, reviewTarget.productId])];
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem('zylo_reviewed_items', JSON.stringify(updatedReviewed)); } catch (e) {}
+        }
+        this.showToast('You have already submitted a review for this product.');
+        this.setState({
+          writeReviewOpen: false,
+          reviewTarget: null,
+          submittingReview: false,
+          reviewedItems: updatedReviewed
+        });
+      } else {
+        const msg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to submit review. Please try again.';
+        alert(msg);
+        this.setState({ submittingReview: false });
+      }
     }
   };
 
@@ -4751,12 +4829,7 @@ export default class StoreApp extends React.Component {
     const {
       productReviews = [],
       reviewsSummary,
-      reviewsLoading,
-      writeReviewOpen,
-      reviewFormRating,
-      reviewFormTitle,
-      reviewFormComment,
-      submittingReview
+      reviewsLoading
     } = this.state;
 
     const totalReviews = reviewsSummary?.ratingCount || productReviews.length;
@@ -4792,13 +4865,10 @@ export default class StoreApp extends React.Component {
               <span>Based on {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}</span>
             </p>
           </div>
-          <button
-            type="button"
-            className="rmx-write-review-btn"
-            onClick={() => this.setState({ writeReviewOpen: true })}
-          >
-            ★ Write a Review
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--mute, #737373)', background: 'var(--smoke, #f5f5f5)', padding: '6px 14px', borderRadius: 999, border: '1px solid var(--line, #e5e5e5)' }}>
+            <span style={{ color: '#16a34a', fontWeight: 700 }}>✓</span>
+            <span>Verified Buyer Reviews</span>
+          </div>
         </div>
 
         {/* Overview Box */}
@@ -4836,7 +4906,7 @@ export default class StoreApp extends React.Component {
           </div>
         ) : productReviews.length === 0 ? (
           <div style={{
-            padding: '48px 24px',
+            padding: '44px 24px',
             textAlign: 'center',
             background: 'var(--smoke, #fafafa)',
             border: '1px dashed var(--line, #e5e5e5)',
@@ -4844,16 +4914,13 @@ export default class StoreApp extends React.Component {
           }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>💬</div>
             <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 500, color: 'var(--ink, #111)' }}>No Reviews Yet</h4>
-            <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--mute, #737373)', maxWidth: 400, marginInline: 'auto' }}>
-              Have you worn or tested this piece? Be the first to share your experience with other customers!
+            <p style={{ margin: '0 0 16px', fontSize: 13.5, color: 'var(--mute, #737373)', maxWidth: 440, marginInline: 'auto', lineHeight: 1.5 }}>
+              Be the first to share your experience once your order arrives! Reviews can be submitted directly from your Order History after package delivery.
             </p>
-            <button
-              type="button"
-              className="rmx-write-review-btn"
-              onClick={() => this.setState({ writeReviewOpen: true })}
-            >
-              Write First Review
-            </button>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--mute, #737373)', background: 'var(--paper, #fff)', border: '1px solid var(--line, #e5e5e5)', padding: '6px 14px', borderRadius: 999 }}>
+              <span>🛡️</span>
+              <span>Reviews are verified and submitted from Order History upon delivery.</span>
+            </div>
           </div>
         ) : (
           <div className="rmx-reviews-list">
@@ -4879,159 +4946,256 @@ export default class StoreApp extends React.Component {
             ))}
           </div>
         )}
+      </section>
+    );
+  }
 
-        {/* Write Review Modal */}
-        {writeReviewOpen && (
-          <div
-            className="zylo-modal-backdrop"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.65)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 99999,
-              padding: 20
-            }}
-            onClick={(e) => { if (e.target === e.currentTarget) this.setState({ writeReviewOpen: false }); }}
-          >
-            <div
-              className="zylo-modal-card"
+  renderReviewModal() {
+    const {
+      writeReviewOpen,
+      reviewTarget,
+      reviewFormRating,
+      reviewFormTitle,
+      reviewFormComment,
+      submittingReview
+    } = this.state;
+
+    if (!writeReviewOpen || !reviewTarget) return null;
+
+    const ratingDescriptions = {
+      5: 'Exceptional (Loved it!)',
+      4: 'Very Good (Met expectations)',
+      3: 'Average (It was okay)',
+      2: 'Disappointing (Could be better)',
+      1: 'Poor (Did not like it)'
+    };
+
+    return (
+      <div
+        className="zylo-modal-backdrop"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: 20
+        }}
+        onClick={(e) => { if (e.target === e.currentTarget) this.setState({ writeReviewOpen: false }); }}
+      >
+        <div
+          className="zylo-modal-card"
+          style={{
+            background: 'var(--paper, #ffffff)',
+            border: '1px solid var(--line, #e5e5e5)',
+            borderRadius: 16,
+            padding: '26px 28px',
+            width: '100%',
+            maxWidth: 520,
+            color: 'var(--ink, #111)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--ink, #111)' }}>Write a Customer Review</h3>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--mute, #737373)' }}>
+                Share your verified purchase experience with other shoppers.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => this.setState({ writeReviewOpen: false })}
               style={{
-                background: 'var(--paper, #ffffff)',
-                border: '1px solid var(--line, #e5e5e5)',
-                borderRadius: 16,
-                padding: '28px',
-                width: '100%',
-                maxWidth: 500,
-                color: 'var(--ink, #111)'
+                background: 'none',
+                border: 'none',
+                fontSize: 20,
+                cursor: 'pointer',
+                color: 'var(--mute, #737373)',
+                padding: '2px 6px',
+                borderRadius: 6
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Write a Review</h3>
-                <button
-                  type="button"
-                  onClick={() => this.setState({ writeReviewOpen: false })}
-                  style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--mute, #737373)' }}
-                >
-                  ✕
-                </button>
-              </div>
+              ✕
+            </button>
+          </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {/* Rating selection */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
-                    YOUR RATING
-                  </label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[1, 2, 3, 4, 5].map(st => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => this.setState({ reviewFormRating: st })}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          fontSize: 26,
-                          cursor: 'pointer',
-                          padding: '0 2px',
-                          color: st <= reviewFormRating ? '#f59e0b' : 'var(--mute, #ccc)',
-                          transition: 'transform 0.1s ease'
-                        }}
-                      >
-                        ★
-                      </button>
-                    ))}
-                    <span style={{ fontSize: 13, alignSelf: 'center', marginLeft: 8, fontWeight: 600 }}>
-                      {reviewFormRating} / 5 Stars
-                    </span>
-                  </div>
+          {/* Product Summary Banner */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            padding: '12px 14px',
+            background: 'var(--smoke, #f9fafb)',
+            border: '1px solid var(--line, #e5e7eb)',
+            borderRadius: 12,
+            marginBottom: 20
+          }}>
+            {reviewTarget.image && (
+              <img
+                src={reviewTarget.image}
+                alt={reviewTarget.name}
+                style={{
+                  width: 50,
+                  height: 62,
+                  objectFit: 'cover',
+                  borderRadius: 6,
+                  border: '1px solid #e5e7eb',
+                  flexShrink: 0
+                }}
+              />
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {reviewTarget.name}
+              </h4>
+              {reviewTarget.variantLabel && (
+                <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                  {reviewTarget.variantLabel}
                 </div>
-
-                {/* Review Title */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
-                    HEADLINE / TITLE
-                  </label>
-                  <input
-                    type="text"
-                    value={reviewFormTitle}
-                    onChange={(e) => this.setState({ reviewFormTitle: e.target.value })}
-                    placeholder="e.g. Incredibly comfortable, fits true to size"
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      border: '1px solid var(--line, #e5e5e5)',
-                      background: 'var(--smoke, #fafafa)',
-                      color: 'var(--ink, #111)',
-                      fontSize: 13.5,
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      outline: 'none'
-                    }}
-                  />
+              )}
+              {reviewTarget.orderNo && (
+                <div style={{ fontSize: 11.5, color: '#166534', marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                  <span>✓ Delivered Purchase</span>
+                  <span style={{ color: '#9ca3af' }}>•</span>
+                  <span>Order #{reviewTarget.orderNo}</span>
                 </div>
-
-                {/* Review Comment */}
-                <div>
-                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--mute, #737373)', marginBottom: 6 }}>
-                    DETAILED FEEDBACK
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={reviewFormComment}
-                    onChange={(e) => this.setState({ reviewFormComment: e.target.value })}
-                    placeholder="How is the fabric quality, sizing, and comfort during everyday wear?"
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      border: '1px solid var(--line, #e5e5e5)',
-                      background: 'var(--smoke, #fafafa)',
-                      color: 'var(--ink, #111)',
-                      fontSize: 13.5,
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      outline: 'none',
-                      resize: 'vertical'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => this.setState({ writeReviewOpen: false })}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: 8,
-                      border: '1px solid var(--line, #e5e5e5)',
-                      background: 'none',
-                      color: 'var(--ink, #111)',
-                      fontSize: 13,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={submittingReview}
-                    onClick={() => this.handleReviewSubmit(prodKey)}
-                    className="rmx-write-review-btn"
-                    style={{ height: 38, padding: '0 20px', borderRadius: 8 }}
-                  >
-                    {submittingReview ? 'Submitting...' : 'Submit Review'}
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
-        )}
-      </section>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Rating selection */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink, #111)', marginBottom: 6, letterSpacing: 0.5 }}>
+                OVERALL RATING
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1, 2, 3, 4, 5].map(st => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => this.setState({ reviewFormRating: st })}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: 28,
+                        cursor: 'pointer',
+                        padding: '0 2px',
+                        color: st <= reviewFormRating ? '#f59e0b' : 'var(--mute, #d1d5db)',
+                        transition: 'transform 0.1s ease',
+                        lineHeight: 1
+                      }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <span style={{ fontSize: 13, marginLeft: 6, fontWeight: 600, color: '#111' }}>
+                  {reviewFormRating} / 5 Stars
+                  <span style={{ fontWeight: 400, color: 'var(--mute, #6b7280)', marginLeft: 6 }}>
+                    ({ratingDescriptions[reviewFormRating] || ''})
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Review Title */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink, #111)', marginBottom: 6, letterSpacing: 0.5 }}>
+                HEADLINE / SUMMARY
+              </label>
+              <input
+                type="text"
+                value={reviewFormTitle}
+                onChange={(e) => this.setState({ reviewFormTitle: e.target.value })}
+                placeholder="e.g. Excellent fabric quality and perfect fit!"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--line, #e5e5e5)',
+                  background: 'var(--smoke, #fafafa)',
+                  color: 'var(--ink, #111)',
+                  fontSize: 13.5,
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            {/* Review Comment */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink, #111)', marginBottom: 6, letterSpacing: 0.5 }}>
+                DETAILED FEEDBACK <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                rows={4}
+                value={reviewFormComment}
+                onChange={(e) => this.setState({ reviewFormComment: e.target.value })}
+                placeholder="How does the garment feel? Describe the quality, size, comfort, and why you would recommend it..."
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--line, #e5e5e5)',
+                  background: 'var(--smoke, #fafafa)',
+                  color: 'var(--ink, #111)',
+                  fontSize: 13.5,
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={() => this.setState({ writeReviewOpen: false })}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: 8,
+                  border: '1px solid var(--line, #e5e5e5)',
+                  background: 'none',
+                  color: 'var(--ink, #111)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submittingReview}
+                onClick={this.handleReviewSubmit}
+                style={{
+                  height: 38,
+                  padding: '0 22px',
+                  borderRadius: 8,
+                  background: '#000',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: submittingReview ? 'not-allowed' : 'pointer',
+                  opacity: submittingReview ? 0.7 : 1
+                }}
+              >
+                {submittingReview ? 'Submitting...' : 'Submit Verified Review'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -6344,6 +6508,7 @@ export default class StoreApp extends React.Component {
                     returned: { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0', label: 'RETURNED', step: 0 }
                   };
                   const currentStatusKey = (ord.fulfillmentStatus || 'pending').toLowerCase();
+                  const isDelivered = currentStatusKey === 'delivered' || (ord.fulfillmentStatus && ord.fulfillmentStatus.toLowerCase() === 'delivered');
                   const st = statusColors[currentStatusKey] || statusColors.pending;
                   const orderDateObj = ord.createdAt ? new Date(ord.createdAt) : (ord.placedAt ? new Date(ord.placedAt) : null);
                   const orderDate = orderDateObj && !isNaN(orderDateObj.getTime())
@@ -6407,7 +6572,34 @@ export default class StoreApp extends React.Component {
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {isDelivered && (
+                            <button
+                              type="button"
+                              onClick={() => this.setState({ invoiceModalOrder: ord })}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                background: '#ffffff',
+                                color: '#166534',
+                                border: '1px solid #86efac',
+                                padding: '5px 12px',
+                                borderRadius: 999,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf4'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                              title="View Attached Official Tax Invoice"
+                            >
+                              <span>🧾</span>
+                              <span>Invoice</span>
+                            </button>
+                          )}
                           <span style={{
                             background: st.bg,
                             color: st.text,
@@ -6423,61 +6615,155 @@ export default class StoreApp extends React.Component {
                         </div>
                       </div>
 
-                      {/* Visual Order Progress Tracker */}
-                      {st.step > 0 && (
-                        <div style={{ background: '#fcfcfc', borderBottom: '1px solid #eee', padding: '20px 24px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+                      {/* Attached Invoice & Completed State: Process tracker is removed once order is received/delivered */}
+                      {isDelivered ? (
+                        <div style={{
+                          background: '#f8fafc',
+                          borderBottom: '1px solid #e2e8f0',
+                          padding: '16px 24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: 14
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{
-                              position: 'absolute',
-                              top: 14,
-                              left: '8%',
-                              right: '8%',
-                              height: 3,
-                              background: '#e5e7eb',
-                              zIndex: 1
+                              width: 38,
+                              height: 38,
+                              borderRadius: '50%',
+                              background: '#dcfce7',
+                              color: '#166534',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 18,
+                              fontWeight: 700,
+                              flexShrink: 0
                             }}>
-                              <div style={{
-                                height: '100%',
-                                background: '#111',
-                                width: `${((Math.min(st.step, 5) - 1) / 4) * 100}%`,
-                                transition: 'width 0.4s ease'
-                              }} />
+                              ✓
                             </div>
+                            <div>
+                              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span>Order Completed &amp; Received</span>
+                                <span style={{ fontSize: 11.5, background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
+                                  Tax Invoice Attached
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                                Your package was successfully delivered and received. Official IRD tax invoice is available.
+                              </div>
+                            </div>
+                          </div>
 
-                            {steps.map((step) => {
-                              const isCompleted = step.num < st.step;
-                              const isCurrent = step.num === st.step;
-                              return (
-                                <div key={step.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
-                                  <div style={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: '50%',
-                                    background: isCurrent ? '#000' : (isCompleted ? '#10b981' : '#fff'),
-                                    border: isCurrent ? '2px solid #000' : (isCompleted ? '2px solid #10b981' : '2px solid #d1d5db'),
-                                    color: (isCurrent || isCompleted) ? '#fff' : '#6b7280',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    boxShadow: isCurrent ? '0 0 0 4px rgba(0,0,0,0.1)' : 'none'
-                                  }}>
-                                    {isCompleted ? '✓' : step.num}
-                                  </div>
-                                  <span style={{
-                                    fontSize: 11.5,
-                                    fontWeight: isCurrent ? 700 : (isCompleted ? 600 : 500),
-                                    color: isCurrent ? '#000' : (isCompleted ? '#10b981' : '#888'),
-                                    marginTop: 6
-                                  }}>
-                                    {step.label}
-                                  </span>
-                                </div>
-                              );
-                            })}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => this.setState({ invoiceModalOrder: ord })}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                background: '#ffffff',
+                                color: '#0f172a',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 8,
+                                padding: '8px 14px',
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                            >
+                              <span>🧾</span>
+                              <span>View Tax Invoice</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => downloadReceiptPdf(ord)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                background: '#000000',
+                                color: '#ffffff',
+                                border: '1px solid #000000',
+                                borderRadius: 8,
+                                padding: '8px 14px',
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#27272a'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = '#000000'; }}
+                            >
+                              <span>⬇</span>
+                              <span>Download PDF</span>
+                            </button>
                           </div>
                         </div>
+                      ) : (
+                        st.step > 0 && (
+                          <div style={{ background: '#fcfcfc', borderBottom: '1px solid #eee', padding: '20px 24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+                              <div style={{
+                                position: 'absolute',
+                                top: 14,
+                                left: '8%',
+                                right: '8%',
+                                height: 3,
+                                background: '#e5e7eb',
+                                zIndex: 1
+                              }}>
+                                <div style={{
+                                  height: '100%',
+                                  background: '#111',
+                                  width: `${((Math.min(st.step, 5) - 1) / 4) * 100}%`,
+                                  transition: 'width 0.4s ease'
+                                }} />
+                              </div>
+
+                              {steps.map((step) => {
+                                const isCompleted = step.num < st.step;
+                                const isCurrent = step.num === st.step;
+                                return (
+                                  <div key={step.num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                    <div style={{
+                                      width: 28,
+                                      height: 28,
+                                      borderRadius: '50%',
+                                      background: isCurrent ? '#000' : (isCompleted ? '#10b981' : '#fff'),
+                                      border: isCurrent ? '2px solid #000' : (isCompleted ? '2px solid #10b981' : '2px solid #d1d5db'),
+                                      color: (isCurrent || isCompleted) ? '#fff' : '#6b7280',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      boxShadow: isCurrent ? '0 0 0 4px rgba(0,0,0,0.1)' : 'none'
+                                    }}>
+                                      {isCompleted ? '✓' : step.num}
+                                    </div>
+                                    <span style={{
+                                      fontSize: 11.5,
+                                      fontWeight: isCurrent ? 700 : (isCompleted ? 600 : 500),
+                                      color: isCurrent ? '#000' : (isCompleted ? '#10b981' : '#888'),
+                                      marginTop: 6
+                                    }}>
+                                      {step.label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
                       )}
 
                       {/* Order Items */}
@@ -6489,9 +6775,11 @@ export default class StoreApp extends React.Component {
                             const qty = it.qty || 1;
                             const itemImg = it.image || it.img || it.imageUrl || catItem.img1 || catItem.img || (catItem.images && (catItem.images.find(img => img.isFeatured)?.url || catItem.images[0]?.url || (typeof catItem.images[0] === 'string' ? catItem.images[0] : null))) || '/assets/ea97fe30fd8d1dfc.q.jpg';
                             const variantDetails = it.variantLabel || [it.size ? `Size: ${it.size}` : '', it.color || it.colour ? `Colour: ${it.color || it.colour}` : ''].filter(Boolean).join(' • ');
+                            const isDelivered = currentStatusKey === 'delivered' || (ord.fulfillmentStatus && ord.fulfillmentStatus.toLowerCase() === 'delivered');
+                            const alreadyReviewed = this.isItemReviewed(it, ord);
 
                             return (
-                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: idx < ord.items.length - 1 ? '1px solid #f0f0f0' : 'none', paddingBottom: idx < ord.items.length - 1 ? 16 : 0 }}>
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 16, borderBottom: idx < ord.items.length - 1 ? '1px solid #f0f0f0' : 'none', paddingBottom: idx < ord.items.length - 1 ? 16 : 0, flexWrap: 'wrap' }}>
                                 <div style={{
                                   width: 58,
                                   height: 72,
@@ -6502,11 +6790,55 @@ export default class StoreApp extends React.Component {
                                 }}>
                                   <img src={itemImg} alt={it.name || 'Item'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
-                                <div style={{ flex: 1 }}>
+                                <div style={{ flex: 1, minWidth: 200 }}>
                                   <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 600, color: '#111' }}>{it.name || 'Ramroxa Garment'}</h4>
                                   <div style={{ fontSize: 12.5, color: '#666', marginTop: 4 }}>
                                     {variantDetails ? `${variantDetails} • ` : ''}Qty: {qty}
                                   </div>
+                                  {isDelivered && (
+                                    <div style={{ marginTop: 8 }}>
+                                      {alreadyReviewed ? (
+                                        <span style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: 5,
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color: '#166534',
+                                          background: '#dcfce7',
+                                          border: '1px solid #bbf7d0',
+                                          padding: '3px 10px',
+                                          borderRadius: 6
+                                        }}>
+                                          ✓ Review Submitted
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => this.openWriteReviewForItem(it, ord, catItem)}
+                                          style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            padding: '5px 12px',
+                                            borderRadius: 6,
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            background: '#111',
+                                            color: '#fff',
+                                            border: '1px solid #111',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease'
+                                          }}
+                                          onMouseEnter={(e) => { e.currentTarget.style.background = '#333'; }}
+                                          onMouseLeave={(e) => { e.currentTarget.style.background = '#111'; }}
+                                        >
+                                          <span style={{ color: '#f59e0b' }}>★</span>
+                                          <span>Write Review</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                   <strong style={{ fontSize: 15, color: '#111' }}>{rs(unitPriceNpr * qty)}</strong>
@@ -6559,6 +6891,29 @@ export default class StoreApp extends React.Component {
                               <span style={{ fontSize: 20, fontWeight: 800, color: '#000' }}>{rs(totalNpr)}</span>
                             </div>
 
+                            {isDelivered && (
+                              <button
+                                type="button"
+                                onClick={() => this.setState({ invoiceModalOrder: ord })}
+                                style={{
+                                  background: '#fff',
+                                  color: '#000',
+                                  border: '1px solid #000',
+                                  borderRadius: 8,
+                                  padding: '10px 18px',
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  letterSpacing: 0.5,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6
+                                }}
+                              >
+                                <span>🧾</span>
+                                <span>INVOICE</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 const newItems = (ord.items || []).map(i => {
@@ -7090,6 +7445,16 @@ export default class StoreApp extends React.Component {
 
         {/* Wishlist Variant Selection Modal */}
         {this.renderWishlistModal()}
+
+        {/* Customer Review Modal for Delivered Orders */}
+        {this.renderReviewModal()}
+
+        {/* Tax Invoice / Receipt Modal for Completed Orders */}
+        <RamroxaReceiptModal
+          order={this.state.invoiceModalOrder}
+          isOpen={!!this.state.invoiceModalOrder}
+          onClose={() => this.setState({ invoiceModalOrder: null })}
+        />
       </div>
     );
   }
