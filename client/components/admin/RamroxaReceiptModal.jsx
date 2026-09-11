@@ -452,7 +452,7 @@ export default function RamroxaReceiptModal({ order, isOpen, onClose }) {
           }}
         >
           <span style={{ fontSize: 12, color: '#6b7280' }}>
-            Bill #{receipt.billNo} &bull; {receipt.items.length} items &bull; Total: Rs {receipt.netAmount}
+            Bill #{receipt.billNo} &bull; {receipt.items.length} items &bull; Total: रू {receipt.netAmount}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button

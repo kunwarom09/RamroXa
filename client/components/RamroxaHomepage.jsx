@@ -8,7 +8,7 @@ import {
 import { parseVideoSource } from './admin/MediaPickerModal';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-const rs = (n) => 'Rs ' + (n || 0).toLocaleString('en-US');
+const rs = (n) => 'रू ' + (n || 0).toLocaleString('en-US');
 
 const COLOR_HEX_MAP = {
   black: '#111111',

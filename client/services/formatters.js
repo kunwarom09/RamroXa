@@ -1,8 +1,8 @@
 export function money(n) {
-  if (n === null || n === undefined) return 'Rs 0';
+  if (n === null || n === undefined) return 'रू 0';
   const val = Number(n);
-  if (isNaN(val)) return 'Rs 0';
-  return 'Rs ' + Math.round(val).toLocaleString('en-IN');
+  if (isNaN(val)) return 'रू 0';
+  return 'रू ' + Math.round(val).toLocaleString('en-IN');
 }
 
 export function moneyNpr(amount) {

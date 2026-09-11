@@ -173,7 +173,7 @@ export const DEFAULT_HOMEPAGE_CONFIG = {
       widgetType: 'benefits_row',
       config: {
         items: [
-          { id: 'b1', icon: 'truck', title: 'FREE SHIPPING', desc: 'On orders over Rs 500' },
+          { id: 'b1', icon: 'truck', title: 'FREE SHIPPING', desc: 'On orders over रू 5000' },
           { id: 'b2', icon: 'return', title: '5-DAY HASSLE-FREE RETURNS', desc: 'Easy returns within 5 days' },
           { id: 'b3', icon: 'support', title: 'CUSTOMER SUPPORT', desc: "We're here to help" }
         ]
