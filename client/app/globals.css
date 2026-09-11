@@ -1385,7 +1385,7 @@ tbody tr:hover {
 .zylo-filter-show-more-btn {
   background: none;
   border: none;
-  color: #1d4ed8;
+  color: #7a706a;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1399,7 +1399,7 @@ tbody tr:hover {
 }
 
 .zylo-filter-show-more-btn:hover {
-  color: #0f172a;
+  color: #5e5651;
   text-decoration: underline;
 }
 
@@ -1435,7 +1435,7 @@ tbody tr:hover {
 }
 
 .zylo-price-input:focus {
-  border-color: #000000;
+  border-color: #7a706a;
 }
 
 .zylo-price-divider {
@@ -1465,7 +1465,7 @@ tbody tr:hover {
 }
 
 .zylo-filter-custom-radio:checked {
-  border-color: #1d4ed8;
+  border-color: #7a706a;
   background: #ffffff;
 }
 
@@ -1478,7 +1478,7 @@ tbody tr:hover {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #1d4ed8;
+  background: #7a706a;
 }
 
 .zylo-price-range-label {
@@ -1510,7 +1510,7 @@ tbody tr:hover {
 .zylo-dual-range-progress {
   position: absolute;
   height: 6px;
-  background: #1d4ed8;
+  background: #7a706a;
   border-radius: 999px;
   pointer-events: none;
   z-index: 1;
@@ -1547,8 +1547,8 @@ tbody tr:hover {
   height: 24px;
   border-radius: 50%;
   background: #ffffff;
-  border: 5.5px solid #1d4ed8;
-  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 5.5px solid #7a706a;
+  box-shadow: 0 2px 6px rgba(122, 112, 106, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   position: relative;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -1556,7 +1556,7 @@ tbody tr:hover {
 
 .zylo-dual-range-input::-webkit-slider-thumb:hover {
   transform: scale(1.12);
-  box-shadow: 0 3px 8px rgba(29, 78, 216, 0.5), 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 8px rgba(122, 112, 106, 0.5), 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .zylo-dual-range-input::-moz-range-thumb {
@@ -1565,8 +1565,8 @@ tbody tr:hover {
   height: 13px;
   border-radius: 50%;
   background: #ffffff;
-  border: 5.5px solid #1d4ed8;
-  box-shadow: 0 2px 6px rgba(29, 78, 216, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 5.5px solid #7a706a;
+  box-shadow: 0 2px 6px rgba(122, 112, 106, 0.35), 0 1px 3px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: transform 0.1s ease;
 }
