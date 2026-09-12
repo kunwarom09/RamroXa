@@ -171,7 +171,8 @@ export async function createAdminOrder(data, user) {
   const subtotalPaisa = grandTotalPaisa - vatTotalPaisa;
 
   const paymentMethod = String(data.payment || data.paymentMethod || 'cod').toLowerCase();
-  const validPaymentMethod = ['cod', 'esewa', 'fonepay', 'cash', 'bank'].includes(paymentMethod) ? paymentMethod : 'cod';
+  const validPaymentMethod = ['cod', 'esewa', 'fonepay', 'cash', 'bank', 'credit'].includes(paymentMethod) ? paymentMethod : 'cod';
+  const defaultPaymentStatus = validPaymentMethod === 'credit' ? 'unpaid' : (data.paymentStatus || 'paid');
 
   const newOrder = await Order.create({
     orderNo: nextOrderNo,
@@ -189,7 +190,7 @@ export async function createAdminOrder(data, user) {
       city: 'Kathmandu'
     },
     paymentMethod: validPaymentMethod,
-    paymentStatus: data.paymentStatus || 'paid',
+    paymentStatus: data.paymentStatus || defaultPaymentStatus,
     fulfillmentStatus: data.fulfillmentStatus || 'delivered',
     statusHistory: [
       {

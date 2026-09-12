@@ -43,14 +43,14 @@ export async function buildJournal(filters = {}) {
     const vatTotal = Number(order.vatTotal) || 0;     // In Paisa
     const netRevenue = grandTotal - vatTotal;        // In Paisa
 
-    const drAccount = order.paymentStatus === 'paid' ? 'Cash & Bank' : 'Accounts Receivable';
+    const drAccount = (order.paymentStatus === 'paid' && order.paymentMethod !== 'credit') ? 'Cash & Bank' : 'Accounts Receivable';
 
     // Debit Cash & Bank / Accounts Receivable for full amount
     entries.push({
       date: dateStr,
       voucher,
       account: drAccount,
-      narration: `Sale to ${customer} (${order.orderNo})`,
+      narration: `Sale to ${customer} (${order.orderNo}${order.paymentMethod === 'credit' ? ' - Credit' : ''})`,
       debit: grandTotal,
       credit: 0
     });
@@ -87,6 +87,12 @@ export async function buildJournal(filters = {}) {
     const refundVat = Number(ret.refundVat) || 0;       // In Paisa
     const refundNet = Number(ret.refundNet) || (refundTotal - refundVat); // In Paisa
 
+    // Check if original order was on credit / unpaid to determine reversal account
+    const origOrder = orders.find(o => o.orderNo === ret.orderNo || o.orderNo === ret.invoice);
+    const crAccount = (origOrder && (origOrder.paymentMethod === 'credit' || origOrder.paymentStatus !== 'paid'))
+      ? 'Accounts Receivable'
+      : 'Cash & Bank';
+
     // Debit Sales Returns & Allowances (Contra-revenue)
     entries.push({
       date: dateStr,
@@ -113,8 +119,8 @@ export async function buildJournal(filters = {}) {
     entries.push({
       date: dateStr,
       voucher,
-      account: 'Cash & Bank',
-      narration: `Refund issued to ${customer} for return #${voucher}`,
+      account: crAccount,
+      narration: `Credit adjustment for ${customer} on #${voucher}`,
       debit: 0,
       credit: refundTotal
     });
@@ -128,7 +134,7 @@ export async function buildJournal(filters = {}) {
     const vatAmount = Number(purchase.vatAmount) || 0;
     const totalAmount = Number(purchase.totalAmount) || (subtotal + vatAmount);
 
-    const crAccount = purchase.paymentStatus === 'unpaid' ? 'Accounts Payable' : 'Cash & Bank';
+    const crAccount = (purchase.paymentStatus === 'unpaid' || purchase.paymentMethod === 'credit') ? 'Accounts Payable' : 'Cash & Bank';
 
     // Debit Expense Head / Inventory Stock
     entries.push({

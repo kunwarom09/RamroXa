@@ -148,6 +148,71 @@ async function runVerification() {
   }
   console.log(`✓ Approved return with Credit Note ${salesReturn.creditNoteNo || salesReturn.no} successfully restocked`);
 
+  // 5b. Test Credit Sale & Credit Purchase Ledger Posting
+  const creditInvoiceNo = `TINVC-${Date.now().toString(36).toUpperCase()}`;
+  const creditOrder = await createAdminOrder({
+    invoice: creditInvoiceNo,
+    customer: 'Credit Customer Test',
+    customerPhone: '9851000000',
+    vatable: true,
+    payment: 'credit',
+    items: [
+      {
+        name: 'Test Sneaker 42',
+        sku: testSku,
+        qty: 1,
+        rate: 3000 // NPR
+      }
+    ]
+  });
+
+  if (creditOrder.paymentMethod !== 'credit' || creditOrder.paymentStatus !== 'unpaid') {
+    throw new Error(`Credit order payment fields invalid! Method: ${creditOrder.paymentMethod}, Status: ${creditOrder.paymentStatus}`);
+  }
+  console.log(`✓ Credit sale created with paymentMethod: 'credit' and paymentStatus: 'unpaid'`);
+
+  const creditBillNo = `TBILLC-${Date.now().toString(36).toUpperCase()}`;
+  const creditPurchase = await createPurchase({
+    billNo: creditBillNo,
+    supplier: 'Credit Supplier Nepal',
+    supplierPan: '609999999',
+    date: new Date(),
+    vatable: true,
+    paymentMethod: 'credit',
+    paymentStatus: 'unpaid',
+    items: [
+      {
+        name: 'Test Sneaker 42',
+        sku: testSku,
+        qty: 2,
+        rate: 1500 // NPR
+      }
+    ]
+  });
+
+  if (creditPurchase.paymentMethod !== 'credit' || creditPurchase.paymentStatus !== 'unpaid') {
+    throw new Error(`Credit purchase payment fields invalid! Method: ${creditPurchase.paymentMethod}, Status: ${creditPurchase.paymentStatus}`);
+  }
+  console.log(`✓ Credit purchase created with paymentMethod: 'credit' and paymentStatus: 'unpaid'`);
+
+  // Test Credit Note issued against credit sale (must reverse Accounts Receivable)
+  const creditReturn = await createSalesReturn({
+    orderNo: creditOrder.orderNo,
+    customer: 'Credit Customer Test',
+    refundAmount: 3000,
+    reason: 'Defective item on credit order',
+    status: 'approved',
+    restock: 'available',
+    items: [
+      {
+        sku: testSku,
+        returnQty: 1,
+        desc: 'Test Sneaker 42'
+      }
+    ]
+  });
+  console.log(`✓ Credit note ${creditReturn.creditNoteNo || creditReturn.no} issued for credit sale`);
+
   // 6. Test Double-Entry Accounting Journal Balance
   const journalResult = await buildJournal();
   console.log(`Journal Entries: ${journalResult.summary.totalEntries}`);
@@ -155,6 +220,17 @@ async function runVerification() {
   if (!journalResult.summary.isBalanced) {
     throw new Error(`Journal is out of balance! Dr: ${journalResult.summary.totalDr}, Cr: ${journalResult.summary.totalCr}`);
   }
+
+  // Verify Accounts Receivable & Accounts Payable entries exist
+  const arEntries = journalResult.entries.filter(e => e.account === 'Accounts Receivable');
+  const apEntries = journalResult.entries.filter(e => e.account === 'Accounts Payable');
+  if (arEntries.length === 0) {
+    throw new Error('Expected Accounts Receivable entries in Journal for credit sale / credit note, none found!');
+  }
+  if (apEntries.length === 0) {
+    throw new Error('Expected Accounts Payable entries in Journal for credit purchase, none found!');
+  }
+  console.log(`✓ Verified Accounts Receivable (${arEntries.length} entries) & Accounts Payable (${apEntries.length} entries) in Journal`);
   console.log('✓ Double-Entry Journal is strictly balanced (Total Debit == Total Credit)');
 
   // 7. Test Profit & Loss

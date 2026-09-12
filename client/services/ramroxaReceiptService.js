@@ -320,6 +320,99 @@ export function normalizeOrderForReceipt(order = {}) {
 }
 
 /**
+ * Normalizes a SalesReturn / Credit Note document conforming to IRD Schedule 10
+ */
+export function normalizeCreditNoteForReceipt(ret) {
+  if (!ret) return null;
+  const cnNo = ret.creditNoteNo || ret.no || 'CN-1001';
+  const origInvoice = ret.invoice || ret.orderNo || 'TINV-Original';
+  const dateStr = formatReceiptDate(ret.date || ret.createdAt);
+  const mitiStr = adToBs(ret.date || ret.createdAt);
+
+  const rawItems = ret.items || [];
+  let items = [];
+  if (Array.isArray(rawItems) && rawItems.length > 0) {
+    items = rawItems.map((it, idx) => {
+      const type = detectProductType(it);
+      const name = it.desc || it.name || `Returned item ${idx + 1}`;
+      const variant = it.sku ? `SKU: ${it.sku}` : '';
+      const qty = Number(it.returnQty || it.qty) || 1;
+      const rate = Number(it.rate) > 50000 ? Number(it.rate) / 100 : Number(it.rate || 0);
+      const amount = qty * rate;
+      return {
+        sn: idx + 1,
+        type,
+        name,
+        variant,
+        qty,
+        rate: Number(rate.toFixed(2)),
+        amount: Number(amount.toFixed(2))
+      };
+    });
+  } else {
+    const refundNpr = Number(ret.refundAmount) > 50000 ? Number(ret.refundAmount) / 100 : Number(ret.refundAmount || 0);
+    items = [
+      {
+        sn: 1,
+        type: 'Return Item',
+        name: ret.reason || 'Customer Return & Allowance',
+        variant: `Ref: ${origInvoice}`,
+        qty: 1,
+        rate: refundNpr,
+        amount: refundNpr
+      }
+    ];
+  }
+
+  const refundTotalPaisa = Number(ret.refundAmount) || 0;
+  const refundTotalNpr = refundTotalPaisa > 50000 ? refundTotalPaisa / 100 : refundTotalPaisa;
+  const refundVatPaisa = Number(ret.refundVat) || Math.round((refundTotalPaisa * 13) / 113);
+  const refundVatNpr = refundVatPaisa > 50000 ? refundVatPaisa / 100 : (refundTotalNpr > 0 ? (refundTotalNpr * 13) / 113 : 0);
+  const taxableNpr = Math.max(0, refundTotalNpr - refundVatNpr);
+
+  const words = numberToWords(refundTotalNpr);
+
+  const store = {
+    brandTitle: 'RAMROXA',
+    brandSub: 'NEPAL',
+    categories: 'CLOTHING  •  FOOTWEAR  •  ACCESSORIES',
+    address: 'Kathmandu, Nepal',
+    panNo: '606387590',
+    contactNo: '01-453178',
+    invoiceTitle: 'CREDIT NOTE / क्रेडिट नोट (अनुसूची १०)',
+    footerMessage: 'Credit Note issued under Nepal VAT Act 2052 (Schedule 10).\nAmount reversed against customer account / refunded.',
+    website: 'www.ramroxa.com',
+    socialHandle: '@ramroxanepal',
+    phone: '01-453178',
+    poweredBy: 'RamroXa Retail Systems'
+  };
+
+  return {
+    isCreditNote: true,
+    billNo: cnNo,
+    origInvoice,
+    returnReason: ret.reason || 'Customer return',
+    date: dateStr,
+    time: '',
+    miti: mitiStr,
+    paymentMethod: 'Credit Adjustment',
+    customerName: ret.customer || 'Customer',
+    customerCompany: '',
+    customerAddress: ret.address || 'Kathmandu, Nepal',
+    customerPan: ret.customerPan || '',
+    items,
+    grossAmount: refundTotalNpr.toFixed(2),
+    discount: '0.00',
+    taxableAmount: taxableNpr.toFixed(2),
+    nonTaxableAmount: '0.00',
+    vat: refundVatNpr.toFixed(2),
+    netAmount: refundTotalNpr.toFixed(2),
+    words,
+    store
+  };
+}
+
+/**
  * Generates exact thermal receipt HTML matching the Ramroxa Global reference image
  */
 export function generateThermalReceiptHtml(receipt) {
@@ -412,12 +505,19 @@ export function generateThermalReceiptHtml(receipt) {
       <tbody>
         <tr>
           <td style="padding: 1px 0; width: 55%; vertical-align: top;">
-            Bill No.&nbsp;&nbsp;: ${escapeHtml(receipt.billNo)}
+            ${receipt.isCreditNote ? 'Credit Note No:' : 'Bill No.&nbsp;&nbsp;:'} <strong>${escapeHtml(receipt.billNo)}</strong>
           </td>
           <td style="padding: 1px 0; width: 45%; vertical-align: top;">
-            Payment By : ${escapeHtml(receipt.paymentMethod)}
+            ${receipt.isCreditNote ? `Orig Inv: <strong>${escapeHtml(receipt.origInvoice || 'N/A')}</strong>` : `Payment By : ${escapeHtml(receipt.paymentMethod)}`}
           </td>
         </tr>
+        ${receipt.isCreditNote && receipt.returnReason ? `
+        <tr>
+          <td colspan="2" style="padding: 1px 0; vertical-align: top;">
+            Reason&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(receipt.returnReason)}
+          </td>
+        </tr>
+        ` : ''}
         <tr>
           <td style="padding: 1px 0; vertical-align: top;">
             Date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${escapeHtml(receipt.date)}
@@ -710,6 +810,54 @@ export async function downloadReceiptPdf(rawOrder, targetElementId = null) {
   }
 }
 
+/**
+ * Print a formal IRD Schedule 10 Credit Note via thermal layout
+ */
+export function printCreditNote(ret) {
+  if (typeof window === 'undefined') return;
+  const receipt = normalizeCreditNoteForReceipt(ret);
+  const receiptHtml = generateThermalReceiptHtml(receipt);
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Credit Note ${receipt.billNo}</title>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          body { margin: 0; padding: 0; background: #fff; }
+        </style>
+      </head>
+      <body>${receiptHtml}</body>
+    </html>
+  `);
+  doc.close();
+
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.print();
+    } catch (e) {
+      console.error('Print credit note error:', e);
+    } finally {
+      setTimeout(() => {
+        if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      }, 1500);
+    }
+  }, 250);
+}
+
 export default {
   numberToWords,
   formatReceiptDate,
@@ -718,7 +866,9 @@ export default {
   detectProductType,
   formatVariantDetails,
   normalizeOrderForReceipt,
+  normalizeCreditNoteForReceipt,
   generateThermalReceiptHtml,
   printThermalReceipt,
-  downloadReceiptPdf
+  downloadReceiptPdf,
+  printCreditNote
 };

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { money } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
@@ -247,6 +248,14 @@ export default function AdminOrdersPage() {
                     </select>
                   </td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <Link
+                      href={`/admin/returns?orderNo=${encodeURIComponent(o.no)}&invoice=${encodeURIComponent(o.no)}&customer=${encodeURIComponent(o.customer)}`}
+                      className="icon-btn"
+                      title="Issue Credit Note / Return"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      <Icon name="rotateCcw" size={15} />
+                    </Link>
                     <button
                       className="icon-btn"
                       title="View Order Details"
@@ -382,6 +391,14 @@ export default function AdminOrdersPage() {
                   <Icon name="download" size={14} />
                   <span>Download PDF</span>
                 </button>
+                <Link
+                  href={`/admin/returns?orderNo=${encodeURIComponent(selectedOrder.no)}&invoice=${encodeURIComponent(selectedOrder.no)}&customer=${encodeURIComponent(selectedOrder.customer)}`}
+                  className="btn btn-sm btn-outline"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--accent)' }}
+                >
+                  <Icon name="rotateCcw" size={14} />
+                  <span>Issue Credit Note</span>
+                </Link>
               </div>
               <button className="btn btn-sm" onClick={() => setSelectedOrder(null)}>Close</button>
             </div>

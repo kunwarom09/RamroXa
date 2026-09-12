@@ -202,7 +202,7 @@ export default function AdminLayout({ children }) {
     { label: 'Inventory', route: '/admin/inventory', icon: 'inventory' },
     { section: 'Accounts' },
     { label: 'Sales', route: '/admin/sales', icon: 'sales' },
-    { label: 'Sales returns', route: '/admin/returns', icon: 'arrowDown' },
+    { label: 'Credit notes (returns)', route: '/admin/returns', icon: 'arrowDown' },
     { label: 'Purchases', route: '/admin/purchases', icon: 'purchases' },
     { label: 'Purchase returns', route: '/admin/purchases/returns', icon: 'rotateCcw' },
     { label: 'Finance', route: '/admin/finance', icon: 'finance' },
@@ -250,7 +250,7 @@ export default function AdminLayout({ children }) {
           if (item.section) {
             return <div key={idx} className="sidebar-section-label">{item.section}</div>;
           }
-          const isActive = pathname === item.route;
+          const isActive = pathname === item.route || (item.route === '/admin/returns' && pathname === '/admin/credit-notes');
           return (
             <Link
               key={item.route}

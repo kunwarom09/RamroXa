@@ -71,6 +71,7 @@ export default function AdminPurchasesPage() {
       date: today(),
       supplier: '',
       head: 'Purchases (stock)',
+      paymentMethod: 'bank',
       vatable: true,
       items: [{ desc: '', qty: 1, rate: 0 }]
     });
@@ -84,6 +85,7 @@ export default function AdminPurchasesPage() {
       date: p.date || today(),
       supplier: p.supplier || '',
       head: p.head || 'Purchases (stock)',
+      paymentMethod: p.paymentMethod || (p.paymentStatus === 'unpaid' ? 'credit' : 'bank'),
       vatable: p.vatable !== false,
       items: p.items && p.items.length ? JSON.parse(JSON.stringify(p.items)) : [{ desc: '', qty: 1, rate: 0 }]
     });
@@ -129,6 +131,8 @@ export default function AdminPurchasesPage() {
       supplier: formData.supplier,
       supplierPan: formData.supplierPan || '',
       head: formData.head || 'Purchases (stock)',
+      paymentMethod: formData.paymentMethod || 'bank',
+      paymentStatus: formData.paymentMethod === 'credit' ? 'unpaid' : 'paid',
       vatable: formData.vatable !== false,
       items: validItems.map(it => ({
         name: it.desc || it.name,
@@ -241,6 +245,7 @@ export default function AdminPurchasesPage() {
               <th>Date</th>
               <th>Supplier</th>
               <th>Expense Head</th>
+              <th>Payment</th>
               <th className="num">Taxable</th>
               <th className="num">VAT 13%</th>
               <th className="num">Total</th>
@@ -255,6 +260,11 @@ export default function AdminPurchasesPage() {
                   <td>{p.date}</td>
                   <td>{p.supplier}</td>
                   <td><span className="badge badge-muted">{p.head}</span></td>
+                  <td>
+                    <span className={`badge ${p.paymentMethod === 'credit' || p.paymentStatus === 'unpaid' ? 'badge-warning' : 'badge-accent'}`}>
+                      {p.paymentMethod === 'credit' ? 'Credit' : (p.paymentMethod || 'Paid')}
+                    </span>
+                  </td>
                   <td className="num">{money(docSubtotal(p))}</td>
                   <td className="num">{money(docVat(p))}</td>
                   <td className="num"><strong>{money(docTotal(p))}</strong></td>
@@ -335,6 +345,22 @@ export default function AdminPurchasesPage() {
                     <option>Marketing</option>
                     <option>Other expenses</option>
                   </select>
+                </div>
+                <div className="field">
+                  <label>Payment Method</label>
+                  <select
+                    value={formData.paymentMethod || 'bank'}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  >
+                    <option value="bank">Bank / Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="credit">Credit (उधारो / Accounts Payable)</option>
+                  </select>
+                  {formData.paymentMethod === 'credit' && (
+                    <div style={{ fontSize: '11px', color: '#eab308', marginTop: '4px' }}>
+                      ⓘ Posted as Unpaid (Credits Accounts Payable)
+                    </div>
+                  )}
                 </div>
               </div>
 

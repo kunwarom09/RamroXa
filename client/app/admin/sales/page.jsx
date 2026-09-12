@@ -223,6 +223,9 @@ export default function AdminSalesPage() {
           style={{ width: '250px' }}
         />
         <div className="spacer" />
+        <Link href="/admin/returns" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Icon name="rotateCcw" size={14} /> Credit Notes (Returns)
+        </Link>
         <button className="btn" onClick={exportCsv}>Export CSV</button>
         <button className="btn btn-primary" onClick={openAddSaleModal}>
           + Add sale
@@ -250,18 +253,22 @@ export default function AdminSalesPage() {
                   <td><code>{s.invoice}</code></td>
                   <td>{s.date}</td>
                   <td>{s.customer}</td>
-                  <td><span className="badge badge-accent">{s.payment || s.pay || 'COD'}</span></td>
+                  <td>
+                    <span className={`badge ${String(s.payment || s.pay).toLowerCase() === 'credit' ? 'badge-warning' : 'badge-accent'}`}>
+                      {s.payment || s.pay || 'COD'}
+                    </span>
+                  </td>
                   <td className="num">{money(docSubtotal(s))}</td>
                   <td className="num">{money(docVat(s))}</td>
                   <td className="num"><strong>{money(docTotal(s))}</strong></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <Link
-                      href={`/admin/returns?saleId=${s.id}`}
+                      href={`/admin/returns?invoice=${encodeURIComponent(s.invoice)}&customer=${encodeURIComponent(s.customer)}&saleId=${encodeURIComponent(s.id)}`}
                       className="icon-btn"
-                      title="Create Sales Return"
+                      title="Issue Credit Note / Return"
                       style={{ color: 'var(--accent)' }}
                     >
-                      <Icon name="arrowDown" size={15} />
+                      <Icon name="rotateCcw" size={15} />
                     </Link>
                     <button
                       className="icon-btn"
@@ -346,12 +353,17 @@ export default function AdminSalesPage() {
                     value={formData.payment}
                     onChange={(e) => setFormData({ ...formData, payment: e.target.value })}
                   >
-                    <option value="Cash">Cash</option>
-                    <option value="COD">COD</option>
+                    <option value="Cash">Cash (Counter)</option>
+                    <option value="Bank">Bank / QR</option>
                     <option value="eSewa">eSewa</option>
-                    <option value="Fonepay">Fonepay</option>
-                    <option value="Credit">Credit</option>
+                    <option value="COD">Cash on Delivery (COD)</option>
+                    <option value="Credit">Credit (उधारो / Receivables)</option>
                   </select>
+                  {String(formData.payment).toLowerCase() === 'credit' && (
+                    <div style={{ fontSize: '11px', color: '#eab308', marginTop: '4px' }}>
+                      ⓘ Posted as Unpaid (Debits Accounts Receivable)
+                    </div>
+                  )}
                 </div>
               </div>
 

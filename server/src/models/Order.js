@@ -62,12 +62,12 @@ const orderSchema = new mongoose.Schema(
     billingAddress: addressSchema,
     paymentMethod: {
       type: String,
-      enum: ['cod', 'esewa', 'fonepay', 'cash', 'bank'],
+      enum: ['cod', 'esewa', 'fonepay', 'cash', 'bank', 'credit'],
       required: true
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
+      enum: ['pending', 'paid', 'failed', 'refunded', 'unpaid'],
       default: 'pending',
       index: true
     },

@@ -1,8 +1,10 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { money, today } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
+import { printCreditNote } from '../../../services/ramroxaReceiptService';
 
 const VAT_RATE = 13;
 
@@ -146,7 +148,17 @@ export default function AdminReturnsPage() {
     }
   }, []);
 
-  useEffect(() => { refreshData(); }, [refreshData]);
+  useEffect(() => {
+    refreshData();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const qInv = params.get('invoice') || params.get('orderNo');
+      if (qInv) {
+        setSaleSearch(qInv);
+        setModalOpen(true);
+      }
+    }
+  }, [refreshData]);
 
   const openNewReturnModal = () => {
     setWizardStep('search');
@@ -321,14 +333,19 @@ export default function AdminReturnsPage() {
 
   return (
     <div>
-      <div className="page-head">
-        <h2>Sales Returns</h2>
-        <p>Return authorization, inspection, restocking, and credit note registry.</p>
+      <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h2>Credit Notes &amp; Sales Returns</h2>
+          <p>Schedule 10 Credit Notes (क्रेडिट नोट) issued for customer returns, allowances, and VAT reversals.</p>
+        </div>
+        <Link href="/admin/sales" className="btn btn-outline">
+          &larr; Sales Register
+        </Link>
       </div>
 
       <div className="toolbar">
-        <input type="text" placeholder="Search return no, invoice or customer" value={search}
-          onChange={e => setSearch(e.target.value)} style={{ width: '260px' }} />
+        <input type="text" placeholder="Search credit note, invoice or customer" value={search}
+          onChange={e => setSearch(e.target.value)} style={{ width: '280px' }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -339,15 +356,15 @@ export default function AdminReturnsPage() {
           <option value="rejected">Rejected</option>
         </select>
         <div className="spacer" />
-        <button className="btn btn-primary" onClick={openNewReturnModal}>+ New sales return</button>
+        <button className="btn btn-primary" onClick={openNewReturnModal}>+ Issue Credit Note</button>
       </div>
 
       <div className="card table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Return No</th><th>Date</th><th>Orig Invoice</th><th>Customer</th>
-              <th>Type</th><th>Reason</th><th className="num">Refund</th><th>Status</th><th></th>
+              <th>Credit Note No</th><th>Date</th><th>Orig Invoice</th><th>Customer</th>
+              <th>Type</th><th>Reason</th><th className="num">Refund Total</th><th>Status</th><th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -355,16 +372,28 @@ export default function AdminReturnsPage() {
               <tr><td colSpan="9"><div className="empty-state">Loading…</div></td></tr>
             ) : filteredReturns.length > 0 ? filteredReturns.map(r => (
               <tr key={r.id || r._id}>
-                <td style={{ fontWeight: 500 }}><code>{r.no}</code></td>
+                <td style={{ fontWeight: 600 }}>
+                  <code style={{ color: 'var(--accent, #ea580c)' }}>{r.creditNoteNo || r.no}</code>
+                  {r.creditNoteNo && r.creditNoteNo !== r.no && (
+                    <div style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.no}</div>
+                  )}
+                </td>
                 <td>{r.date}</td>
-                <td><code>{r.invoice}</code></td>
+                <td><code>{r.invoice || r.orderNo}</code></td>
                 <td>{r.customer}</td>
                 <td><span className="badge badge-muted" style={{ fontSize: '11px' }}>{RETURN_TYPE_LABELS[r.type] || r.type}</span></td>
                 <td>{r.reason}</td>
-                <td className="num">{money(r.refundAmount)}</td>
+                <td className="num"><strong>{money(r.refundAmount > 50000 ? r.refundAmount / 100 : r.refundAmount)}</strong></td>
                 <td><span className={`badge ${STATUS_BADGE[r.status] || 'badge-muted'}`}>{(r.status||'').replace(/_/g,' ')}</span></td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                    <button
+                      className="icon-btn"
+                      title="Print Credit Note (Schedule 10)"
+                      onClick={() => printCreditNote(r)}
+                    >
+                      <Icon name="printer" size={15} />
+                    </button>
                     {r.status === 'pending' && (
                       <button
                         className="btn btn-sm btn-primary"
@@ -769,11 +798,10 @@ export default function AdminReturnsPage() {
               {selectedReturn.status === 'refunded' && (
                 <button className="btn btn-sm btn-primary" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'completed')}>Complete Return</button>
               )}
-              {!['rejected','completed'].includes(selectedReturn.status) && (
-                <button className="btn btn-sm btn-danger" onClick={() => updateReturnStatus(selectedReturn.id || selectedReturn._id || selectedReturn.no, 'rejected')}>Reject</button>
+              {!['rejected','completed','cancelled'].includes(selectedReturn.status) && (
+                <button className="btn btn-sm btn-danger" onClick={() => handleDeleteReturn(selectedReturn.id || selectedReturn._id || selectedReturn.no)}>Cancel / Void</button>
               )}
-              <button className="btn btn-sm" onClick={() => window.print()}>Print Credit Note</button>
-              <button className="btn btn-sm btn-danger" onClick={() => handleDeleteReturn(selectedReturn.id || selectedReturn._id || selectedReturn.no)}>Delete</button>
+              <button className="btn btn-sm btn-primary" onClick={() => printCreditNote(selectedReturn)}>Print Credit Note (Schedule 10)</button>
               <button className="btn btn-sm" onClick={() => setViewModalOpen(false)}>Close</button>
             </div>
           </div>
