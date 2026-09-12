@@ -378,9 +378,11 @@ export async function getProfitAndLoss(fromDate, toDate) {
     grossSalesRevenue,
     salesReturnsNet,
     netSalesRevenue,
+    totalSalesNet: netSalesRevenue,
     grossPurchases,
     purchaseReturnsTotal,
     netPurchases,
+    totalPurchasesNet: netPurchases,
     expenseBreakdown,
     netProfit,
     // Formatted NPR values for frontend display

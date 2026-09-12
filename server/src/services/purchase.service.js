@@ -85,6 +85,7 @@ export async function getPurchaseById(id) {
   const purchase = await Purchase.findOne({
     $or: [
       mongoose.isValidObjectId(id) ? { _id: id } : null,
+      { id: id },
       { billNo: id }
     ].filter(Boolean)
   }).lean();
@@ -95,6 +96,7 @@ export async function getPurchaseById(id) {
 
   return {
     ...purchase,
+    id: purchase.id || purchase._id?.toString(),
     subtotalNpr: Math.round((purchase.subtotal || 0) / 100),
     vatAmountNpr: Math.round((purchase.vatAmount || 0) / 100),
     totalAmountNpr: Math.round((purchase.totalAmount || 0) / 100),
@@ -126,15 +128,22 @@ export async function createPurchase(data, user = null) {
   // Calculate items amount and subtotal in Paisa
   const processedItems = items.map((item) => {
     const qty = Number(item.qty || 1);
-    // If rate is explicitly in Paisa, use it; otherwise convert user NPR input to Paisa
     let ratePaisa = 0;
-    if (item.ratePaisa != null) {
-      ratePaisa = Math.round(Number(item.ratePaisa));
-    } else if (item.rate != null) {
-      ratePaisa = Math.round(Number(item.rate) * 100);
-    }
+    let amountPaisa = 0;
 
-    const amountPaisa = item.amountPaisa != null ? Math.round(Number(item.amountPaisa)) : qty * ratePaisa;
+    if (item.amount != null && item.rate != null) {
+      ratePaisa = Math.round(Number(item.rate));
+      amountPaisa = Math.round(Number(item.amount));
+    } else if (item.amount != null) {
+      amountPaisa = Math.round(Number(item.amount));
+      ratePaisa = qty > 0 ? Math.round(amountPaisa / qty) : 0;
+    } else if (item.ratePaisa != null) {
+      ratePaisa = Math.round(Number(item.ratePaisa));
+      amountPaisa = item.amountPaisa != null ? Math.round(Number(item.amountPaisa)) : qty * ratePaisa;
+    } else if (item.rate != null) {
+      ratePaisa = Math.round(Number(item.rate));
+      amountPaisa = qty * ratePaisa;
+    }
 
     return {
       name: item.name || item.desc || 'Stock Item',
@@ -261,6 +270,7 @@ export async function updatePurchase(id, data) {
   const purchase = await Purchase.findOne({
     $or: [
       mongoose.isValidObjectId(id) ? { _id: id } : null,
+      { id: id },
       { billNo: id }
     ].filter(Boolean)
   });
@@ -284,12 +294,21 @@ export async function updatePurchase(id, data) {
     purchase.items = data.items.map((item) => {
       const qty = Number(item.qty || 1);
       let ratePaisa = 0;
-      if (item.ratePaisa != null) {
+      let amountPaisa = 0;
+
+      if (item.amount != null && item.rate != null) {
+        ratePaisa = Math.round(Number(item.rate));
+        amountPaisa = Math.round(Number(item.amount));
+      } else if (item.amount != null) {
+        amountPaisa = Math.round(Number(item.amount));
+        ratePaisa = qty > 0 ? Math.round(amountPaisa / qty) : 0;
+      } else if (item.ratePaisa != null) {
         ratePaisa = Math.round(Number(item.ratePaisa));
+        amountPaisa = item.amountPaisa != null ? Math.round(Number(item.amountPaisa)) : qty * ratePaisa;
       } else if (item.rate != null) {
-        ratePaisa = Math.round(Number(item.rate) * 100);
+        ratePaisa = Math.round(Number(item.rate));
+        amountPaisa = qty * ratePaisa;
       }
-      const amountPaisa = item.amountPaisa != null ? Math.round(Number(item.amountPaisa)) : qty * ratePaisa;
 
       return {
         name: item.name || item.desc || 'Stock Item',
@@ -320,6 +339,7 @@ export async function cancelPurchase(id, { reason = 'Cancelled by administrator'
   const purchase = await Purchase.findOne({
     $or: [
       mongoose.isValidObjectId(id) ? { _id: id } : null,
+      { id: id },
       { billNo: id }
     ].filter(Boolean)
   });
@@ -385,7 +405,8 @@ export async function cancelPurchase(id, { reason = 'Cancelled by administrator'
 
 // Retain deletePurchase endpoint alias for backward-compatibility, redirecting to cancellation
 export async function deletePurchase(id, user = null) {
-  return cancelPurchase(id, { reason: 'Cancelled via Admin Portal', user });
+  const purchase = await cancelPurchase(id, { reason: 'Cancelled via Admin Portal', user });
+  return { message: 'Purchase bill deleted successfully.', purchase };
 }
 
 export default {
