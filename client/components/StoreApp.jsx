@@ -3208,7 +3208,7 @@ export default class StoreApp extends React.Component {
             <div>
               <img src="/assets/ramroxa-logo-white.png" alt="Ramroxa" style={{ height: 28, width: 'auto', marginBottom: 14, display: 'block' }} />
               <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
-                Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
+                Thoughtfully designed clothing, footwear and everyday essentials made for comfort, quality and lasting style. From Kathmandu to every corner of Nepal.
               </p>
             </div>
             <div>

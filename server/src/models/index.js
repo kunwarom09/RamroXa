@@ -14,5 +14,8 @@ export { Coupon } from './Coupon.js';
 export { Review } from './Review.js';
 export { Wishlist } from './Wishlist.js';
 export { Purchase } from './Purchase.js';
+export { PurchaseReturn } from './PurchaseReturn.js';
+export { Supplier } from './Supplier.js';
 export { SalesReturn } from './SalesReturn.js';
 export { VerificationToken } from './VerificationToken.js';
+

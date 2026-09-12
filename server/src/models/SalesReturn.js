@@ -17,6 +17,7 @@ const salesReturnSchema = new mongoose.Schema(
   {
     id: { type: String, unique: true, sparse: true, index: true },
     no: { type: String, required: true, unique: true, uppercase: true, index: true },
+    creditNoteNo: { type: String, uppercase: true, index: true },
     saleId: { type: String, default: '' },
     orderNo: { type: String, default: '', index: true },
     invoice: { type: String, default: '' },
@@ -36,16 +37,18 @@ const salesReturnSchema = new mongoose.Schema(
     },
     warehouseId: { type: String, default: 'w1' },
     items: [returnItemSchema],
-    refundNet: { type: Number, default: 0 },
-    refundVat: { type: Number, default: 0 },
-    refundAmount: { type: Number, required: true },
-    alreadyRefunded: { type: Number, default: 0 },
+    refundNet: { type: Number, default: 0 }, // In Paisa
+    refundVat: { type: Number, default: 0 }, // In Paisa
+    refundAmount: { type: Number, required: true }, // In Paisa
+    alreadyRefunded: { type: Number, default: 0 }, // In Paisa
     status: {
       type: String,
-      enum: ['pending', 'inspected', 'approved', 'refunded', 'rejected', 'completed'],
+      enum: ['pending', 'inspected', 'approved', 'refunded', 'rejected', 'completed', 'cancelled'],
       default: 'pending',
       index: true
     },
+    cancelReason: { type: String, default: '' },
+    cancelledAt: { type: Date, default: null },
     notes: { type: String, default: '' },
     attachments: [
       {

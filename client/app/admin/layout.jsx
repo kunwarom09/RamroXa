@@ -204,6 +204,7 @@ export default function AdminLayout({ children }) {
     { label: 'Sales', route: '/admin/sales', icon: 'sales' },
     { label: 'Sales returns', route: '/admin/returns', icon: 'arrowDown' },
     { label: 'Purchases', route: '/admin/purchases', icon: 'purchases' },
+    { label: 'Purchase returns', route: '/admin/purchases/returns', icon: 'rotateCcw' },
     { label: 'Finance', route: '/admin/finance', icon: 'finance' },
     { label: 'Reports', route: '/admin/reports', icon: 'reports' },
     { label: 'IRD / VAT', route: '/admin/ird', icon: 'ird' },

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const purchaseItemSchema = new mongoose.Schema(
+const purchaseReturnItemSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     productId: { type: String, default: '' },
@@ -13,11 +13,25 @@ const purchaseItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const purchaseSchema = new mongoose.Schema(
+const purchaseReturnSchema = new mongoose.Schema(
   {
+    no: {
+      type: String,
+      required: [true, 'Debit Note number is required'],
+      unique: true,
+      uppercase: true,
+      trim: true,
+      index: true
+    },
+    purchaseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Purchase',
+      default: null,
+      index: true
+    },
     billNo: {
       type: String,
-      required: [true, 'Bill number is required'],
+      required: [true, 'Original Bill number is required'],
       trim: true,
       index: true
     },
@@ -36,12 +50,7 @@ const purchaseSchema = new mongoose.Schema(
       default: Date.now,
       index: true
     },
-    head: {
-      type: String,
-      default: 'Purchases (stock)',
-      trim: true
-    },
-    items: [purchaseItemSchema],
+    items: [purchaseReturnItemSchema],
     subtotal: {
       type: Number,
       required: true,
@@ -60,21 +69,20 @@ const purchaseSchema = new mongoose.Schema(
       required: true,
       default: 0 // In Paisa
     },
-    paymentMethod: {
+    reason: {
       type: String,
-      enum: ['cash', 'bank', 'credit'],
-      default: 'bank'
-    },
-    paymentStatus: {
-      type: String,
-      enum: ['paid', 'unpaid', 'partial'],
-      default: 'paid'
+      required: [true, 'Return reason is required'],
+      trim: true
     },
     status: {
       type: String,
-      enum: ['posted', 'cancelled'],
-      default: 'posted',
+      enum: ['pending', 'completed', 'cancelled'],
+      default: 'completed',
       index: true
+    },
+    warehouseId: {
+      type: String,
+      default: 'w1'
     },
     cancelReason: {
       type: String,
@@ -83,10 +91,6 @@ const purchaseSchema = new mongoose.Schema(
     cancelledAt: {
       type: Date,
       default: null
-    },
-    cancelledBy: {
-      type: String,
-      default: ''
     },
     notes: {
       type: String,
@@ -107,7 +111,7 @@ const purchaseSchema = new mongoose.Schema(
   }
 );
 
-purchaseSchema.index({ date: -1, supplier: 1 });
+purchaseReturnSchema.index({ date: -1, supplier: 1 });
 
-export const Purchase = mongoose.models.Purchase || mongoose.model('Purchase', purchaseSchema);
-export default Purchase;
+export const PurchaseReturn = mongoose.models.PurchaseReturn || mongoose.model('PurchaseReturn', purchaseReturnSchema);
+export default PurchaseReturn;

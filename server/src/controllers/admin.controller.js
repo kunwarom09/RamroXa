@@ -253,8 +253,20 @@ export const updateSalesReturnStatus = asyncHandler(async (req, res) => {
 
 export const deleteSalesReturn = asyncHandler(async (req, res) => {
   const { deleteSalesReturn: removeReturn } = await import('../services/adminReturn.service.js');
-  const result = await removeReturn(req.params.id);
+  const result = await removeReturn(req.params.id, req.user);
   res.status(200).json(result);
+});
+
+export const cancelSalesReturn = asyncHandler(async (req, res) => {
+  const { cancelSalesReturn: doCancel } = await import('../services/adminReturn.service.js');
+  const result = await doCancel(req.params.id, { reason: req.body?.reason, user: req.user });
+  res.status(200).json({ message: 'Sales return cancelled successfully.', data: result });
+});
+
+export const cancelOrder = asyncHandler(async (req, res) => {
+  const { cancelAdminOrder } = await import('../services/adminOrder.service.js');
+  const result = await cancelAdminOrder(req.params.id, { reason: req.body?.reason, user: req.user });
+  res.status(200).json({ message: 'Order cancelled successfully.', data: result });
 });
 
 export default {

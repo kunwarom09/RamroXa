@@ -27,6 +27,7 @@ import {
   createOrder,
   updateOrderStatus,
   deleteOrder,
+  cancelOrder,
   refundOrder,
   listCustomers,
   getCustomer,
@@ -37,6 +38,7 @@ import {
   listSalesReturns,
   createSalesReturn,
   updateSalesReturnStatus,
+  cancelSalesReturn,
   deleteSalesReturn
 } from '../controllers/admin.controller.js';
 import {
@@ -57,12 +59,20 @@ import {
   getDaybook,
   getTrialBalance,
   getProfitAndLoss,
+  getBalanceSheet,
   getSalesReport,
   getIrdVatSummary,
   listPurchases,
   getPurchase,
   createPurchase,
-  deletePurchase
+  cancelPurchase,
+  deletePurchase,
+  listPurchaseReturns,
+  getPurchaseReturn,
+  createPurchaseReturn,
+  cancelPurchaseReturn,
+  listSuppliers,
+  createSupplier
 } from '../controllers/finance.controller.js';
 
 export const router = express.Router();
@@ -112,14 +122,16 @@ router.post('/orders', createOrder);
 router.get('/orders/:id', getOrder);
 router.put('/orders/:id/status', updateOrderStatus);
 router.patch('/orders/:id/status', updateOrderStatus);
+router.post('/orders/:id/cancel', cancelOrder);
 router.delete('/orders/:id', deleteOrder);
 router.post('/orders/:id/refund', refundOrder);
 
-// Sales Returns
+// Sales Returns (Credit Notes)
 router.get('/returns', listSalesReturns);
 router.post('/returns', createSalesReturn);
 router.put('/returns/:id/status', updateSalesReturnStatus);
 router.patch('/returns/:id/status', updateSalesReturnStatus);
+router.post('/returns/:id/cancel', cancelSalesReturn);
 router.delete('/returns/:id', deleteSalesReturn);
 
 // Coupons Management
@@ -144,12 +156,17 @@ router.put('/customers/:id', updateCustomer);
 router.patch('/customers/:id', updateCustomer);
 router.delete('/customers/:id', deleteCustomer);
 
+// Suppliers Directory
+router.get('/suppliers', listSuppliers);
+router.post('/suppliers', createSupplier);
+
 // Finance & Accounting
 router.get('/finance/journal', getJournal);
 router.get('/finance/ledger', getLedger);
 router.get('/finance/daybook', getDaybook);
 router.get('/finance/trial-balance', getTrialBalance);
 router.get('/finance/profit-and-loss', getProfitAndLoss);
+router.get('/finance/balance-sheet', getBalanceSheet);
 
 // Sales Reports
 router.get('/reports/sales', getSalesReport);
@@ -161,7 +178,14 @@ router.get('/ird/vat-summary', getIrdVatSummary);
 router.get('/purchases', listPurchases);
 router.post('/purchases', createPurchase);
 router.get('/purchases/:id', getPurchase);
+router.post('/purchases/:id/cancel', cancelPurchase);
 router.delete('/purchases/:id', deletePurchase);
+
+// Purchase Returns (Debit Notes)
+router.get('/purchase-returns', listPurchaseReturns);
+router.post('/purchase-returns', createPurchaseReturn);
+router.get('/purchase-returns/:id', getPurchaseReturn);
+router.post('/purchase-returns/:id/cancel', cancelPurchaseReturn);
 
 // Email Diagnostic & Testing (Admin)
 router.get('/email/diagnostic', async (req, res, next) => {

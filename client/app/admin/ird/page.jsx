@@ -3,40 +3,33 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { money, today } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 
-// Convert backend Paisa (if value > 1000 and integer) or raw NPR to display rupees
-function toRupees(val) {
-  if (val === null || val === undefined) return 0;
-  const num = Number(val) || 0;
-  // If backend returns in Paisa (standard in Zylo order/purchase models)
-  if (Math.abs(num) >= 100 && Number.isInteger(num)) {
-    return Math.round(num / 100);
-  }
-  return Math.round(num);
-}
-
 export default function AdminIrdPage() {
   const [monthStr, setMonthStr] = useState(today().slice(0, 7));
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'sales', 'purchases', 'returns'
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary', 'sales', 'purchases', 'creditNotes', 'debitNotes'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [summaryData, setSummaryData] = useState({
     summary: {
       sales: { taxable: 0, vat: 0, gross: 0, count: 0 },
-      returns: { taxable: 0, vat: 0, gross: 0, count: 0 },
+      creditNotes: { taxable: 0, vat: 0, gross: 0, count: 0 },
       purchases: { taxable: 0, exempt: 0, vat: 0, gross: 0, count: 0 },
+      debitNotes: { taxable: 0, vat: 0, gross: 0, count: 0 },
+      netSalesVat: 0,
+      netPurchasesVat: 0,
       netVatPayable: 0
     },
     salesRegister: [],
-    returnsRegister: [],
+    creditNotesRegister: [],
     purchaseRegister: [],
+    debitNotesRegister: [],
     vatRate: 13
   });
 
   const [settings, setSettings] = useState({
-    company: 'Zylo Pvt. Ltd.',
-    address: 'Thamel, Kathmandu, Nepal',
-    pan: '601234567',
+    company: 'Ramroxa Pvt. Ltd.',
+    address: 'Kathmandu, Nepal',
+    pan: '606387590',
     vatRate: 13
   });
 
@@ -51,206 +44,129 @@ export default function AdminIrdPage() {
         setSummaryData(res);
       }
     } catch (err) {
-      console.warn('API /api/admin/ird/vat-summary failed, attempting fallback calculation:', err);
-      try {
-        // Fallback: fetch orders and purchases directly
-        const [ordersRes, purchRes, returnsRes] = await Promise.allSettled([
-          api.get('/api/admin/orders'),
-          api.get('/api/admin/purchases'),
-          api.get('/api/admin/returns')
-        ]);
-
-        const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data?.orders || ordersRes.value.data || []) : [];
-        const purchases = purchRes.status === 'fulfilled' ? (purchRes.value.data?.purchases || purchRes.value.data || []) : [];
-        const returns = returnsRes.status === 'fulfilled' ? (returnsRes.value.data?.returns || returnsRes.value.data || []) : [];
-
-        const filteredOrders = orders.filter(o => (o.createdAt || o.date || '').slice(0, 7) === targetMonth);
-        const filteredPurch = purchases.filter(p => (p.date || '').slice(0, 7) === targetMonth);
-        const filteredReturns = returns.filter(r => (r.createdAt || r.date || '').slice(0, 7) === targetMonth);
-
-        const salesRegister = filteredOrders.map(o => {
-          const gross = o.grandTotal != null ? o.grandTotal : (Number(o.total || 0) * 100);
-          const vat = o.vatTotal != null ? o.vatTotal : Math.round(gross * 0.13 / 1.13);
-          const taxable = gross - vat;
-          return {
-            date: (o.createdAt || o.date || today()).slice(0, 10),
-            invoice: o.orderNo || o.id || 'INV',
-            customer: o.shippingAddress?.fullName || o.customer || o.guestEmail || 'Customer',
-            taxable,
-            vat,
-            total: gross
-          };
-        });
-
-        const purchaseRegister = filteredPurch.map(p => {
-          const taxable = p.subtotal != null ? p.subtotal : (p.taxable || (p.total || 0));
-          const vat = p.vatAmount != null ? p.vatAmount : (p.vat != null ? p.vat : (p.vatable !== false ? Math.round(taxable * 0.13) : 0));
-          const total = p.totalAmount != null ? p.totalAmount : (taxable + vat);
-          return {
-            date: (p.date || today()).slice(0, 10),
-            bill: p.billNo || p.bill || 'BILL',
-            supplier: p.supplier || 'Supplier',
-            supplierPan: p.supplierPan || '',
-            vatable: p.vatable !== false,
-            taxable,
-            vat,
-            total
-          };
-        });
-
-        const returnsRegister = filteredReturns.map(r => {
-          const gross = r.refundAmount != null ? (r.refundAmount > 1000 ? r.refundAmount : r.refundAmount * 100) : 0;
-          const vat = r.refundVat != null ? (r.refundVat > 1000 ? r.refundVat : r.refundVat * 100) : Math.round(gross * 0.13 / 1.13);
-          const taxable = r.refundNet != null ? (r.refundNet > 1000 ? r.refundNet : r.refundNet * 100) : (gross - vat);
-          return {
-            date: (r.date || r.createdAt || today()).slice(0, 10),
-            creditNoteNo: r.no || r.id || 'CN',
-            orderNo: r.orderNo || '',
-            customer: r.customer || 'Customer',
-            taxable,
-            vat,
-            total: gross,
-            reason: r.reason || ''
-          };
-        });
-
-        const sTaxable = salesRegister.reduce((a, s) => a + s.taxable, 0);
-        const sVat = salesRegister.reduce((a, s) => a + s.vat, 0);
-        const sGross = salesRegister.reduce((a, s) => a + s.total, 0);
-
-        const rTaxable = returnsRegister.reduce((a, r) => a + r.taxable, 0);
-        const rVat = returnsRegister.reduce((a, r) => a + r.vat, 0);
-        const rGross = returnsRegister.reduce((a, r) => a + r.total, 0);
-
-        const pTaxable = purchaseRegister.filter(p => p.vatable).reduce((a, p) => a + p.taxable, 0);
-        const pExempt = purchaseRegister.filter(p => !p.vatable).reduce((a, p) => a + p.taxable, 0);
-        const pVat = purchaseRegister.reduce((a, p) => a + p.vat, 0);
-        const pGross = purchaseRegister.reduce((a, p) => a + p.total, 0);
-
-        const netVat = (sVat - rVat) - pVat;
-
-        setSummaryData({
-          month: targetMonth,
-          vatRate: 13,
-          summary: {
-            sales: { taxable: sTaxable, vat: sVat, gross: sGross, count: salesRegister.length },
-            returns: { taxable: rTaxable, vat: rVat, gross: rGross, count: returnsRegister.length },
-            purchases: { taxable: pTaxable, exempt: pExempt, vat: pVat, gross: pGross, count: purchaseRegister.length },
-            netVatPayable: netVat
-          },
-          salesRegister,
-          returnsRegister,
-          purchaseRegister
-        });
-      } catch (fallbackErr) {
-        setError('Failed to load IRD VAT data. Please check your network connection.');
-      }
+      console.error('Failed to load IRD VAT summary:', err);
+      setError('Failed to fetch IRD VAT data. Please check backend connection.');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    try {
-      const saved = typeof window !== 'undefined' ? (localStorage.getItem('rmx_admin_settings') || localStorage.getItem('zylo_admin_settings') || localStorage.getItem('zylo_settings')) : null;
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        }
-      }
-    } catch (e) {}
     loadIrdData(monthStr);
-  }, [loadIrdData, monthStr]);
-
-  const vatRate = summaryData?.vatRate || settings?.vatRate || 13;
-  const rawSummary = summaryData?.summary || {};
-
-  // Formatted values in Rupees
-  const salesTaxable = toRupees(rawSummary?.sales?.taxable);
-  const salesVat = toRupees(rawSummary?.sales?.vat);
-  const salesGross = toRupees(rawSummary?.sales?.gross);
-
-  const returnsTaxable = toRupees(rawSummary?.returns?.taxable);
-  const returnsVat = toRupees(rawSummary?.returns?.vat);
-  const returnsGross = toRupees(rawSummary?.returns?.gross);
-
-  const purchasesTaxable = toRupees(rawSummary?.purchases?.taxable);
-  const purchasesExempt = toRupees(rawSummary?.purchases?.exempt);
-  const purchasesVat = toRupees(rawSummary?.purchases?.vat);
-  const purchasesGross = toRupees(rawSummary?.purchases?.gross);
-
-  const netVatPayable = toRupees(rawSummary?.netVatPayable);
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('rmx_admin_settings') || localStorage.getItem('zylo_admin_settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.company) {
+            setSettings(prev => ({ ...prev, company: parsed.company, pan: parsed.pan || prev.pan }));
+          }
+        }
+      } catch (e) {}
+    }
+  }, [monthStr, loadIrdData]);
 
   const sales = summaryData.salesRegister || [];
-  const returns = summaryData.returnsRegister || [];
-  const purch = summaryData.purchaseRegister || [];
+  const creditNotes = summaryData.creditNotesRegister || summaryData.returnsRegister || [];
+  const purchases = summaryData.purchaseRegister || [];
+  const debitNotes = summaryData.debitNotesRegister || [];
+  const summary = summaryData.summary || {};
 
   const exportCsv = () => {
     const rows = [
-      [`NEPAL INLAND REVENUE DEPARTMENT (IRD) - VAT RETURN SUMMARY`],
-      [`Company Name`, `"${settings?.company || 'Zylo Pvt. Ltd.'}"`],
-      [`Taxpayer PAN`, `"${settings?.pan || '601234567'}"`],
-      [`Tax Period (AD)`, monthStr],
-      [`Applicable VAT Rate`, `${vatRate}%`],
+      [`INLAND REVENUE DEPARTMENT (IRD) NEPAL - STATUTORY VAT RETURN`],
+      [`Company: ${settings.company}`, `PAN: ${settings.pan}`, `Period: ${monthStr}`],
       [],
-      [`--- SUMMARY OF VAT COMPUTATION ---`],
-      [`Category`, `Taxable Amount (NPR)`, `Exempt Amount (NPR)`, `VAT (13% NPR)`, `Total Gross (NPR)`],
-      [`Sales / Output VAT`, salesTaxable, 0, salesVat, salesGross],
-      [`Less: Sales Returns (Credit Notes)`, returnsTaxable, 0, returnsVat, returnsGross],
-      [`Purchases / Input VAT`, purchasesTaxable, purchasesExempt, purchasesVat, purchasesGross],
-      [netVatPayable >= 0 ? `Net VAT Payable to IRD` : `Excess Input VAT Credit C/F`, ``, ``, Math.abs(netVatPayable), ``],
+      [`--- SUMMARY OF VAT RETURN (Schedule 10) ---`],
+      [`Category`, `Taxable Amount (NPR)`, `13% VAT Amount (NPR)`],
+      [`Gross Sales`, summary.sales?.taxable || 0, summary.sales?.vat || 0],
+      [`Less: Credit Notes (Returns)`, -(summary.creditNotes?.taxable || 0), -(summary.creditNotes?.vat || 0)],
+      [`Net Sales Taxable & Output VAT`, (summary.sales?.taxable || 0) - (summary.creditNotes?.taxable || 0), summary.netSalesVat || 0],
+      [`Gross Purchases`, summary.purchases?.taxable || 0, summary.purchases?.vat || 0],
+      [`Less: Debit Notes (Returns)`, -(summary.debitNotes?.taxable || 0), -(summary.debitNotes?.vat || 0)],
+      [`Net Purchases Taxable & Input VAT`, (summary.purchases?.taxable || 0) - (summary.debitNotes?.taxable || 0), summary.netPurchasesVat || 0],
+      [`NET VAT PAYABLE TO IRD`, ``, summary.netVatPayable || 0],
       [],
-      [`--- SALES REGISTER (Bikri Khata - Anusuchi 8) ---`],
-      [`Date`, `Tax Invoice No`, `Buyer / Customer Name`, `Taxable Sales (NPR)`, `Output VAT 13% (NPR)`, `Total Invoice (NPR)`]
+      [`--- SCHEDULE 8: SALES REGISTER (Bikri Khata) ---`],
+      [`S.N.`, `Date`, `Invoice No`, `Buyer Name`, `Buyer PAN`, `Total Amount`, `Exempt Amount`, `Taxable Amount`, `13% VAT`, `Export`]
     ];
 
-    sales.forEach(s => {
+    sales.forEach((s, idx) => {
       rows.push([
+        idx + 1,
         s.date,
         s.invoice,
-        `"${s.customer || 'Store Customer'}"`,
-        toRupees(s.taxable),
-        toRupees(s.vat),
-        toRupees(s.total)
+        `"${s.buyerName || 'Walk-in Customer'}"`,
+        `"${s.buyerPan || ''}"`,
+        s.totalAmount,
+        s.exemptAmount || 0,
+        s.taxableAmount,
+        s.vatAmount,
+        0
       ]);
     });
 
-    if (returns.length > 0) {
-      rows.push(
-        [],
-        [`--- CREDIT NOTES REGISTER (Sales Returns - Anusuchi 10) ---`],
-        [`Date`, `Credit Note No`, `Original Invoice No`, `Customer Name`, `Reason`, `Taxable Credit (NPR)`, `VAT 13% (NPR)`, `Total Refund (NPR)`]
-      );
-      returns.forEach(r => {
-        rows.push([
-          r.date,
-          r.creditNoteNo,
-          r.orderNo,
-          `"${r.customer || 'Customer'}"`,
-          `"${r.reason || ''}"`,
-          toRupees(r.taxable),
-          toRupees(r.vat),
-          toRupees(r.total)
-        ]);
-      });
-    }
+    rows.push(
+      [],
+      [`--- SCHEDULE 9: PURCHASE REGISTER (Kharid Khata) ---`],
+      [`S.N.`, `Date`, `Bill No`, `Supplier Name`, `Supplier PAN`, `Total Amount`, `Exempt Amount`, `Taxable (Local)`, `Taxable (Import)`, `Capital Goods`, `13% Input VAT`]
+    );
+
+    purchases.forEach((p, idx) => {
+      rows.push([
+        idx + 1,
+        p.date,
+        p.billNo,
+        `"${p.supplierName || 'Supplier'}"`,
+        `"${p.supplierPan || ''}"`,
+        p.totalAmount,
+        p.exemptAmount || 0,
+        p.taxableLocal || 0,
+        0,
+        0,
+        p.vatAmount
+      ]);
+    });
 
     rows.push(
       [],
-      [`--- PURCHASE REGISTER (Kharid Khata - Anusuchi 9) ---`],
-      [`Date`, `Supplier Bill No`, `Supplier Name`, `Supplier PAN`, `Taxable Purchase (NPR)`, `Input VAT 13% (NPR)`, `Total Bill (NPR)`]
+      [`--- SCHEDULE 10: CREDIT NOTES (Sales Returns) ---`],
+      [`S.N.`, `Credit Note No`, `Date`, `Original Invoice`, `Buyer Name`, `Buyer PAN`, `Reason`, `Taxable`, `13% VAT`, `Total Amount`]
     );
 
-    purch.forEach(p => {
+    creditNotes.forEach((cn, idx) => {
       rows.push([
-        p.date,
-        p.bill,
-        `"${p.supplier || 'Supplier'}"`,
-        `"${p.supplierPan || ''}"`,
-        toRupees(p.taxable),
-        toRupees(p.vat),
-        toRupees(p.total)
+        idx + 1,
+        cn.creditNoteNo,
+        cn.date,
+        cn.originalInvoice,
+        `"${cn.buyerName || 'Customer'}"`,
+        `"${cn.buyerPan || ''}"`,
+        `"${cn.reason || ''}"`,
+        cn.taxableAmount,
+        cn.vatAmount,
+        cn.totalAmount
+      ]);
+    });
+
+    rows.push(
+      [],
+      [`--- SCHEDULE 11: DEBIT NOTES (Purchase Returns) ---`],
+      [`S.N.`, `Debit Note No`, `Date`, `Original Bill No`, `Supplier Name`, `Supplier PAN`, `Reason`, `Taxable`, `13% VAT`, `Total Amount`]
+    );
+
+    debitNotes.forEach((dn, idx) => {
+      rows.push([
+        idx + 1,
+        dn.debitNoteNo,
+        dn.date,
+        dn.originalBillNo,
+        `"${dn.supplierName || 'Supplier'}"`,
+        `"${dn.supplierPan || ''}"`,
+        `"${dn.reason || ''}"`,
+        dn.taxableAmount,
+        dn.vatAmount,
+        dn.totalAmount
       ]);
     });
 
@@ -266,65 +182,48 @@ export default function AdminIrdPage() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      {/* Page Header */}
       <div className="page-head">
-        <h2>IRD / VAT Return Module</h2>
+        <h2>Nepal IRD / VAT Return System</h2>
         <p>
-          Official VAT return computation, Bikri Khata (Sales), Kharid Khata (Purchases), and Credit Notes for Inland Revenue Department filing.
+          Statutory Schedule 8 (Sales Book), Schedule 9 (Purchase Book), Schedule 10 (Credit Notes), and Schedule 11 (Debit Notes) in full compliance with Nepal VAT Act 2052.
         </p>
       </div>
 
-      {/* Toolbar & Month Selection */}
-      <div className="toolbar no-print">
+      {/* Toolbar */}
+      <div className="toolbar no-print" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '13px', fontWeight: '500', color: 'var(--primary)' }}>Tax Period (AD):</label>
+          <label style={{ fontSize: '13px', fontWeight: 600 }}>Tax Period (AD):</label>
           <input
             type="month"
             value={monthStr}
             onChange={(e) => setMonthStr(e.target.value)}
+            className="text-input"
           />
         </div>
 
-        <button
-          className="btn btn-sm"
-          onClick={() => loadIrdData(monthStr)}
-          disabled={loading}
-        >
+        <button className="btn btn-sm" onClick={() => loadIrdData(monthStr)} disabled={loading}>
           {loading ? 'Refreshing...' : '🔄 Refresh Data'}
         </button>
 
-        <div className="spacer" />
-
         <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            className={`btn btn-sm ${activeTab === 'all' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            All Reports
+          <button className={`btn btn-sm ${activeTab === 'summary' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('summary')}>
+            VAT Return Summary
           </button>
-          <button
-            className={`btn btn-sm ${activeTab === 'sales' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTab('sales')}
-          >
-            Bikri Khata ({sales.length})
+          <button className={`btn btn-sm ${activeTab === 'sales' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('sales')}>
+            Schedule 8: Sales ({sales.length})
           </button>
-          <button
-            className={`btn btn-sm ${activeTab === 'purchases' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTab('purchases')}
-          >
-            Kharid Khata ({purch.length})
+          <button className={`btn btn-sm ${activeTab === 'purchases' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('purchases')}>
+            Schedule 9: Purchases ({purchases.length})
           </button>
-          {returns.length > 0 && (
-            <button
-              className={`btn btn-sm ${activeTab === 'returns' ? 'btn-primary' : ''}`}
-              onClick={() => setActiveTab('returns')}
-            >
-              Credit Notes ({returns.length})
-            </button>
-          )}
+          <button className={`btn btn-sm ${activeTab === 'creditNotes' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('creditNotes')}>
+            Schedule 10: Credit Notes ({creditNotes.length})
+          </button>
+          <button className={`btn btn-sm ${activeTab === 'debitNotes' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('debitNotes')}>
+            Schedule 11: Debit Notes ({debitNotes.length})
+          </button>
         </div>
 
-        <button className="btn btn-sm" onClick={exportCsv}>
+        <button className="btn btn-sm btn-outline" onClick={exportCsv}>
           📥 Export IRD CSV
         </button>
         <button className="btn btn-sm btn-primary" onClick={() => window.print()}>
@@ -333,357 +232,272 @@ export default function AdminIrdPage() {
       </div>
 
       {error && (
-        <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
+        <div style={{ background: '#fee2e2', border: '1px solid #ef4444', color: '#b91c1c', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
           {error}
         </div>
       )}
 
-      {/* Main Report Card */}
-      <div className="card card-pad" style={{ marginTop: '16px' }}>
-        {/* Taxpayer Header */}
-        <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '18px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+      {/* Taxpayer Header Card */}
+      <div className="card card-pad" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '500', color: 'var(--primary)', margin: 0 }}>
-              {settings?.company || 'Zylo Pvt. Ltd.'}
-            </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--muted-foreground)' }}>
-              {settings?.address || 'Thamel, Kathmandu, Nepal'} &middot; <strong style={{ color: 'var(--primary)' }}>PAN: {settings?.pan || '601234567'}</strong>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>{settings.company}</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--muted-foreground)' }}>
+              {settings.address} &middot; <strong>PAN: {settings.pan}</strong>
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span className="badge badge-accent" style={{ marginBottom: '4px', display: 'inline-block' }}>
-              Standard Rate: {vatRate}% VAT
-            </span>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--primary)' }}>
-              Filing Period: {monthStr}
-            </div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--primary)' }}>Tax Period: {monthStr}</div>
+            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>Applicable Nepal VAT Rate: 13%</div>
           </div>
         </div>
 
-        {/* Top Metric Cards */}
-        <div className="metric-grid" style={{ gridTemplateColumns: returnsVat > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', marginBottom: '28px' }}>
-          <div className="metric" style={{ background: 'var(--success-soft)', border: '1px solid color-mix(in srgb, var(--success) 25%, transparent)' }}>
-            <div className="label" style={{ color: 'var(--success)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Output VAT (Sales)
-            </div>
-            <div className="value" style={{ color: 'var(--success)', fontWeight: '700' }}>
-              {money(salesVat)}
-            </div>
-            <div className="hint" style={{ color: 'var(--muted-foreground)' }}>
-              On {money(salesTaxable)} taxable sales ({rawSummary?.sales?.count || 0} invoices)
-            </div>
-          </div>
-
-          <div className="metric" style={{ background: 'var(--accent-soft)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)' }}>
-            <div className="label" style={{ color: 'var(--accent)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Input VAT (Purchases)
-            </div>
-            <div className="value" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-              {money(purchasesVat)}
-            </div>
-            <div className="hint" style={{ color: 'var(--muted-foreground)' }}>
-              On {money(purchasesTaxable)} taxable purchases ({rawSummary?.purchases?.count || 0} bills)
-            </div>
-          </div>
-
-          {returnsVat > 0 && (
-            <div className="metric" style={{ background: 'var(--danger-soft)', border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' }}>
-              <div className="label" style={{ color: 'var(--danger)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Sales Returns (Credit Notes)
-              </div>
-              <div className="value" style={{ color: 'var(--danger)', fontWeight: '700' }}>
-                -{money(returnsVat)}
-              </div>
-              <div className="hint" style={{ color: 'var(--muted-foreground)' }}>
-                On {money(returnsTaxable)} returned goods ({rawSummary?.returns?.count || 0} notes)
-              </div>
-            </div>
-          )}
-
-          <div className="metric" style={{
-            background: netVatPayable >= 0 ? 'var(--warning-soft)' : 'var(--accent-soft)',
-            border: netVatPayable >= 0 ? '1px solid color-mix(in srgb, var(--warning) 25%, transparent)' : '1px solid color-mix(in srgb, var(--accent) 25%, transparent)'
-          }}>
-            <div className="label" style={{
-              color: netVatPayable >= 0 ? 'var(--warning)' : 'var(--accent)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em'
-            }}>
-              {netVatPayable >= 0 ? 'Net VAT Payable to IRD' : 'Excess Input Credit C/F'}
-            </div>
-            <div className="value" style={{
-              color: netVatPayable >= 0 ? 'var(--warning)' : 'var(--accent)',
-              fontWeight: '700'
-            }}>
-              {money(Math.abs(netVatPayable))}
-            </div>
-            <div className="hint" style={{ color: 'var(--muted-foreground)' }}>
-              {netVatPayable >= 0 ? 'Due by 25th of next Nepali month' : 'Eligible for deduction in next period'}
-            </div>
-          </div>
-        </div>
-
-        {/* VAT Computation Master Table */}
-        <div style={{ marginBottom: '32px' }}>
-          <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📋</span> Monthly VAT Return Summary (IRD Filing Worksheet)
-          </div>
-          <div className="table-wrap" style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
-            <table>
+        {/* TAB 1: VAT SUMMARY */}
+        {activeTab === 'summary' && (
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px' }}>Monthly VAT Return Reconciliation (Schedule 10)</h3>
+            <table style={{ width: '100%', marginBottom: '20px' }}>
               <thead>
-                <tr style={{ background: 'var(--muted)' }}>
-                  <th>Classification / Account Head</th>
-                  <th className="num">Taxable Amount (Rs)</th>
-                  <th className="num">Exempt / Non-VAT (Rs)</th>
-                  <th className="num">13% VAT Amount (Rs)</th>
-                  <th className="num">Total Gross (Rs)</th>
+                <tr>
+                  <th>Transaction Description</th>
+                  <th className="num">Taxable Amount (NPR)</th>
+                  <th className="num">13% VAT (NPR)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ fontWeight: '500' }}>1. Total Sales (Output Taxable Goods)</td>
-                  <td className="num">{money(salesTaxable)}</td>
-                  <td className="num">{money(0)}</td>
-                  <td className="num" style={{ fontWeight: '600', color: 'var(--success)' }}>{money(salesVat)}</td>
-                  <td className="num" style={{ fontWeight: '600' }}>{money(salesGross)}</td>
-                </tr>
-                {returns.length > 0 && (
-                  <tr style={{ background: 'var(--danger-soft)' }}>
-                    <td style={{ fontWeight: '500', color: 'var(--danger)' }}>2. Less: Sales Returns / Credit Notes (Anusuchi 10)</td>
-                    <td className="num" style={{ color: 'var(--danger)' }}>-{money(returnsTaxable)}</td>
-                    <td className="num">-</td>
-                    <td className="num" style={{ fontWeight: '600', color: 'var(--danger)' }}>-{money(returnsVat)}</td>
-                    <td className="num" style={{ color: 'var(--danger)' }}>-{money(returnsGross)}</td>
-                  </tr>
-                )}
-                <tr style={{ background: 'var(--muted)' }}>
-                  <td style={{ fontWeight: '600' }}>Net Adjusted Sales (Output Base)</td>
-                  <td className="num" style={{ fontWeight: '600' }}>{money(salesTaxable - returnsTaxable)}</td>
-                  <td className="num">{money(0)}</td>
-                  <td className="num" style={{ fontWeight: '700', color: 'var(--success)' }}>{money(salesVat - returnsVat)}</td>
-                  <td className="num" style={{ fontWeight: '600' }}>{money(salesGross - returnsGross)}</td>
+                  <td>Gross Taxable Sales (Schedule 8)</td>
+                  <td className="num">{money(summary.sales?.taxable || 0)}</td>
+                  <td className="num">{money(summary.sales?.vat || 0)}</td>
                 </tr>
                 <tr>
-                  <td style={{ fontWeight: '500' }}>3. Total Purchases (Input Taxable Stock & Materials)</td>
-                  <td className="num">{money(purchasesTaxable)}</td>
-                  <td className="num">{money(purchasesExempt)}</td>
-                  <td className="num" style={{ fontWeight: '600', color: 'var(--accent)' }}>{money(purchasesVat)}</td>
-                  <td className="num" style={{ fontWeight: '600' }}>{money(purchasesGross)}</td>
+                  <td style={{ color: (summary.creditNotes?.taxable || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    <em>Less:</em> Sales Returns / Credit Notes (Schedule 10)
+                  </td>
+                  <td className="num" style={{ color: (summary.creditNotes?.taxable || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    ({money(summary.creditNotes?.taxable || 0)})
+                  </td>
+                  <td className="num" style={{ color: (summary.creditNotes?.vat || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    ({money(summary.creditNotes?.vat || 0)})
+                  </td>
+                </tr>
+                <tr style={{ background: 'var(--muted)', fontWeight: 600 }}>
+                  <td><strong>A. Net Sales &amp; Output VAT Liability</strong></td>
+                  <td className="num"><strong>{money((summary.sales?.taxable || 0) - (summary.creditNotes?.taxable || 0))}</strong></td>
+                  <td className="num"><strong>{money(summary.netSalesVat || 0)}</strong></td>
+                </tr>
+                <tr>
+                  <td>Gross Taxable Purchases (Schedule 9)</td>
+                  <td className="num">{money(summary.purchases?.taxable || 0)}</td>
+                  <td className="num">{money(summary.purchases?.vat || 0)}</td>
+                </tr>
+                <tr>
+                  <td style={{ color: (summary.debitNotes?.taxable || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    <em>Less:</em> Purchase Returns / Debit Notes (Schedule 11)
+                  </td>
+                  <td className="num" style={{ color: (summary.debitNotes?.taxable || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    ({money(summary.debitNotes?.taxable || 0)})
+                  </td>
+                  <td className="num" style={{ color: (summary.debitNotes?.vat || 0) > 0 ? 'var(--danger)' : 'inherit' }}>
+                    ({money(summary.debitNotes?.vat || 0)})
+                  </td>
+                </tr>
+                <tr style={{ background: 'var(--muted)', fontWeight: 600 }}>
+                  <td><strong>B. Net Purchases &amp; Input VAT Credit Claimed</strong></td>
+                  <td className="num"><strong>{money((summary.purchases?.taxable || 0) - (summary.debitNotes?.taxable || 0))}</strong></td>
+                  <td className="num"><strong>{money(summary.netPurchasesVat || 0)}</strong></td>
                 </tr>
               </tbody>
-              <tfoot>
-                <tr style={{
-                  background: netVatPayable >= 0 ? 'var(--warning-soft)' : 'var(--accent-soft)',
-                  fontWeight: '700',
-                  color: netVatPayable >= 0 ? 'var(--warning)' : 'var(--accent)'
-                }}>
-                  <td colSpan="3">
-                    {netVatPayable >= 0 ? 'Net VAT Payable to Inland Revenue Department (IRD)' : 'Excess Input Credit Carried Forward'}
-                  </td>
-                  <td className="num">
-                    {money(Math.abs(netVatPayable))}
-                  </td>
-                  <td className="num" style={{ fontSize: '11px' }}>
-                    {netVatPayable >= 0 ? 'Tax Payable' : 'Credit Carried Forward'}
-                  </td>
+            </table>
+
+            {/* Net VAT Payable Highlight Banner */}
+            <div
+              style={{
+                padding: '16px 20px',
+                borderRadius: '10px',
+                background: (summary.netVatPayable || 0) >= 0 ? '#1e293b' : '#059669',
+                color: '#ffffff',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 700 }}>
+                  {(summary.netVatPayable || 0) >= 0 ? 'NET VAT PAYABLE TO NEPAL IRD' : 'EXCESS INPUT VAT (CARRIED FORWARD)'}
+                </div>
+                <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px' }}>
+                  Statutory Rule: Due for deposit by 25th of the following Nepali month
+                </div>
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 800 }}>
+                {money(Math.abs(summary.netVatPayable || 0))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: SCHEDULE 8 (SALES REGISTER) */}
+        {activeTab === 'sales' && (
+          <div className="table-wrap">
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px' }}>Schedule 8: Sales Register (बिक्री खाता)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>S.N.</th>
+                  <th>Date</th>
+                  <th>Invoice No</th>
+                  <th>Buyer Name</th>
+                  <th>Buyer PAN</th>
+                  <th className="num">Total (NPR)</th>
+                  <th className="num">Taxable (NPR)</th>
+                  <th className="num">13% VAT (NPR)</th>
                 </tr>
-              </tfoot>
+              </thead>
+              <tbody>
+                {sales.length > 0 ? (
+                  sales.map((s) => (
+                    <tr key={s.sn}>
+                      <td>{s.sn}</td>
+                      <td>{s.date}</td>
+                      <td><code>{s.invoice}</code></td>
+                      <td>{s.buyerName}</td>
+                      <td>{s.buyerPan || <span style={{ color: 'var(--muted-foreground)' }}>B2C Unregistered</span>}</td>
+                      <td className="num">{money(s.totalAmount)}</td>
+                      <td className="num">{money(s.taxableAmount)}</td>
+                      <td className="num">{money(s.vatAmount)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '24px' }}>No sales recorded in this period.</td></tr>
+                )}
+              </tbody>
             </table>
           </div>
-        </div>
+        )}
 
-        {/* Sales Register (Bikri Khata) */}
-        {(activeTab === 'all' || activeTab === 'sales') && (
-          <div style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div className="section-title" style={{ margin: 0 }}>
-                🧾 Sales Register &mdash; Bikri Khata (Anusuchi 8)
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
-                {sales.length} record{sales.length === 1 ? '' : 's'}
-              </span>
-            </div>
-
-            <div className="table-wrap" style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <table>
-                <thead>
-                  <tr style={{ background: 'var(--muted)' }}>
-                    <th>Date</th>
-                    <th>Invoice No</th>
-                    <th>Customer / Buyer</th>
-                    <th className="num">Taxable Sales (Rs)</th>
-                    <th className="num">VAT 13% (Rs)</th>
-                    <th className="num">Total Gross (Rs)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sales.length > 0 ? (
-                    sales.map((s, idx) => (
-                      <tr key={s.id || s.invoice || idx}>
-                        <td>{s.date || today()}</td>
-                        <td>
-                          <code style={{ background: 'var(--muted)', color: 'var(--primary)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', border: '1px solid var(--border)' }}>
-                            {s.invoice}
-                          </code>
-                        </td>
-                        <td style={{ fontWeight: '500' }}>{s.customer || 'Storefront Customer'}</td>
-                        <td className="num">{money(toRupees(s.taxable))}</td>
-                        <td className="num" style={{ color: 'var(--success)', fontWeight: '500' }}>{money(toRupees(s.vat))}</td>
-                        <td className="num" style={{ fontWeight: '600' }}>{money(toRupees(s.total))}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                        No sales invoices recorded for {monthStr}
-                      </td>
+        {/* TAB 3: SCHEDULE 9 (PURCHASE REGISTER) */}
+        {activeTab === 'purchases' && (
+          <div className="table-wrap">
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px' }}>Schedule 9: Purchase Register (खरिद खाता)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>S.N.</th>
+                  <th>Date</th>
+                  <th>Bill No</th>
+                  <th>Supplier Name</th>
+                  <th>Supplier PAN</th>
+                  <th className="num">Total (NPR)</th>
+                  <th className="num">Taxable Local (NPR)</th>
+                  <th className="num">13% Input VAT (NPR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchases.length > 0 ? (
+                  purchases.map((p) => (
+                    <tr key={p.sn}>
+                      <td>{p.sn}</td>
+                      <td>{p.date}</td>
+                      <td><code>{p.billNo}</code></td>
+                      <td>{p.supplierName}</td>
+                      <td>{p.supplierPan || '-'}</td>
+                      <td className="num">{money(p.totalAmount)}</td>
+                      <td className="num">{money(p.taxableLocal)}</td>
+                      <td className="num">{money(p.vatAmount)}</td>
                     </tr>
-                  )}
-                </tbody>
-                {sales.length > 0 && (
-                  <tfoot>
-                    <tr style={{ background: 'var(--muted)', fontWeight: '700' }}>
-                      <td colSpan="3">Total Sales (Bikri Khata)</td>
-                      <td className="num">{money(salesTaxable)}</td>
-                      <td className="num" style={{ color: 'var(--success)' }}>{money(salesVat)}</td>
-                      <td className="num">{money(salesGross)}</td>
-                    </tr>
-                  </tfoot>
+                  ))
+                ) : (
+                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '24px' }}>No purchase bills recorded in this period.</td></tr>
                 )}
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
 
-        {/* Credit Notes (Sales Returns Register - Anusuchi 10) */}
-        {(activeTab === 'all' || activeTab === 'returns') && returns.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div className="section-title" style={{ margin: 0, color: 'var(--danger)' }}>
-                ↩️ Credit Notes Register &mdash; Sales Returns (Anusuchi 10)
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
-                {returns.length} note{returns.length === 1 ? '' : 's'}
-              </span>
-            </div>
-
-            <div className="table-wrap" style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <table>
-                <thead>
-                  <tr style={{ background: 'var(--danger-soft)' }}>
-                    <th>Date</th>
-                    <th>Credit Note No</th>
-                    <th>Orig. Invoice</th>
-                    <th>Customer</th>
-                    <th>Reason</th>
-                    <th className="num">Taxable Refund (Rs)</th>
-                    <th className="num">VAT 13% (Rs)</th>
-                    <th className="num">Total Credit (Rs)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {returns.map((r, idx) => (
-                    <tr key={r.id || r.creditNoteNo || idx}>
-                      <td>{r.date || today()}</td>
-                      <td>
-                        <code style={{ background: 'var(--danger-soft)', color: 'var(--danger)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>
-                          {r.creditNoteNo}
-                        </code>
-                      </td>
-                      <td>{r.orderNo || '-'}</td>
-                      <td>{r.customer || 'Customer'}</td>
-                      <td style={{ color: 'var(--muted-foreground)' }}>{r.reason || 'Sales return'}</td>
-                      <td className="num" style={{ color: 'var(--danger)' }}>-{money(toRupees(r.taxable))}</td>
-                      <td className="num" style={{ color: 'var(--danger)' }}>-{money(toRupees(r.vat))}</td>
-                      <td className="num" style={{ fontWeight: '600', color: 'var(--danger)' }}>-{money(toRupees(r.total))}</td>
+        {/* TAB 4: SCHEDULE 10 (CREDIT NOTES) */}
+        {activeTab === 'creditNotes' && (
+          <div className="table-wrap">
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px' }}>Schedule 10: Credit Note Register / Sales Returns (अनुसूची १०)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>S.N.</th>
+                  <th>Credit Note No</th>
+                  <th>Date</th>
+                  <th>Original Invoice</th>
+                  <th>Buyer Name</th>
+                  <th>Reason</th>
+                  <th className="num">Taxable Refund</th>
+                  <th className="num">13% VAT Reversed</th>
+                  <th className="num">Total Refund (NPR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {creditNotes.length > 0 ? (
+                  creditNotes.map((cn) => (
+                    <tr key={cn.sn}>
+                      <td>{cn.sn}</td>
+                      <td><code>{cn.creditNoteNo}</code></td>
+                      <td>{cn.date}</td>
+                      <td><code>{cn.originalInvoice}</code></td>
+                      <td>{cn.buyerName}</td>
+                      <td>{cn.reason}</td>
+                      <td className="num">{money(cn.taxableAmount)}</td>
+                      <td className="num">{money(cn.vatAmount)}</td>
+                      <td className="num">{money(cn.totalAmount)}</td>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr style={{ background: 'var(--danger-soft)', fontWeight: '700' }}>
-                    <td colSpan="5">Total Credit Notes (Sales Deductions)</td>
-                    <td className="num" style={{ color: 'var(--danger)' }}>-{money(returnsTaxable)}</td>
-                    <td className="num" style={{ color: 'var(--danger)' }}>-{money(returnsVat)}</td>
-                    <td className="num" style={{ color: 'var(--danger)' }}>-{money(returnsGross)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Purchase Register (Kharid Khata) */}
-        {(activeTab === 'all' || activeTab === 'purchases') && (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <div className="section-title" style={{ margin: 0 }}>
-                📦 Purchase Register &mdash; Kharid Khata (Anusuchi 9)
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>
-                {purch.length} record{purch.length === 1 ? '' : 's'}
-              </span>
-            </div>
-
-            <div className="table-wrap" style={{ border: '1px solid var(--border)', borderRadius: '8px' }}>
-              <table>
-                <thead>
-                  <tr style={{ background: 'var(--muted)' }}>
-                    <th>Date</th>
-                    <th>Supplier Bill No</th>
-                    <th>Supplier Name</th>
-                    <th>Supplier PAN</th>
-                    <th className="num">Taxable (Rs)</th>
-                    <th className="num">Input VAT 13% (Rs)</th>
-                    <th className="num">Total Bill (Rs)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purch.length > 0 ? (
-                    purch.map((p, idx) => (
-                      <tr key={p.id || p.bill || idx}>
-                        <td>{p.date || today()}</td>
-                        <td>
-                          <code style={{ background: 'var(--muted)', color: 'var(--primary)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', border: '1px solid var(--border)' }}>
-                            {p.bill}
-                          </code>
-                        </td>
-                        <td style={{ fontWeight: '500' }}>{p.supplier || 'Vendor / Supplier'}</td>
-                        <td style={{ color: 'var(--muted-foreground)' }}>{p.supplierPan || '-'}</td>
-                        <td className="num">{money(toRupees(p.taxable))}</td>
-                        <td className="num" style={{ color: 'var(--accent)', fontWeight: '500' }}>{money(toRupees(p.vat))}</td>
-                        <td className="num" style={{ fontWeight: '600' }}>{money(toRupees(p.total))}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" style={{ padding: '24px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
-                        No purchase bills recorded for {monthStr}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                {purch.length > 0 && (
-                  <tfoot>
-                    <tr style={{ background: 'var(--muted)', fontWeight: '700' }}>
-                      <td colSpan="4">Total Purchases (Kharid Khata)</td>
-                      <td className="num">{money(purchasesTaxable)}</td>
-                      <td className="num" style={{ color: 'var(--accent)' }}>{money(purchasesVat)}</td>
-                      <td className="num">{money(purchasesGross)}</td>
-                    </tr>
-                  </tfoot>
+                  ))
+                ) : (
+                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '24px' }}>No credit notes issued in this period.</td></tr>
                 )}
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         )}
 
-        {/* Legal & Compliance Footer */}
-        <div style={{ marginTop: '28px', paddingTop: '16px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--muted-foreground)', lineHeight: '1.6' }}>
-          <p style={{ margin: 0 }}>
-            <strong>Nepal Inland Revenue Department (IRD) Filing Guidelines:</strong> Taxable sales and input purchases are calculated in accordance with the Value Added Tax Act, 2052. Returns must be verified against fiscal sales invoices and authentic tax purchase bills. Dates are recorded in Gregorian (AD) and should be reconciled with Bikram Sambat (BS) month schedules for monthly e-TDS and VAT filing before the 25th of the succeeding month.
-          </p>
-        </div>
+        {/* TAB 5: SCHEDULE 11 (DEBIT NOTES) */}
+        {activeTab === 'debitNotes' && (
+          <div className="table-wrap">
+            <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px' }}>Schedule 11: Debit Note Register / Purchase Returns (अनुसूची ११)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>S.N.</th>
+                  <th>Debit Note No</th>
+                  <th>Date</th>
+                  <th>Original Bill No</th>
+                  <th>Supplier Name</th>
+                  <th>Supplier PAN</th>
+                  <th>Reason</th>
+                  <th className="num">Taxable Amount</th>
+                  <th className="num">13% Input VAT Reversed</th>
+                  <th className="num">Total (NPR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {debitNotes.length > 0 ? (
+                  debitNotes.map((dn) => (
+                    <tr key={dn.sn}>
+                      <td>{dn.sn}</td>
+                      <td><code>{dn.debitNoteNo}</code></td>
+                      <td>{dn.date}</td>
+                      <td><code>{dn.originalBillNo}</code></td>
+                      <td>{dn.supplierName}</td>
+                      <td>{dn.supplierPan || '-'}</td>
+                      <td>{dn.reason}</td>
+                      <td className="num">{money(dn.taxableAmount)}</td>
+                      <td className="num">{money(dn.vatAmount)}</td>
+                      <td className="num">{money(dn.totalAmount)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="10" style={{ textAlign: 'center', padding: '24px' }}>No debit notes recorded in this period.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

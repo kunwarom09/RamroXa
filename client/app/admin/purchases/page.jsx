@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { money, today, docSubtotal, docVat, docTotal } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
@@ -132,6 +133,7 @@ export default function AdminPurchasesPage() {
       items: validItems.map(it => ({
         name: it.desc || it.name,
         desc: it.desc || it.name,
+        sku: it.sku || '',
         qty: Number(it.qty) || 1,
         rate: Number(it.rate) || 0,
         amount: (Number(it.qty) || 1) * (Number(it.rate) || 0)
@@ -154,13 +156,14 @@ export default function AdminPurchasesPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this purchase bill?')) return;
+  const handleCancelPurchase = async (id, billNo) => {
+    const reason = prompt(`Cancel/Void purchase bill ${billNo || id}?\nPlease enter a reason:`, 'Vendor bill cancellation / Voided');
+    if (reason === null) return;
     try {
-      await api.delete(`/api/admin/purchases/${id}`);
+      await api.post(`/api/admin/purchases/${id}/cancel`, { reason });
       await refreshData();
     } catch (e) {
-      alert('Failed to delete purchase: ' + (e?.response?.data?.message || e.message || 'Server error'));
+      alert('Failed to cancel purchase: ' + (e?.response?.data?.message || e.message || 'Server error'));
     }
   };
 
@@ -194,7 +197,7 @@ export default function AdminPurchasesPage() {
     <div>
       <div className="page-head">
         <h2>Purchases</h2>
-        <p>Supplier bills and operational expense tracking.</p>
+        <p>Supplier bills, stock procurement, and operational expense tracking.</p>
       </div>
 
       <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
@@ -212,7 +215,7 @@ export default function AdminPurchasesPage() {
         </div>
       </div>
 
-      <div className="toolbar">
+      <div className="toolbar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder="Search bill, supplier or head"
@@ -221,6 +224,9 @@ export default function AdminPurchasesPage() {
           style={{ width: '250px' }}
         />
         <div className="spacer" />
+        <Link href="/admin/purchases/returns" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Icon name="rotateCcw" size={14} /> Debit Notes (Returns)
+        </Link>
         <button className="btn" onClick={exportCsv}>Export CSV</button>
         <button className="btn btn-primary" onClick={openAddPurchaseModal}>
           + Add purchase
@@ -253,8 +259,24 @@ export default function AdminPurchasesPage() {
                   <td className="num">{money(docVat(p))}</td>
                   <td className="num"><strong>{money(docTotal(p))}</strong></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <Link
+                      href={`/admin/purchases/returns?billNo=${encodeURIComponent(p.bill)}&supplier=${encodeURIComponent(p.supplier)}`}
+                      className="icon-btn"
+                      title="Return Goods / Create Debit Note"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      <Icon name="rotateCcw" size={15} />
+                    </Link>
                     <button className="icon-btn" title="Edit" onClick={() => openEditPurchaseModal(p)}><Icon name="edit" size={15} /></button>
-                    <button className="icon-btn" title="Delete" onClick={() => handleDelete(p.id)}><Icon name="trash" size={15} /></button>
+                    <button
+                      className="icon-btn"
+                      title={p.status === 'cancelled' ? 'Bill Cancelled' : 'Cancel/Void Purchase'}
+                      disabled={p.status === 'cancelled'}
+                      style={{ color: p.status === 'cancelled' ? 'var(--muted-foreground)' : '#ef4444' }}
+                      onClick={() => handleCancelPurchase(p.id, p.bill)}
+                    >
+                      <Icon name="x" size={15} />
+                    </button>
                   </td>
                 </tr>
               ))

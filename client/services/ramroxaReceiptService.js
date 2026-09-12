@@ -76,21 +76,59 @@ export function formatReceiptTime(dateInput) {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 }
 
+// Accurate Bikram Sambat (BS) month lengths lookup table (BS 2080 - 2085)
+const BS_MONTH_DAYS = {
+  2080: [31, 31, 31, 32, 31, 31, 30, 29, 30, 29, 30, 30], // Starts 2023-04-14
+  2081: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30], // Starts 2024-04-13
+  2082: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 31], // Starts 2025-04-14
+  2083: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30], // Starts 2026-04-14
+  2084: [31, 31, 32, 31, 32, 30, 30, 30, 29, 30, 29, 31], // Starts 2027-04-14
+  2085: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 31]  // Starts 2028-04-13
+};
+
+const BS_NEW_YEARS_AD = {
+  2080: new Date(2023, 3, 14), // 2023-04-14
+  2081: new Date(2024, 3, 13), // 2024-04-13
+  2082: new Date(2025, 3, 14), // 2025-04-14
+  2083: new Date(2026, 3, 14), // 2026-04-14
+  2084: new Date(2027, 3, 14), // 2027-04-14
+  2085: new Date(2028, 3, 13)  // 2028-04-13
+};
+
 export function adToBs(dateInput) {
   const d = dateInput ? new Date(dateInput) : new Date();
   if (isNaN(d.getTime())) return '27.05.2083';
 
-  const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
+  // Find corresponding BS year
+  let bsYear = 2083;
+  if (d >= BS_NEW_YEARS_AD[2084]) bsYear = 2084;
+  else if (d >= BS_NEW_YEARS_AD[2083]) bsYear = 2083;
+  else if (d >= BS_NEW_YEARS_AD[2082]) bsYear = 2082;
+  else if (d >= BS_NEW_YEARS_AD[2081]) bsYear = 2081;
+  else if (d >= BS_NEW_YEARS_AD[2080]) bsYear = 2080;
+  else bsYear = d.getFullYear() + 57;
 
-  let bsYear = y + 57;
-  let bsMonth = (m + 8) % 12;
-  if (bsMonth === 0) bsMonth = 12;
-  if (m < 4 || (m === 4 && day < 14)) {
-    bsYear = y + 56;
+  const nyDate = BS_NEW_YEARS_AD[bsYear] || new Date(d.getFullYear(), 3, 14);
+  let daysDiff = Math.floor((d.setHours(0,0,0,0) - nyDate.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+
+  if (daysDiff < 0) {
+    // Falls in previous BS year
+    bsYear -= 1;
+    const prevNy = BS_NEW_YEARS_AD[bsYear] || new Date(nyDate.getFullYear() - 1, 3, 14);
+    daysDiff = Math.floor((d - prevNy) / (1000 * 60 * 60 * 24));
   }
-  let bsDay = (day + 15) % 30 || 1;
+
+  const monthLengths = BS_MONTH_DAYS[bsYear] || [31, 31, 32, 31, 31, 30, 30, 29, 30, 29, 30, 30];
+  let bsMonth = 1;
+  let bsDay = daysDiff + 1;
+
+  for (let m = 0; m < 12; m++) {
+    if (bsDay <= monthLengths[m]) {
+      bsMonth = m + 1;
+      break;
+    }
+    bsDay -= monthLengths[m];
+  }
 
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(bsDay)}.${pad(bsMonth)}.${bsYear}`;
@@ -150,7 +188,7 @@ export function formatVariantDetails(item = {}) {
  */
 export function normalizeOrderForReceipt(order = {}) {
   // Bill No
-  const billNo = order.orderNo || order.invoice || order.no || (order._id ? `54${String(order._id).slice(-10).replace(/[^0-9]/g, '1')}` : '541254876166');
+  const billNo = order.orderNo || order.invoice || order.no || (order._id ? `INV-${String(order._id).slice(-8).toUpperCase()}` : 'INV-001');
 
   // Dates & Time
   const rawDate = order.createdAt || order.date || order.placedAt || new Date();
@@ -159,27 +197,23 @@ export function normalizeOrderForReceipt(order = {}) {
   const mitiStr = order.miti || adToBs(rawDate);
 
   // Payment method
-  let paymentMethod = order.paymentMethod || order.payment || order.pay || 'Cash';
-  if (String(paymentMethod).toUpperCase() === 'COD') paymentMethod = 'Cash';
+  let paymentMethod = order.paymentMethod || order.payment || order.pay || 'COD';
+  if (String(paymentMethod).toUpperCase() === 'COD') paymentMethod = 'Cash on Delivery';
   else paymentMethod = String(paymentMethod).charAt(0).toUpperCase() + String(paymentMethod).slice(1).toLowerCase();
 
-  // Customer info
+  // Customer info - Clean genuine customer data without dummy fallbacks
   const shipping = order.shippingAddress || {};
-  const customerName = shipping.fullName || order.customer || order.customerName || order.user?.name || order.guestPhone || 'Saroj Bhandari';
-  const customerCompany = order.company || order.customerCompany || shipping.company || 'Arora Pvt. Ltd.';
+  const customerName = shipping.fullName || order.customer || order.customerName || order.user?.name || order.guestPhone || 'Walk-in Customer';
+  const customerCompany = order.company || order.customerCompany || shipping.company || '';
   
-  let customerAddress = order.address || '';
-  if (shipping.line1) {
-    customerAddress = shipping.line1;
-    if (shipping.city && !shipping.line1.toLowerCase().includes(shipping.city.toLowerCase())) {
-      customerAddress += ', ' + shipping.city;
-    }
-  } else if (shipping.city) {
-    customerAddress = shipping.city;
+  let customerAddress = shipping.line1 || order.address || '';
+  if (shipping.city && !customerAddress.toLowerCase().includes(shipping.city.toLowerCase())) {
+    customerAddress = customerAddress ? `${customerAddress}, ${shipping.city}` : shipping.city;
   }
-  if (!customerAddress) customerAddress = 'Pardi, Birauta';
+  if (!customerAddress) customerAddress = 'Kathmandu, Nepal';
 
-  const customerPan = order.pan || order.customerPan || shipping.pan || '306045051';
+  // Buyer PAN: If unregistered B2C, leave blank or N/A; never inject a dummy third-party PAN
+  const customerPan = order.pan || order.customerPan || shipping.pan || order.buyerPan || '';
 
   // Items extraction
   let items = [];
@@ -187,23 +221,22 @@ export function normalizeOrderForReceipt(order = {}) {
   if (Array.isArray(rawItems) && rawItems.length > 0) {
     items = rawItems.map((it, idx) => {
       const type = detectProductType(it);
-      const name = it.name || it.desc || it.title || `Product ${idx + 1}`;
+      const name = it.name || it.desc || it.title || `Item ${idx + 1}`;
       const variant = formatVariantDetails(it);
       const qty = Number(it.qty) || 1;
 
-      // Rate detection: Paisa vs Rupees (DB stores prices in Paisa e.g. 250000 = Rs 2500)
-      let rate = Number(it.rate != null ? it.rate : (it.unitPrice != null ? it.unitPrice : it.price || 0));
-      if (rate >= 10000 || (order.grandTotal > 50000) || (order.subtotal > 50000)) {
-        rate = Math.round(rate / 100);
+      // Rate extraction: DB stores prices in integer Paisa (e.g. 250000 = Rs 2500)
+      let rate = 0;
+      if (it.unitPrice != null) {
+        rate = Number(it.unitPrice) / 100;
+      } else if (it.rate != null) {
+        rate = Number(it.rate) > 50000 ? Number(it.rate) / 100 : Number(it.rate);
+      } else if (it.price != null) {
+        rate = Number(it.price) > 50000 ? Number(it.price) / 100 : Number(it.price);
       }
 
-      let amount = Number(it.amount != null ? it.amount : (it.lineTotal != null ? it.lineTotal : qty * rate));
-      if (amount >= 10000 || (order.grandTotal > 50000) || (order.subtotal > 50000)) {
-        amount = Math.round(amount / 100);
-      }
-      if (!amount || amount === 0) {
-        amount = qty * rate;
-      }
+      let amount = it.lineTotal != null ? Number(it.lineTotal) / 100 : (it.amount != null && Number(it.amount) > 50000 ? Number(it.amount) / 100 : qty * rate);
+      if (!amount || amount === 0) amount = qty * rate;
 
       return {
         sn: idx + 1,
@@ -216,67 +249,52 @@ export function normalizeOrderForReceipt(order = {}) {
       };
     });
   } else {
-    // Dynamic sample fallback if order has no items populated
     items = [
-      { sn: 1, type: 'Jacket', name: 'Mens Puffer Jacket', variant: 'Black / L', qty: 2, rate: 2500.00, amount: 5000.00 },
-      { sn: 2, type: 'Sunglasses', name: 'Aviator Sunglasses', variant: 'Black', qty: 1, rate: 1500.00, amount: 1500.00 },
-      { sn: 3, type: 'Shoes', name: 'Urban Street Sneaker', variant: 'Black / 42', qty: 3, rate: 2000.00, amount: 6000.00 }
+      { sn: 1, type: 'Apparel', name: 'Retail Order Item', variant: 'Standard', qty: 1, rate: 0, amount: 0 }
     ];
   }
 
   // Totals calculations
   let grossAmount = items.reduce((acc, it) => acc + (Number(it.amount) || (it.qty * it.rate)), 0);
   if (order.subtotal != null && grossAmount === 0) {
-    grossAmount = order.subtotal > 50000 ? Math.round(order.subtotal / 100) : Number(order.subtotal);
+    grossAmount = Number(order.subtotal) > 50000 ? Math.round(order.subtotal / 100) : Number(order.subtotal);
   }
 
-  let discount = Number(order.discountTotal != null ? (order.discountTotal >= 10000 ? Math.round(order.discountTotal / 100) : order.discountTotal) : (order.discount || 0));
-  if (discount === 0 && order.items && order.items.length === 3 && grossAmount === 12500) {
-    discount = 500.00; // Matches visual reference proportions
+  let discount = 0;
+  if (order.discountTotal != null) {
+    discount = Number(order.discountTotal) > 50000 ? Number(order.discountTotal) / 100 : Number(order.discountTotal);
+  } else if (order.discount != null) {
+    discount = Number(order.discount);
   }
-
-  const taxableAmount = Math.max(0, grossAmount - discount);
-  const nonTaxableAmount = Number(order.nonTaxableAmount || 0);
 
   const vatRate = 13;
-  let vat = 0;
-  if (order.vatTotal != null && Number(order.vatTotal) > 0) {
-    vat = order.vatTotal > 50000 ? Number((order.vatTotal / 100).toFixed(2)) : Number(order.vatTotal);
-  } else if (order.vat != null && Number(order.vat) > 0) {
-    vat = Number(order.vat);
-  } else {
-    vat = Number(((taxableAmount * vatRate) / 100).toFixed(2));
-  }
+  // Retail pricing is VAT-inclusive
+  const discountedTotal = Math.max(0, grossAmount - discount);
+  const vat = Number(((discountedTotal * vatRate) / (100 + vatRate)).toFixed(2));
+  const taxableAmount = Number((discountedTotal - vat).toFixed(2));
+  const nonTaxableAmount = Number(order.nonTaxableAmount || 0);
 
-  let netAmount = Number((taxableAmount + nonTaxableAmount + vat).toFixed(2));
+  let netAmount = discountedTotal;
   if (order.grandTotal != null && Number(order.grandTotal) > 0) {
-    const calcGrand = order.grandTotal > 50000 ? Math.round(order.grandTotal / 100) : Number(order.grandTotal);
-    if (calcGrand > 0 && Math.abs(calcGrand - netAmount) <= 2) {
-      netAmount = calcGrand;
-    }
-  } else if (order.total != null && Number(order.total) > 0) {
-    const calcTotal = Number(order.total);
-    if (Math.abs(calcTotal - netAmount) <= 2) {
-      netAmount = calcTotal;
-    }
+    netAmount = Number(order.grandTotal) > 50000 ? Math.round(order.grandTotal / 100) : Number(order.grandTotal);
   }
 
   const words = numberToWords(netAmount);
 
-  // Ramroxa Global Store details
+  // Ramroxa Store details
   const store = {
     brandTitle: 'RAMROXA',
-    brandSub: 'GLOBAL',
-    categories: 'JACKETS  •  SUNGLASSES  •  SHOES',
-    address: 'Gaidhara, Kathmandu',
+    brandSub: 'NEPAL',
+    categories: 'CLOTHING  •  FOOTWEAR  •  ACCESSORIES',
+    address: 'Kathmandu, Nepal',
     panNo: '606387590',
     contactNo: '01-453178',
     invoiceTitle: 'TAX INVOICE',
-    footerMessage: 'Thank you for shopping with Ramroxa Global.\nStyle that defines you. Quality that stays with you.',
-    website: 'www.ramroxaglobal.com',
-    socialHandle: '@ramroxaglobal',
+    footerMessage: 'Thank you for shopping with Ramroxa.\nQuality essentials designed in Kathmandu, delivered across Nepal.',
+    website: 'www.ramroxa.com',
+    socialHandle: '@ramroxanepal',
     phone: '01-453178',
-    poweredBy: 'Powered by Omniros Software'
+    poweredBy: 'RamroXa Retail Systems'
   };
 
   return {

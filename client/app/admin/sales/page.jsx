@@ -156,13 +156,14 @@ export default function AdminSalesPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this sale entry?')) return;
+  const handleCancelOrder = async (id, invoice) => {
+    const reason = prompt(`Cancel/Void invoice ${invoice || id}?\nPlease enter a reason:`, 'Customer cancellation / Order voided');
+    if (reason === null) return;
     try {
-      await api.delete(`/api/admin/orders/${id}`);
-      setSales(prev => prev.filter(s => s.id !== id));
+      await api.post(`/api/admin/orders/${id}/cancel`, { reason });
+      await refreshData();
     } catch (err) {
-      alert('Failed to delete sale: ' + (err.message || 'Error'));
+      alert('Failed to cancel sale invoice: ' + (err.message || 'Error'));
     }
   };
 
@@ -286,8 +287,14 @@ export default function AdminSalesPage() {
                     <button className="icon-btn" title="Edit" onClick={() => openEditSaleModal(s)}>
                       <Icon name="edit" size={15} />
                     </button>
-                    <button className="icon-btn" title="Delete" onClick={() => handleDelete(s.id)}>
-                      <Icon name="trash" size={15} />
+                    <button
+                      className="icon-btn"
+                      title={s.fulfillmentStatus === 'cancelled' ? 'Order Cancelled' : 'Cancel/Void Invoice'}
+                      disabled={s.fulfillmentStatus === 'cancelled'}
+                      style={{ color: s.fulfillmentStatus === 'cancelled' ? 'var(--muted-foreground)' : '#ef4444' }}
+                      onClick={() => handleCancelOrder(s.id, s.invoice)}
+                    >
+                      <Icon name="x" size={15} />
                     </button>
                   </td>
                 </tr>

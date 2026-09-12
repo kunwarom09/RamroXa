@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { SalesReturn, Order, Inventory, StockMove, Variant } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import { VAT_RATE } from '../utils/money.js';
 
 function buildReturnIdFilter(id) {
   if (!id) return { _id: null };
@@ -11,22 +12,43 @@ function buildReturnIdFilter(id) {
   or.push({ id: String(id) });
   or.push({ no: String(id).toUpperCase() });
   or.push({ no: String(id) });
+  or.push({ creditNoteNo: String(id).toUpperCase() });
   return { $or: or };
 }
 
 export async function listSalesReturns(query = {}) {
   const filter = {};
-  if (query.status) filter.status = query.status;
+  if (query.status && query.status !== 'all') filter.status = query.status;
   if (query.q || query.search) {
     const term = query.q || query.search;
     filter.$or = [
       { no: { $regex: term, $options: 'i' } },
+      { creditNoteNo: { $regex: term, $options: 'i' } },
       { invoice: { $regex: term, $options: 'i' } },
       { orderNo: { $regex: term, $options: 'i' } },
       { customer: { $regex: term, $options: 'i' } }
     ];
   }
-  const returns = await SalesReturn.find(filter).sort({ createdAt: -1 }).lean();
+
+  const returnsRaw = await SalesReturn.find(filter).sort({ createdAt: -1 }).lean();
+
+  const returns = returnsRaw.map((r) => {
+    const refundPaisa = Number(r.refundAmount) || 0;
+    const netPaisa = Number(r.refundNet) || 0;
+    const vatPaisa = Number(r.refundVat) || 0;
+
+    return {
+      ...r,
+      creditNoteNo: r.creditNoteNo || r.no,
+      refundAmount: refundPaisa,
+      refundNet: netPaisa,
+      refundVat: vatPaisa,
+      refundAmountNpr: Math.round(refundPaisa / 100),
+      refundNetNpr: Math.round(netPaisa / 100),
+      refundVatNpr: Math.round(vatPaisa / 100)
+    };
+  });
+
   return { returns, count: returns.length };
 }
 
@@ -39,11 +61,20 @@ export async function createSalesReturn(data = {}, user = null) {
   if (data.idempotencyKey) {
     const existing = await SalesReturn.findOne({ idempotencyKey: data.idempotencyKey });
     if (existing) {
-      return existing; // Return the already-created record — safe to call twice
+      return existing;
     }
   }
 
-  // --- Calculate already-refunded total for this order ---
+  // Calculate refund amounts in Paisa
+  let refundAmountPaisa = 0;
+  if (data.refundAmountPaisa != null) {
+    refundAmountPaisa = Math.round(Number(data.refundAmountPaisa));
+  } else if (data.refundAmount != null) {
+    // If input is less than 1,000,000 and comes from UI in NPR
+    refundAmountPaisa = Math.round(Number(data.refundAmount) * 100);
+  }
+
+  // Calculate already-refunded total for this order (in Paisa)
   const orderFilter = [
     data.orderNo ? { orderNo: data.orderNo } : null,
     data.invoice && data.invoice !== data.orderNo ? { invoice: data.invoice } : null
@@ -51,36 +82,29 @@ export async function createSalesReturn(data = {}, user = null) {
 
   const previousReturns = await SalesReturn.find({
     $or: orderFilter.length ? orderFilter : [{ saleId: data.saleId }],
-    status: { $nin: ['rejected'] }
+    status: { $nin: ['rejected', 'cancelled'] }
   }).lean();
 
-  const alreadyRefunded = previousReturns.reduce((sum, r) => sum + (r.refundAmount || 0), 0);
-
-  // --- Validate refund amount does not exceed refundable balance ---
-  const originalTotal = Number(data.originalTotal) || 0;
-  const refundAmount = Number(data.refundAmount) || 0;
-
-  if (originalTotal > 0 && (alreadyRefunded + refundAmount) > originalTotal + 1) {
-    throw ApiError.badRequest(
-      `Refund amount (Rs ${refundAmount}) exceeds refundable balance (Rs ${originalTotal - alreadyRefunded}).`
-    );
-  }
+  const alreadyRefundedPaisa = previousReturns.reduce((sum, r) => sum + (Number(r.refundAmount) || 0), 0);
 
   const count = await SalesReturn.countDocuments();
   const nextNo = `RET-${1000 + count + 1}`;
+  const creditNoteNo = data.creditNoteNo || `CN-${1000 + count + 1}`;
   const retId = 'ret_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-  const vatRate = 13;
-  const refundNet = data.refundNet !== undefined ? Number(data.refundNet) : Math.round(refundAmount / (1 + vatRate / 100));
-  const refundVat = data.refundVat !== undefined ? Number(data.refundVat) : (refundAmount - refundNet);
+  // Derived VAT breakdown (inclusive of 13% VAT)
+  const refundNetPaisa = Math.round((refundAmountPaisa * 100) / (100 + VAT_RATE));
+  const refundVatPaisa = refundAmountPaisa - refundNetPaisa;
 
   const items = Array.isArray(data.items) ? data.items : [];
   const warehouseId = data.warehouseId || 'w1';
   const restock = data.restock || 'available';
+  const initialStatus = data.status || 'pending';
 
   const newReturn = await SalesReturn.create({
     id: retId,
     no: data.no || nextNo,
+    creditNoteNo,
     saleId: data.saleId || '',
     orderNo: data.orderNo || data.invoice || '',
     invoice: data.invoice || '',
@@ -92,69 +116,23 @@ export async function createSalesReturn(data = {}, user = null) {
     restock,
     warehouseId,
     items,
-    refundNet,
-    refundVat,
-    refundAmount,
-    alreadyRefunded,
-    status: data.status || 'pending',
+    refundNet: refundNetPaisa,
+    refundVat: refundVatPaisa,
+    refundAmount: refundAmountPaisa,
+    alreadyRefunded: alreadyRefundedPaisa,
+    status: initialStatus,
     notes: data.notes || '',
     attachments: Array.isArray(data.attachments) ? data.attachments : [],
     idempotencyKey: data.idempotencyKey || null
   });
 
-  // --- Restock inventory (only for 'available' destination) ---
-  if (restock === 'available' && items.length > 0) {
-    for (const item of items) {
-      const returnQty = Number(item.returnQty) || 0;
-      if (returnQty <= 0) continue;
-
-      let targetVariant = null;
-      if (item.sku && item.sku !== 'SKU') {
-        targetVariant = await Variant.findOne({ sku: item.sku });
-      }
-      if (!targetVariant && item.variantId) {
-        targetVariant = await Variant.findOne({ id: item.variantId });
-      }
-
-      if (targetVariant) {
-        const vId = targetVariant.id;
-        // Atomic increment — prevents race conditions
-        const inv = await Inventory.findOneAndUpdate(
-          { variantId: vId, warehouseId },
-          { $inc: { available: returnQty } },
-          { new: true, upsert: false }
-        );
-
-        if (!inv) {
-          // No inventory record found — create one
-          await Inventory.create({
-            id: `inv_${vId}_${warehouseId}`,
-            variantId: vId,
-            warehouseId,
-            available: returnQty,
-            reserved: 0
-          });
-        }
-
-        const before = inv ? (inv.available - returnQty) : 0;
-        const after = inv ? inv.available : returnQty;
-
-        await StockMove.create({
-          id: 'sm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          variantId: vId,
-          warehouseId,
-          type: 'customer_return',
-          change: returnQty,
-          before,
-          after,
-          reason: `Customer return: ${newReturn.no} (${data.reason || 'Restocked'})`,
-          reference: newReturn.no
-        });
-      }
-    }
+  // --- Restock inventory ONLY if return is already approved or completed ---
+  // (Prevents restocking items still in transit or awaiting inspection)
+  if (['approved', 'completed'].includes(initialStatus) && restock === 'available' && items.length > 0) {
+    await performReturnRestock(newReturn, items, warehouseId, user);
   }
 
-  // --- Update order status based on refund totals ---
+  // --- Update Order status based on refund totals ---
   if (data.orderNo || data.saleId || data.invoice) {
     const orderOrFilter = [
       data.orderNo ? { orderNo: data.orderNo } : null,
@@ -163,26 +141,21 @@ export async function createSalesReturn(data = {}, user = null) {
     ].filter(Boolean);
 
     const order = await Order.findOne({ $or: orderOrFilter });
-
     if (order) {
-      const newAlreadyRefunded = alreadyRefunded + refundAmount;
-      const orderTotal = Math.round((order.grandTotal || 0) / 100);
+      const orderTotalPaisa = Number(order.grandTotal) || 0;
+      const totalRefundedPaisa = alreadyRefundedPaisa + refundAmountPaisa;
 
-      if (data.type === 'full' || newAlreadyRefunded >= orderTotal) {
-        order.fulfillmentStatus = 'returned';
-        order.paymentStatus = 'refunded';
-      } else if (newAlreadyRefunded > 0) {
-        // Partial return
-        order.fulfillmentStatus = order.fulfillmentStatus === 'returned' ? 'returned' : order.fulfillmentStatus;
-        if (order.paymentStatus !== 'refunded') {
-          order.paymentStatus = 'paid'; // Partial — still has remaining balance
+      if (['approved', 'completed', 'refunded'].includes(initialStatus)) {
+        if (data.type === 'full' || totalRefundedPaisa >= orderTotalPaisa) {
+          order.fulfillmentStatus = 'returned';
+          order.paymentStatus = 'refunded';
         }
       }
 
       order.statusHistory.push({
-        status: `Return requested: ${newReturn.no}`,
+        status: `Return requested: ${newReturn.no} (${newReturn.creditNoteNo})`,
         by: user?.email || 'admin',
-        note: `Reason: ${data.reason || 'Customer return'}, Amount: Rs ${refundAmount}, Previously refunded: Rs ${alreadyRefunded}`
+        note: `Reason: ${data.reason || 'Customer return'}, Amount: Rs ${Math.round(refundAmountPaisa / 100)}`
       });
       await order.save();
     }
@@ -200,9 +173,26 @@ export async function updateSalesReturnStatus(id, { status, notes }, user = null
   if (notes !== undefined) ret.notes = notes;
   await ret.save();
 
-  // Handle side-effects on Order and Inventory when status changes
+  // If newly transitioning to approved or completed, restock inventory if appropriate
+  if (
+    ['approved', 'completed'].includes(status) &&
+    !['approved', 'completed'].includes(prevStatus) &&
+    ret.restock === 'available'
+  ) {
+    await performReturnRestock(ret, ret.items || [], ret.warehouseId || 'w1', user);
+  }
+
+  // If rejected or cancelled after having been restocked, reverse the stock addition
+  if (
+    ['rejected', 'cancelled'].includes(status) &&
+    ['approved', 'completed'].includes(prevStatus) &&
+    ret.restock === 'available'
+  ) {
+    await reverseReturnRestock(ret, ret.items || [], ret.warehouseId || 'w1', user);
+  }
+
+  // Update associated Order status
   if (status && status !== prevStatus) {
-    // 1. Find the associated order if any
     const orderOrFilter = [
       ret.orderNo ? { orderNo: ret.orderNo } : null,
       ret.saleId ? (mongoose.isValidObjectId(ret.saleId) && String(new mongoose.Types.ObjectId(ret.saleId)) === String(ret.saleId) ? { _id: ret.saleId } : { id: ret.saleId }) : null,
@@ -210,25 +200,14 @@ export async function updateSalesReturnStatus(id, { status, notes }, user = null
     ].filter(Boolean);
 
     const order = orderOrFilter.length ? await Order.findOne({ $or: orderOrFilter }) : null;
-
     if (order) {
-      const alreadyRefunded = ret.alreadyRefunded || 0;
-      const refundAmount = ret.refundAmount || 0;
-      const totalRefunded = alreadyRefunded + refundAmount;
-      const orderTotal = Math.round((order.grandTotal || 0) / 100);
-
-      if (['approved', 'refunded', 'completed'].includes(status)) {
-        if (ret.type === 'full' || totalRefunded >= orderTotal) {
-          order.fulfillmentStatus = 'returned';
-        }
-        if (['refunded', 'completed'].includes(status)) {
-          order.paymentStatus = 'refunded';
-        }
-
+      if (['approved', 'completed', 'refunded'].includes(status)) {
+        order.paymentStatus = 'refunded';
+        order.fulfillmentStatus = 'returned';
         order.statusHistory.push({
-          status: `Return ${status.charAt(0).toUpperCase() + status.slice(1)}: ${ret.no}`,
+          status: `Return ${status}: ${ret.no} (${ret.creditNoteNo})`,
           by: user?.email || user?.name || 'admin',
-          note: `Sales return #${ret.no} status updated to '${status}'. Refund: Rs ${refundAmount}.`
+          note: `Credit Note #${ret.creditNoteNo} approved. Refund: Rs ${Math.round((ret.refundAmount || 0) / 100)}.`
         });
         await order.save();
       } else if (status === 'rejected' && prevStatus !== 'rejected') {
@@ -238,45 +217,9 @@ export async function updateSalesReturnStatus(id, { status, notes }, user = null
         order.statusHistory.push({
           status: `Return Rejected: ${ret.no}`,
           by: user?.email || user?.name || 'admin',
-          note: `Sales return #${ret.no} was rejected. ${notes || ''}`
+          note: `Sales return #${ret.no} rejected. ${notes || ''}`
         });
         await order.save();
-      }
-    }
-
-    // 2. Handle inventory reversal if return is rejected after being restocked
-    if (status === 'rejected' && prevStatus !== 'rejected' && ret.restock !== 'none') {
-      const warehouseId = ret.warehouseId || 'w1';
-      for (const item of (ret.items || [])) {
-        const returnQty = Number(item.returnQty) || 1;
-        let targetVariant = null;
-        if (item.sku) {
-          targetVariant = await Variant.findOne({ sku: item.sku });
-        }
-        if (!targetVariant && item.variantId) {
-          targetVariant = await Variant.findOne({ id: item.variantId });
-        }
-
-        if (targetVariant) {
-          const vId = targetVariant.id;
-          const inv = await Inventory.findOneAndUpdate(
-            { variantId: vId, warehouseId },
-            { $inc: { available: -returnQty } },
-            { new: true }
-          );
-
-          await StockMove.create({
-            id: 'sm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-            variantId: vId,
-            warehouseId,
-            type: 'adjustment',
-            change: -returnQty,
-            before: inv ? (inv.available + returnQty) : returnQty,
-            after: inv ? inv.available : 0,
-            reason: `Return rejected reversal: ${ret.no}`,
-            reference: ret.no
-          });
-        }
       }
     }
   }
@@ -284,15 +227,126 @@ export async function updateSalesReturnStatus(id, { status, notes }, user = null
   return ret;
 }
 
-export async function deleteSalesReturn(id) {
-  const ret = await SalesReturn.findOneAndDelete(buildReturnIdFilter(id));
+/**
+ * Helper to restock inventory upon return approval/completion
+ */
+async function performReturnRestock(returnDoc, items, warehouseId, user) {
+  for (const item of items) {
+    const returnQty = Number(item.returnQty) || 0;
+    if (returnQty <= 0) continue;
+
+    let targetVariant = null;
+    if (item.sku && item.sku !== 'SKU') {
+      targetVariant = await Variant.findOne({ sku: item.sku });
+    }
+    if (!targetVariant && item.variantId) {
+      targetVariant = await Variant.findOne({ id: item.variantId });
+    }
+
+    if (targetVariant) {
+      const vId = targetVariant.id;
+      const inv = await Inventory.findOneAndUpdate(
+        { variantId: vId, warehouseId },
+        { $inc: { available: returnQty } },
+        { new: true, upsert: false }
+      );
+
+      if (!inv) {
+        await Inventory.create({
+          id: `inv_${vId}_${warehouseId}`,
+          variantId: vId,
+          warehouseId,
+          available: returnQty,
+          reserved: 0
+        });
+      }
+
+      const before = inv ? inv.available - returnQty : 0;
+      const after = inv ? inv.available : returnQty;
+
+      await StockMove.create({
+        id: 'sm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        variantId: vId,
+        warehouseId,
+        type: 'customer_return',
+        change: returnQty,
+        before,
+        after,
+        reason: `Customer return restock: ${returnDoc.creditNoteNo || returnDoc.no}`,
+        reference: returnDoc.creditNoteNo || returnDoc.no,
+        user: user?.name || user?.email || 'Admin',
+        at: new Date()
+      });
+    }
+  }
+}
+
+/**
+ * Helper to reverse restock if return is later rejected or cancelled
+ */
+async function reverseReturnRestock(returnDoc, items, warehouseId, user) {
+  for (const item of items) {
+    const returnQty = Number(item.returnQty) || 0;
+    if (returnQty <= 0) continue;
+
+    let targetVariant = null;
+    if (item.sku) targetVariant = await Variant.findOne({ sku: item.sku });
+    if (!targetVariant && item.variantId) targetVariant = await Variant.findOne({ id: item.variantId });
+
+    if (targetVariant) {
+      const vId = targetVariant.id;
+      const inv = await Inventory.findOneAndUpdate(
+        { variantId: vId, warehouseId },
+        { $inc: { available: -returnQty } },
+        { new: true }
+      );
+
+      await StockMove.create({
+        id: 'sm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        variantId: vId,
+        warehouseId,
+        type: 'adjustment',
+        change: -returnQty,
+        before: inv ? inv.available + returnQty : returnQty,
+        after: inv ? inv.available : 0,
+        reason: `Return cancelled/rejected reversal: ${returnDoc.creditNoteNo || returnDoc.no}`,
+        reference: returnDoc.creditNoteNo || returnDoc.no,
+        user: user?.name || user?.email || 'Admin',
+        at: new Date()
+      });
+    }
+  }
+}
+
+/**
+ * Compliant cancellation (preserves audit trail)
+ */
+export async function cancelSalesReturn(id, { reason = 'Cancelled by administrator', user = null } = {}) {
+  const ret = await SalesReturn.findOne(buildReturnIdFilter(id));
   if (!ret) throw ApiError.notFound('Sales return record not found.');
-  return { message: 'Sales return record deleted successfully.' };
+  if (ret.status === 'cancelled') throw ApiError.badRequest('Sales return is already cancelled.');
+
+  const prevStatus = ret.status;
+  ret.status = 'cancelled';
+  ret.cancelReason = reason;
+  ret.cancelledAt = new Date();
+  await ret.save();
+
+  if (['approved', 'completed'].includes(prevStatus) && ret.restock === 'available') {
+    await reverseReturnRestock(ret, ret.items || [], ret.warehouseId || 'w1', user);
+  }
+
+  return ret;
+}
+
+export async function deleteSalesReturn(id, user = null) {
+  return cancelSalesReturn(id, { reason: 'Cancelled via Admin Portal', user });
 }
 
 export default {
   listSalesReturns,
   createSalesReturn,
   updateSalesReturnStatus,
+  cancelSalesReturn,
   deleteSalesReturn
 };
