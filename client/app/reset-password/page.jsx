@@ -120,8 +120,8 @@ function ResetPasswordContent() {
     }}>
       {/* Brand Header */}
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <Link href="/shop" style={{ textDecoration: 'none', color: '#000' }}>
-          <span style={{ fontSize: 28, letterSpacing: 6, fontWeight: 700 }}>RAMROXA</span>
+        <Link href="/shop" style={{ textDecoration: 'none', display: 'inline-block' }}>
+          <img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 32, width: 'auto', display: 'block', margin: '0 auto' }} />
         </Link>
         <p style={{ margin: '8px 0 0', color: '#666', fontSize: 14 }}>Create New Password</p>
       </div>

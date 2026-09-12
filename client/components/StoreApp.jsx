@@ -2628,7 +2628,7 @@ export default class StoreApp extends React.Component {
                   <span />
                 </div>
               </button>
-              <div onClick={this.nav('shop')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}><img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 22, filter: 'brightness(0) invert(1)' }} /></div>
+              <div onClick={this.nav('shop')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}><img src="/assets/ramroxa-logo-white.png" alt="Ramroxa" style={{ height: 24, width: 'auto', display: 'block' }} /></div>
               <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28, marginLeft: 8 }}>
                 {link('HOME', view === 'shop', this.nav('shop'))}
 
@@ -3082,7 +3082,7 @@ export default class StoreApp extends React.Component {
         {/* Mobile Navigation Drawer */}
         <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, borderBottom: '1px solid #222', paddingBottom: 16 }}>
-            <img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 20, filter: 'brightness(0) invert(1)' }} />
+            <img src="/assets/ramroxa-logo-white.png" alt="Ramroxa" style={{ height: 22, width: 'auto', display: 'block' }} />
             <button onClick={this.closeMobileMenu} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24, cursor: 'pointer', padding: 8 }}>&times;</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -3206,7 +3206,7 @@ export default class StoreApp extends React.Component {
         <div className="store-footer-inner">
           <div className="store-footer-grid">
             <div>
-              <img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 24, filter: 'brightness(0) invert(1)', marginBottom: 12 }} />
+              <img src="/assets/ramroxa-logo-white.png" alt="Ramroxa" style={{ height: 28, width: 'auto', marginBottom: 14, display: 'block' }} />
               <p style={{ color: '#888', fontSize: 13, lineHeight: 1.6, maxWidth: 320 }}>
                 Objects for the everyday grid. Minimal garments made for longevity, utility and form. Designed in Kathmandu, shipped across Nepal.
               </p>
@@ -3238,10 +3238,8 @@ export default class StoreApp extends React.Component {
             <span>&copy; {new Date().getFullYear()} Ramroxa Pvt. Ltd. All rights reserved.</span>
             <span>Thamel, Kathmandu &middot; PAN: 601234567</span>
           </div>
-          <div style={{ width: '100%', overflow: 'hidden', textAlign: 'center', marginTop: 32, opacity: 0.16, pointerEvents: 'none', userSelect: 'none' }}>
-            <span style={{ fontFamily: "'Geist', sans-serif", fontSize: 'clamp(44px, 11vw, 150px)', fontWeight: 700, letterSpacing: 'clamp(4px, 1vw, 10px)', color: '#ffffff', lineHeight: 0.85, display: 'block' }}>
-              RAMROXA
-            </span>
+          <div style={{ width: '100%', overflow: 'hidden', textAlign: 'center', marginTop: 36, opacity: 0.18, pointerEvents: 'none', userSelect: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img src="/assets/ramroxa-logo-white.png" alt="Ramroxa" style={{ maxHeight: 72, maxWidth: '85%', objectFit: 'contain', width: 'auto' }} />
           </div>
         </div>
       </footer>

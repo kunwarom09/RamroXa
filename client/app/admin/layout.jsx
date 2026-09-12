@@ -244,7 +244,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="sidebar-logo"><img src="/assets/ramroxa-logo.png" alt="Ramroxa" style={{ height: 20 }} /></div>
+        <div className="sidebar-logo"><img src={dark ? "/assets/ramroxa-logo-white.png" : "/assets/ramroxa-logo.png"} alt="Ramroxa" style={{ height: 22, width: 'auto', display: 'block' }} /></div>
         {navItems.map((item, idx) => {
           if (item.section) {
             return <div key={idx} className="sidebar-section-label">{item.section}</div>;

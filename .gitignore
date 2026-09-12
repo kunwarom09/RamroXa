@@ -49,7 +49,7 @@ antigravity-ide/
 .system_generated/
 
 # Database Storage
-data/
+/data/
 server/data/
 *.db
 
