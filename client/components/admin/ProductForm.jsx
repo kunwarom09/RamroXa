@@ -6,6 +6,7 @@ import { api } from '../../services/apiClient';
 import { convertToWebP } from '../../services/imageProcessor';
 import Icon from './Icons';
 import ImageEditorModal from './ImageEditorModal';
+import { BAG_CAPACITY_CONFIG, BAG_SIZE_KEYS, getBagCapacityRange, getBagCapacityOptions, isValidBagCapacity, formatBagCapacity } from '../../config/bagCapacityConfig';
 
 const shortCode = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
 const UK_SHOE_SIZES = ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13'];
@@ -202,6 +203,8 @@ export default function ProductForm({ productId = null }) {
                     sizeType: hasUkSizes ? 'UK Shoe Size' : 'Custom Size',
                     values: topVars.map(v => {
                       const cleanName = String(v.name || v.options?.Size || v.options?.['UK Size'] || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+                      const valCapacity = v.capacity ? formatBagCapacity(v.capacity) : '';
+
                       return {
                         id: v.id,
                         name: cleanName,
@@ -210,6 +213,7 @@ export default function ProductForm({ productId = null }) {
                         stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
                         sku: v.sku || '',
                         status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
+                        capacity: valCapacity,
                         subsets: (subsByParent[v.id] || []).map(sv => {
                           let cleanSub = String(sv.name || sv.options?.Colour || sv.options?.Color || '').trim();
                           if (cleanSub.includes('/')) {
@@ -223,7 +227,8 @@ export default function ProductForm({ productId = null }) {
                             image: sv.image || '',
                             stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
                             sku: sv.sku || '',
-                            status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft'))
+                            status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft')),
+                            capacity: sv.capacity ? formatBagCapacity(sv.capacity) : valCapacity
                           };
                         })
                       };
@@ -366,10 +371,12 @@ export default function ProductForm({ productId = null }) {
         ...val,
         id: 'val_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         sku: val.sku ? `${val.sku}-COPY` : '',
+        capacity: val.capacity || '',
         subsets: (val.subsets || []).map(sub => ({
           ...sub,
           id: 'sub_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          sku: sub.sku ? `${sub.sku}-COPY` : ''
+          sku: sub.sku ? `${sub.sku}-COPY` : '',
+          capacity: sub.capacity || val.capacity || ''
         }))
       }));
       const next = [...prev];
@@ -409,6 +416,7 @@ export default function ProductForm({ productId = null }) {
             stock: 0,
             sku: '',
             status: 'Draft',
+            capacity: '',
             subsets: []
           }];
         } else {
@@ -426,6 +434,7 @@ export default function ProductForm({ productId = null }) {
           stock: 0,
           sku: `${masterSku}-V${vgIdx + 1}-${count}`,
           status: 'Draft',
+          capacity: '',
           subsets: []
         };
 
@@ -455,6 +464,7 @@ export default function ProductForm({ productId = null }) {
         stock: 0,
         sku: `${masterSku}-V${count}`,
         status: 'Draft',
+        capacity: '',
         subsets: []
       };
       vg.values = [...(vg.values || []), newVal];
@@ -478,7 +488,13 @@ export default function ProductForm({ productId = null }) {
       const next = [...prev];
       const vg = { ...next[vgIdx] };
       const values = [...(vg.values || [])];
-      values[valIdx] = { ...values[valIdx], ...patch };
+      let updatedVal = { ...values[valIdx], ...patch };
+      if (isBags && patch.name !== undefined) {
+        if (updatedVal.capacity && !isValidBagCapacity(patch.name, updatedVal.capacity)) {
+          updatedVal.capacity = '';
+        }
+      }
+      values[valIdx] = updatedVal;
       vg.values = values;
       next[vgIdx] = vg;
       return next;
@@ -584,6 +600,44 @@ export default function ProductForm({ productId = null }) {
   const isBottoms = selectedCat
     ? (selectedCat.slug === 'bottoms' || (selectedCat.name || '').toLowerCase() === 'bottoms' || selectedCat.id === 'c_bottoms' || selectedCat.id === 'c_pants')
     : (formData.categoryId === 'c_bottoms' || formData.categoryId === 'c_pants' || String(formData.categoryId).toLowerCase() === 'bottoms');
+  const isBags = selectedCat
+    ? (selectedCat.slug === 'bags' || (selectedCat.name || '').toLowerCase() === 'bags' || selectedCat.id === 'c_bags')
+    : (formData.categoryId === 'c_bags' || String(formData.categoryId).toLowerCase() === 'bags');
+
+  const handleCategoryChange = (newCatId) => {
+    const currentIsBags = isBags;
+    const newCat = categories.find(c => c.id === newCatId || c._id === newCatId || c.slug === newCatId);
+    const newIsBags = newCat
+      ? (newCat.slug === 'bags' || (newCat.name || '').toLowerCase() === 'bags' || newCat.id === 'c_bags')
+      : (newCatId === 'c_bags' || String(newCatId).toLowerCase() === 'bags');
+
+    if (currentIsBags && !newIsBags) {
+      const hasCapacityData = variantGroups.some(vg =>
+        (vg.values || []).some(v => v.capacity && String(v.capacity).trim())
+      );
+
+      if (hasCapacityData) {
+        const confirmed = window.confirm(
+          'Changing category away from Bags will clear capacity data from your size variants. Are you sure you want to proceed?'
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      setVariantGroups(prev => prev.map(vg => ({
+        ...vg,
+        values: (vg.values || []).map(v => ({
+          ...v,
+          capacity: '',
+          subsets: (v.subsets || []).map(s => ({ ...s, capacity: '' }))
+        }))
+      })));
+    }
+
+    setFormData(prev => ({ ...prev, categoryId: newCatId }));
+    if (formErrors.categoryId) setFormErrors(prev => ({ ...prev, categoryId: undefined }));
+  };
 
   // Total sellable combinations calculation
   const totalCombinations = variantGroups.reduce((acc, vg) => {
@@ -606,6 +660,24 @@ export default function ProductForm({ productId = null }) {
     }
     if (formData.price === '' || formData.price === null || formData.price === undefined || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
       errs.price = 'Price is required';
+    }
+    if (isBags) {
+      const sizeGroup = variantGroups.find(vg => (vg.name || '').trim().toLowerCase() === 'size' || (vg.name || '').trim().toLowerCase() === 'uk size');
+      if (sizeGroup) {
+        for (const val of (sizeGroup.values || [])) {
+          if (val.name && val.name.trim()) {
+            const cleanName = String(val.name).replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+            const range = getBagCapacityRange(cleanName);
+            if (!val.capacity || !String(val.capacity).trim()) {
+              errs.capacity = `Capacity is required for size '${cleanName}'. Please select a capacity button.`;
+              break;
+            } else if (range && !isValidBagCapacity(cleanName, val.capacity)) {
+              errs.capacity = `Capacity '${val.capacity}' for size '${cleanName}' must be between ${range.min} L and ${range.max} L.`;
+              break;
+            }
+          }
+        }
+      }
     }
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
@@ -710,6 +782,7 @@ export default function ProductForm({ productId = null }) {
         valSku = candidateValSku;
 
         const cleanValName = String(val.name || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+        const valCap = val.capacity ? formatBagCapacity(val.capacity) : null;
 
         const subList = (val.subsets || []).map((sub, subIndex) => {
           const subAmt = sub.amount !== '' && sub.amount != null ? Number(sub.amount) : topAmount;
@@ -743,6 +816,7 @@ export default function ProductForm({ productId = null }) {
             amount: Math.round(subAmt * 100),
             stock: Number(sub.stock) || 0,
             image: sub.image || '',
+            capacity: sub.capacity ? formatBagCapacity(sub.capacity) : valCap,
             status: isHidden ? 'hidden' : (shouldPublish ? (sub.status === 'Published' ? 'active' : 'draft') : 'draft'),
             published: shouldPublish ? !isHidden && sub.status === 'Published' : false,
             hidden: isHidden
@@ -761,6 +835,7 @@ export default function ProductForm({ productId = null }) {
           amount: topPricePaisa,
           stock: Number(val.stock) || 0,
           image: val.image || '',
+          capacity: valCap,
           status: isValHidden ? 'hidden' : (shouldPublish ? (val.status === 'Published' ? 'active' : 'draft') : 'draft'),
           published: shouldPublish ? !isValHidden && val.status === 'Published' : false,
           hidden: isValHidden,
@@ -860,15 +935,23 @@ export default function ProductForm({ productId = null }) {
                   {variantGroups.length > 0 && (
                     <div className="sf-variants">
                       {variantGroups.map((vg) => (
-                        (vg.values || []).map((val) => (
-                          (val.subsets || []).length > 0 ? (
+                        (vg.values || []).map((val) => {
+                          const capLabel = val.capacity ? formatBagCapacity(val.capacity) : null;
+                          const capDetail = capLabel ? ` (Capacity: ${capLabel})` : '';
+                          return (val.subsets || []).length > 0 ? (
                             val.subsets.map((sub, sidx) => (
-                              <span key={sidx} className="sf-variant">{`${vg.name || 'Variant'}: ${val.name || 'Val'} / ${sub.name || 'Sub'}`}</span>
+                              <span key={sidx} className="sf-variant">
+                                {`${vg.name || 'Variant'}: ${val.name || 'Val'} / ${sub.name || 'Sub'}`}
+                                {capDetail}
+                              </span>
                             ))
                           ) : (
-                            <span key={val.id} className="sf-variant">{`${vg.name || 'Variant'}: ${val.name || 'Val'}`}</span>
-                          )
-                        ))
+                            <span key={val.id} className="sf-variant">
+                              {`${vg.name || 'Variant'}: ${val.name || 'Val'}`}
+                              {capDetail}
+                            </span>
+                          );
+                        })
                       ))}
                     </div>
                   )}
@@ -1005,10 +1088,7 @@ export default function ProductForm({ productId = null }) {
               <label>Category <span style={{ color: '#ef4444' }}>*</span></label>
               <select
                 value={formData.categoryId}
-                onChange={(e) => {
-                  setFormData({ ...formData, categoryId: e.target.value });
-                  if (formErrors.categoryId) setFormErrors((prev) => ({ ...prev, categoryId: undefined }));
-                }}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 style={formErrors.categoryId ? { borderColor: '#ef4444', boxShadow: '0 0 0 1px #ef4444' } : {}}
               >
                 <option value="">Select Category</option>
@@ -1361,31 +1441,36 @@ export default function ProductForm({ productId = null }) {
                   <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted-foreground)', marginRight: '6px' }}>
                     {isFootwear ? 'UK Size:' : 'Size:'}
                   </span>
-                  {(isFootwear
-                    ? ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13']
-                    : (isBottoms
-                      ? ['28', '30', '32', '34', '36', '38']
-                      : ['XS', 'S', 'M', 'L', 'XL', 'XXL'])
-                  ).map((sizeName) => {
-                    const isSelected = (vg.values || []).some(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
-                    return (
-                      <button
-                        key={sizeName}
-                        type="button"
-                        className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
-                        onClick={() => handleToggleUkSize(vgIdx, sizeName)}
-                        style={{
-                          minWidth: '48px',
-                          fontSize: '12px',
-                          fontWeight: isSelected ? 600 : 400,
-                          padding: '4px 10px',
-                          borderRadius: '4px'
-                        }}
-                      >
-                        {isSelected ? `✓ ${sizeName}` : sizeName}
-                      </button>
-                    );
-                  })}
+                  {(() => {
+                    const availableSizes = isFootwear
+                      ? ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13']
+                      : (isBottoms
+                        ? ['28', '30', '32', '34', '36', '38']
+                        : (isBags
+                          ? ['S', 'M', 'L', 'XL']
+                          : ['XS', 'S', 'M', 'L', 'XL', 'XXL']));
+
+                    return availableSizes.map((sizeName) => {
+                      const isSelected = (vg.values || []).some(v => (v.name || '').trim().toUpperCase() === sizeName.toUpperCase());
+                      return (
+                        <button
+                          key={sizeName}
+                          type="button"
+                          className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
+                          onClick={() => handleToggleUkSize(vgIdx, sizeName)}
+                          style={{
+                            minWidth: '48px',
+                            fontSize: '12px',
+                            fontWeight: isSelected ? 600 : 400,
+                            padding: '4px 10px',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          {isSelected ? `✓ ${sizeName}` : sizeName}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               )}
 
@@ -1429,6 +1514,68 @@ export default function ProductForm({ productId = null }) {
                           &times;
                         </button>
                       </div>
+
+                      {/* Capacity Selection Row for Bags */}
+                      {isBags && (() => {
+                        const cleanValName = String(val.name || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+                        const capacityOptions = getBagCapacityOptions(cleanValName);
+                        if (!capacityOptions || capacityOptions.length === 0) return null;
+
+                        return (
+                          <div
+                            className="capacity-step-row"
+                            style={{
+                              margin: '8px 0 10px',
+                              background: 'var(--canvas)',
+                              padding: '10px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                              <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--muted-foreground)' }}>
+                                Capacity ({cleanValName}):
+                              </span>
+                              <span style={{ fontSize: '11px', color: val.capacity ? 'var(--primary)' : 'var(--muted-foreground)', fontWeight: val.capacity ? 600 : 400 }}>
+                                {val.capacity ? `Selected: ${val.capacity}` : 'Click a litre button to select'}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                              {capacityOptions.map((litStr) => {
+                                const isSelected = val.capacity === litStr;
+                                return (
+                                  <button
+                                    key={litStr}
+                                    type="button"
+                                    className={`btn btn-sm ${isSelected ? 'btn-primary' : ''}`}
+                                    onClick={() => {
+                                      // Single-select / radio behavior: clicking selected deselects, clicking another replaces
+                                      const nextCap = isSelected ? '' : litStr;
+                                      handleUpdateValue(vgIdx, valIdx, { capacity: nextCap });
+                                    }}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '4px',
+                                      padding: '3px 8px',
+                                      minWidth: '46px',
+                                      fontSize: '11.5px',
+                                      fontWeight: isSelected ? 600 : 400,
+                                      borderRadius: '4px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {isSelected && <span style={{ fontSize: '10px' }}>✓</span>}
+                                    <span>{litStr}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* 20 Common Colours Sub-Variant Selector */}
                       <div style={{

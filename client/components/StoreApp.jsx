@@ -8,6 +8,7 @@ import { api } from '../services/apiClient';
 import { loadHomepageConfig } from '../services/homepageCms';
 import RamroxaReceiptModal from './admin/RamroxaReceiptModal';
 import { downloadReceiptPdf } from '../services/ramroxaReceiptService';
+import { BAG_CAPACITY_CONFIG, BAG_SIZE_KEYS, formatBagCapacity } from '../config/bagCapacityConfig';
 
 const DEFAULT_CATALOG = [
   {
@@ -4574,6 +4575,19 @@ export default class StoreApp extends React.Component {
                 (p.tags || []).some(t => ['footwear', 'shoe', 'shoes', 'sneakers', 'runner', 'loafer', 'boot'].includes(String(t).toLowerCase())) ||
                 availableSizes.some(s => String(s).startsWith('UK '));
 
+              const isBagProd = p.categoryId === 'c_bags' ||
+                p.categoryId === 'bags' ||
+                (p.category || '').toLowerCase().includes('bag') ||
+                (p.tags || []).some(t => ['bag', 'bags', 'backpack', 'tote', 'sling'].includes(String(t).toLowerCase()));
+
+              const sizeVariant = (p.allVariants || p.variants || []).find(v => {
+                const optS = (v.options?.Size || v.options?.size || '').trim().toLowerCase();
+                const vName = (v.name || '').trim().toLowerCase();
+                const cSize = (currentSize || '').trim().toLowerCase();
+                return optS === cSize || vName === cSize || vName.startsWith(`size: ${cSize}`) || vName.startsWith(`size:${cSize}`);
+              });
+              const activeCapacity = sizeVariant?.capacity ? formatBagCapacity(sizeVariant.capacity) : null;
+
               return (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -4622,6 +4636,102 @@ export default class StoreApp extends React.Component {
                         );
                       })}
                     </div>
+
+                    {/* Capacity badge for Bags */}
+                    {isBagProd && activeCapacity && (
+                      <div style={{
+                        marginTop: 4,
+                        marginBottom: 4,
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap'
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, color: '#64748b', textTransform: 'uppercase' }}>
+                          Capacity:
+                        </span>
+                        <span style={{
+                          fontSize: 12.5,
+                          fontWeight: 700,
+                          color: '#0f172a',
+                          background: '#e2e8f0',
+                          padding: '2px 8px',
+                          borderRadius: 4
+                        }}>
+                          {activeCapacity}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Bags Size & Capacity Guide */}
+                    {isBagProd && (
+                      <div style={{ marginTop: 2, marginBottom: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => this.setState(st => ({ showBagSizeGuide: !st.showBagSizeGuide }))}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '2px 0',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: '#2563eb',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5
+                          }}
+                        >
+                          <span>🎒 Bag Size & Capacity Guide</span>
+                          <span style={{ fontSize: 10 }}>{this.state.showBagSizeGuide ? '▲' : '▼'}</span>
+                        </button>
+                        {this.state.showBagSizeGuide && (
+                          <div style={{
+                            marginTop: 6,
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 8,
+                            overflow: 'hidden',
+                            fontSize: 12
+                          }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                              <thead>
+                                <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
+                                  <th style={{ padding: '8px 12px', fontWeight: 600 }}>Size</th>
+                                  <th style={{ padding: '8px 12px', fontWeight: 600 }}>Capacity Range</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {BAG_SIZE_KEYS.map((k) => {
+                                  const def = BAG_CAPACITY_CONFIG[k];
+                                  const isSelectedRow = (currentSize || '').toUpperCase() === k;
+                                  return (
+                                    <tr
+                                      key={k}
+                                      style={{
+                                        borderBottom: '1px solid #f1f5f9',
+                                        background: isSelectedRow ? '#f0fdf4' : 'transparent',
+                                        fontWeight: isSelectedRow ? 600 : 400
+                                      }}
+                                    >
+                                      <td style={{ padding: '8px 12px' }}>
+                                        {k} ({def.label}) {isSelectedRow && '✓'}
+                                      </td>
+                                      <td style={{ padding: '8px 12px', color: '#0f172a' }}>
+                                        <strong>{def.min}-{def.max} L</strong>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {availableColours.length > 0 && (

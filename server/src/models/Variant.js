@@ -13,6 +13,7 @@ const variantSchema = new mongoose.Schema(
     compareAtPrice: { type: Number, default: null, min: 0 },
     cost: { type: Number, default: null, min: 0 },
     barcode: { type: String, default: null, trim: true },
+    capacity: { type: String, default: null, trim: true },
     status: {
       type: String,
       enum: ['active', 'draft', 'published', 'hidden', 'out_of_stock', 'discontinued', 'archived'],

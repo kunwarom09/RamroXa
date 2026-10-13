@@ -2,7 +2,71 @@ import mongoose from 'mongoose';
 import { Product, Variant, Inventory, StockMove, Category } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { escapeRegex } from '../utils/regex.js';
+import { BAG_CAPACITY_CONFIG, BAG_SIZE_KEYS, getBagCapacityRange, getBagCapacityOptions, isValidBagCapacity, formatBagCapacity } from '../config/bagCapacityConfig.js';
 import crypto from 'crypto';
+
+export function sanitizeText(str) {
+  if (!str) return null;
+  return String(str).replace(/[<>]/g, '').trim();
+}
+
+export async function isBagCategory(categoryId) {
+  if (!categoryId) return false;
+  if (categoryId === 'c_bags' || categoryId === 'bags') return true;
+  const cat = await Category.findOne({
+    $or: [
+      { id: categoryId },
+      { slug: categoryId },
+      ...(mongoose.Types.ObjectId.isValid(categoryId) ? [{ _id: categoryId }] : [])
+    ]
+  }).lean();
+  return !!(cat && (cat.slug === 'bags' || (cat.name || '').toLowerCase() === 'bags' || cat.id === 'c_bags'));
+}
+
+export async function validateAndSanitizeVariants(categoryId, variants) {
+  if (!variants || !Array.isArray(variants)) return;
+  const isBags = await isBagCategory(categoryId);
+
+  for (const v of variants) {
+    const optSize = v.options?.Size || v.options?.size || (v.options instanceof Map ? (v.options.get('Size') || v.options.get('size')) : null);
+    const isSize = !!optSize || /(^|:|\s)Size/i.test(v.name || '');
+
+    if (v.capacity !== undefined && v.capacity !== null) {
+      v.capacity = sanitizeText(v.capacity);
+    }
+
+    if (isBags && isSize) {
+      const cleanName = String(v.name || optSize || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+      const range = getBagCapacityRange(cleanName);
+
+      if (!v.capacity || !String(v.capacity).trim()) {
+        throw ApiError.badRequest(`Capacity is required for each size variant when category is Bags. Missing on: '${cleanName || 'Size'}'.`);
+      }
+
+      if (!range) {
+        throw ApiError.badRequest(`Invalid size variant '${cleanName}' for Bags. Allowed sizes are S, M, L, XL.`);
+      }
+
+      if (!isValidBagCapacity(cleanName, v.capacity)) {
+        throw ApiError.badRequest(`Capacity '${v.capacity}' for size '${cleanName}' is out of range. Must be a single value between ${range.min} L and ${range.max} L.`);
+      }
+
+      v.capacity = formatBagCapacity(v.capacity);
+    }
+
+    const subList = v.subVariants || v.subvariants || [];
+    for (const sv of subList) {
+      if (sv.capacity !== undefined && sv.capacity !== null) {
+        sv.capacity = sanitizeText(sv.capacity);
+      } else if (v.capacity) {
+        sv.capacity = v.capacity;
+      }
+      if (isBags && isSize && sv.capacity) {
+        sv.capacity = formatBagCapacity(sv.capacity);
+      }
+    }
+  }
+}
 
 export function categoryPrefix(catId) {
   if (!catId) return 'GEN';
@@ -235,6 +299,8 @@ export async function createAdminProduct(data, user) {
     throw ApiError.badRequest('Category is required.');
   }
 
+  await validateAndSanitizeVariants(categoryId, variants);
+
   const finalPrice = basePrice !== undefined && basePrice !== null ? Number(basePrice) : (price !== undefined && price !== null ? Number(price) : 0);
   if (isNaN(finalPrice) || finalPrice <= 0) {
     throw ApiError.badRequest('Price is required and must be greater than 0.');
@@ -331,7 +397,8 @@ export async function createAdminProduct(data, user) {
         price: vPrice,
         hidden: isValHidden,
         published: isValPublished,
-        status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
+        status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft'),
+        capacity: v.capacity || null
       });
 
       const stockQty = v.stock !== undefined ? v.stock : initialStock;
@@ -394,7 +461,8 @@ export async function createAdminProduct(data, user) {
           price: svPrice,
           hidden: isHidden,
           published: isSubPublished,
-          status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
+          status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft'),
+          capacity: sv.capacity || v.capacity || null
         });
 
         const svStock = sv.stock !== undefined ? sv.stock : stockQty;
@@ -521,6 +589,7 @@ export async function updateAdminProduct(productId, updates, user) {
 
   // If variants array is provided, sync variants & subvariants
   if (updates.variants && Array.isArray(updates.variants)) {
+    await validateAndSanitizeVariants(updates.categoryId || product.categoryId, updates.variants);
     const pId = product.id;
     const finalPrice = product.price || product.basePrice || 0;
     const existingVariants = await Variant.find({ productId: pId });
@@ -532,7 +601,8 @@ export async function updateAdminProduct(productId, updates, user) {
 
     for (let vIndex = 0; vIndex < updates.variants.length; vIndex++) {
       const v = updates.variants[vIndex];
-      const vId = v.id || 'v_' + crypto.randomBytes(6).toString('hex');
+      const matchedExisting = (v.id && existingMap.get(v.id)) || (v.sku && existingVariants.find((ev) => ev.sku === v.sku));
+      const vId = matchedExisting ? matchedExisting.id : (v.id || 'v_' + crypto.randomBytes(6).toString('hex'));
       processedIds.add(vId);
       const vName = v.name || (v.options ? Object.values(v.options).join(' / ') : '') || `Variant ${vIndex + 1}`;
       const rawVSku = (v.sku && v.sku.trim()) || `${product.sku}-${(v.name || 'VAR').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'VAR'}-${vIndex + 1}`;
@@ -555,7 +625,8 @@ export async function updateAdminProduct(productId, updates, user) {
             price: vPrice,
             hidden: isValHidden,
             published: isValPublished,
-            status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
+            status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft'),
+            capacity: v.capacity || null
           }
         );
 
@@ -600,7 +671,8 @@ export async function updateAdminProduct(productId, updates, user) {
           price: vPrice,
           hidden: isValHidden,
           published: isValPublished,
-          status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft')
+          status: isValHidden ? 'hidden' : (isValPublished ? 'active' : 'draft'),
+          capacity: v.capacity || null
         });
 
         const vStock = v.stock !== undefined ? Number(v.stock) : 10;
@@ -617,7 +689,8 @@ export async function updateAdminProduct(productId, updates, user) {
       const subList = v.subVariants || v.subvariants || [];
       for (let sIndex = 0; sIndex < subList.length; sIndex++) {
         const sv = subList[sIndex];
-        const svId = sv.id || 'sv_' + crypto.randomBytes(6).toString('hex');
+        const matchedSub = (sv.id && existingMap.get(sv.id)) || (sv.sku && existingVariants.find((ev) => ev.sku === sv.sku));
+        const svId = matchedSub ? matchedSub.id : (sv.id || 'sv_' + crypto.randomBytes(6).toString('hex'));
         processedIds.add(svId);
         const svName = sv.name || (sv.options ? Object.values(sv.options).join(' / ') : '') || `SubVariant ${sIndex + 1}`;
         const rawSvSku = (sv.sku && sv.sku.trim()) || `${vSku}-${(sv.name || 'SUB').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || 'SUB'}-${sIndex + 1}`;
@@ -654,7 +727,8 @@ export async function updateAdminProduct(productId, updates, user) {
               price: svPrice,
               hidden: isHidden,
               published: isSubPublished,
-              status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
+              status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft'),
+              capacity: sv.capacity || v.capacity || null
             }
           );
           const existingInv = await Inventory.findOne({ variantId: svId });
@@ -695,7 +769,8 @@ export async function updateAdminProduct(productId, updates, user) {
             price: svPrice,
             hidden: isHidden,
             published: isSubPublished,
-            status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft')
+            status: isHidden ? 'hidden' : (isSubPublished ? 'active' : 'draft'),
+            capacity: sv.capacity || v.capacity || null
           });
           await Inventory.create({
             id: `inv_${svId}_w1`,
