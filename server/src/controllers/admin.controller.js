@@ -29,7 +29,17 @@ export const deleteCategory = asyncHandler(async (req, res) => {
 // --- Products ---
 export const listProducts = asyncHandler(async (req, res) => {
   const result = await adminProductService.listAdminProducts(req.query);
-  res.status(200).json({ data: result });
+  res.status(200).json({
+    data: result,
+    items: result.items,
+    products: result.products,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    variantsTotal: result.variantsTotal,
+    pagination: result.pagination
+  });
 });
 
 export const listProductTags = asyncHandler(async (req, res) => {
@@ -39,7 +49,7 @@ export const listProductTags = asyncHandler(async (req, res) => {
 
 export const getProduct = asyncHandler(async (req, res) => {
   const product = await adminProductService.getAdminProductById(req.params.id);
-  res.status(200).json({ data: { product } });
+  res.status(200).json({ data: { product }, product });
 });
 
 export const createProduct = asyncHandler(async (req, res) => {

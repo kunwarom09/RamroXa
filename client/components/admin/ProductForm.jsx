@@ -1,12 +1,53 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { money, slugify } from '../../services/formatters';
 import { api } from '../../services/apiClient';
 import { convertToWebP } from '../../services/imageProcessor';
 import Icon from './Icons';
 import ImageEditorModal from './ImageEditorModal';
 import { BAG_CAPACITY_CONFIG, BAG_SIZE_KEYS, getBagCapacityRange, getBagCapacityOptions, isValidBagCapacity, formatBagCapacity } from '../../config/bagCapacityConfig';
+
+const defaultFormData = {
+  name: '',
+  slug: '',
+  sku: '',
+  brand: 'Zylo',
+  categoryId: '',
+  status: 'draft',
+  gender: '',
+  season: '',
+  tags: '',
+  price: '',
+  mrp: '',
+  cost: '',
+  description: '',
+  featured: false,
+  trending: false,
+  newArrival: false,
+  bestSelling: false,
+  images: []
+};
+
+const defaultVariantGroups = [
+  {
+    id: 'vg_1',
+    name: 'Size',
+    sizeType: 'UK Shoe Size',
+    values: [
+      {
+        id: 'val_1',
+        name: '',
+        amount: '',
+        image: '',
+        stock: 0,
+        sku: '',
+        status: 'Draft',
+        subsets: []
+      }
+    ]
+  }
+];
 
 const shortCode = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 4).toUpperCase();
 const UK_SHOE_SIZES = ['UK 3', 'UK 4', 'UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12', 'UK 13'];
@@ -39,55 +80,18 @@ export default function ProductForm({ productId = null }) {
   const routeParams = useParams();
   const activeProductId = productId || routeParams?.id || null;
 
+  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [variants, setVariants] = useState([]);
   const [editingProd, setEditingProd] = useState(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [previewDevice, setPreviewDevice] = useState('desktop');
   const [toastMsg, setToastMsg] = useState('');
   const [formErrors, setFormErrors] = useState({});
 
-  const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    sku: '',
-    brand: 'Zylo',
-    categoryId: '',
-    status: 'draft',
-    gender: '',
-    season: '',
-    tags: '',
-    price: '',
-    mrp: '',
-    cost: '',
-    description: '',
-    featured: false,
-    trending: false,
-    newArrival: false,
-    bestSelling: false,
-    images: []
-  });
-
-  const [variantGroups, setVariantGroups] = useState([
-    {
-      id: 'vg_1',
-      name: 'Size',
-      sizeType: 'UK Shoe Size',
-      values: [
-        {
-          id: 'val_1',
-          name: '',
-          amount: '',
-          image: '',
-          stock: 0,
-          sku: '',
-          status: 'Draft',
-          subsets: []
-        }
-      ]
-    }
-  ]);
+  const [formData, setFormData] = useState(defaultFormData);
+  const [variantGroups, setVariantGroups] = useState(defaultVariantGroups);
 
   // Image Studio state
   const [editingImageIdx, setEditingImageIdx] = useState(null);
@@ -98,6 +102,11 @@ export default function ProductForm({ productId = null }) {
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  const handleBackToList = () => {
+    const query = searchParams ? searchParams.toString() : '';
+    router.push(query ? `/admin/products?${query}` : '/admin/products');
   };
 
   const handleSaveEditedVariantImage = (editedUrl) => {
@@ -115,141 +124,166 @@ export default function ProductForm({ productId = null }) {
   const generateMasterSku = (catId) => {
     const cat = categories.find((c) => c.id === (catId || formData.categoryId));
     const code = (cat ? cat.name.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() : 'GEN').padEnd(3, 'X');
-    const count = (products || []).filter((p) => (p.sku || '').startsWith(`ZYL-${code}`)).length + 1;
-    return `ZYL-${code}-${String(count).padStart(5, '0')}`;
+    const randomSuffix = String(Math.floor(10000 + Math.random() * 90000));
+    return `ZYL-${code}-${randomSuffix}`;
   };
 
   useEffect(() => {
-    async function loadData() {
+    let isCancelled = false;
+
+    async function loadProductData() {
+      setLoading(true);
+      setFetchError(null);
+      setEditingProd(null);
+      setFormData(defaultFormData);
+      setVariantGroups(defaultVariantGroups);
+
       try {
-        const [catRes, prodRes] = await Promise.all([
-          api.get('/api/categories'),
-          api.get('/api/admin/products')
-        ]);
-
-        const cats = catRes.data || [];
-        const prods = prodRes.data?.products || prodRes.data || [];
-        setCategories(cats);
-        setProducts(prods);
-
-        let vars = [];
-        prods.forEach(p => {
-          if (p.variants && p.variants.length) {
-            vars = [...vars, ...p.variants.map(v => ({ ...v, productId: p.id || String(p._id) }))];
-          }
-        });
-        setVariants(vars);
+        const catRes = await api.get('/api/categories');
+        const cats = catRes.data?.categories || catRes.data?.data?.categories || catRes.data || [];
+        if (!isCancelled) setCategories(cats);
 
         if (activeProductId && activeProductId !== 'new') {
           const decodedId = decodeURIComponent(String(activeProductId)).trim();
-          const target = prods.find(p => p.id === activeProductId || String(p._id) === activeProductId || p.slug === activeProductId || p.id === decodedId);
-          if (target) {
-            setEditingProd(target);
-            const labels = target.labels || {};
-            let resolvedCategoryId = target.categoryId || (cats[0]?.id || '');
-            const isTargetFootwear = target.productType === 'Footwear' ||
-              target.categoryId === 'c_shoes' ||
-              target.categoryId === 'c_footwear' ||
-              (target.name || '').toLowerCase().includes('shoe') ||
-              (target.name || '').toLowerCase().includes('sneaker');
+          const prodRes = await api.get(`/api/admin/products/${encodeURIComponent(decodedId)}`);
+          if (isCancelled) return;
 
-            if (isTargetFootwear) {
-              const footwearCat = cats.find(c => c.slug === 'footwear' || c.id === 'c_footwear' || (c.name || '').toLowerCase() === 'footwear');
-              if (footwearCat) {
-                resolvedCategoryId = footwearCat.id;
-              } else if (!resolvedCategoryId) {
-                resolvedCategoryId = 'c_footwear';
-              }
+          const target = prodRes.data?.product || prodRes.data || prodRes.product;
+          if (!target || (!target.id && !target._id)) {
+            throw new Error(`Product "${decodedId}" not found.`);
+          }
+
+          setEditingProd(target);
+          const labels = target.labels || {};
+          let resolvedCategoryId = target.categoryId || (cats[0]?.id || '');
+          const isTargetFootwear = target.productType === 'Footwear' ||
+            target.categoryId === 'c_shoes' ||
+            target.categoryId === 'c_footwear' ||
+            (target.name || '').toLowerCase().includes('shoe') ||
+            (target.name || '').toLowerCase().includes('sneaker');
+
+          if (isTargetFootwear) {
+            const footwearCat = cats.find(c => c.slug === 'footwear' || c.id === 'c_footwear' || (c.name || '').toLowerCase() === 'footwear');
+            if (footwearCat) {
+              resolvedCategoryId = footwearCat.id;
+            } else if (!resolvedCategoryId) {
+              resolvedCategoryId = 'c_footwear';
             }
+          }
 
-            setFormData({
-              name: target.name || '',
-              slug: target.slug || '',
-              sku: target.sku || '',
-              brand: target.brand || 'Zylo',
-              categoryId: resolvedCategoryId,
-              status: target.status || 'draft',
-              gender: target.gender || '',
-              season: target.season || '',
-              tags: Array.isArray(target.tags) ? target.tags.join(', ') : (target.tags || ''),
-              price: target.basePrice ? Math.round(target.basePrice / 100) : (target.price != null ? target.price : ''),
-              mrp: target.mrp ? Math.round(target.mrp / 100) : '',
-              cost: target.cost ? Math.round(target.cost / 100) : '',
-              description: target.description || '',
-              featured: !!labels.featured,
-              trending: !!labels.trending,
-              newArrival: !!labels.newArrival,
-              bestSelling: !!labels.bestSelling,
-              images: Array.isArray(target.images) ? target.images : []
+          setFormData({
+            name: target.name || '',
+            slug: target.slug || '',
+            sku: target.sku || '',
+            brand: target.brand || 'Zylo',
+            categoryId: resolvedCategoryId,
+            status: target.status || 'draft',
+            gender: target.gender || '',
+            season: target.season || '',
+            tags: Array.isArray(target.tags) ? target.tags.join(', ') : (target.tags || ''),
+            price: target.basePrice ? Math.round(target.basePrice / 100) : (target.price != null ? target.price : ''),
+            mrp: target.mrp ? Math.round(target.mrp / 100) : '',
+            cost: target.cost ? Math.round(target.cost / 100) : '',
+            description: target.description || '',
+            featured: !!labels.featured,
+            trending: !!labels.trending,
+            newArrival: !!labels.newArrival,
+            bestSelling: !!labels.bestSelling,
+            images: Array.isArray(target.images) ? target.images : []
+          });
+
+          // Populate variant groups from existing variants directly from by-ID endpoint
+          let allTargetVars = [];
+          if (target.allVariants && target.allVariants.length) {
+            allTargetVars = target.allVariants;
+          } else if (target.variants && target.variants.length) {
+            target.variants.forEach((v) => {
+              allTargetVars.push(v);
+              if (v.subVariants && v.subVariants.length) {
+                allTargetVars.push(...v.subVariants);
+              }
+            });
+          }
+
+          if (allTargetVars.length > 0) {
+            const topVars = allTargetVars.filter((v) => !v.parentVariantId);
+            const subVars = allTargetVars.filter((v) => !!v.parentVariantId);
+            const subsByParent = {};
+            subVars.forEach((sv) => {
+              const pid = sv.parentVariantId;
+              if (!subsByParent[pid]) subsByParent[pid] = [];
+              subsByParent[pid].push(sv);
             });
 
-            // Populate variant groups from existing variants
-            const existingVars = (target.variants || []).concat(vars.filter(v => v.productId === target.id));
-            if (existingVars.length > 0) {
-              const topVars = existingVars.filter(v => !v.parentVariantId);
-              const subVars = existingVars.filter(v => !!v.parentVariantId);
-              const subsByParent = {};
-              subVars.forEach(sv => {
-                if (!subsByParent[sv.parentVariantId]) subsByParent[sv.parentVariantId] = [];
-                subsByParent[sv.parentVariantId].push(sv);
-              });
+            if (topVars.length) {
+              const hasUkSizes = topVars.some((v) => (v.name || '').trim().toUpperCase().startsWith('UK '));
+              setVariantGroups([
+                {
+                  id: 'vg_' + (target.id || target._id),
+                  name: 'Size',
+                  sizeType: hasUkSizes ? 'UK Shoe Size' : 'Custom Size',
+                  values: topVars.map((v) => {
+                    const cleanName = String(v.name || v.options?.Size || v.options?.['UK Size'] || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
+                    const valCapacity = v.capacity ? formatBagCapacity(v.capacity) : '';
 
-              if (topVars.length) {
-                const hasUkSizes = topVars.some(v => (v.name || '').trim().toUpperCase().startsWith('UK '));
-                setVariantGroups([
-                  {
-                    id: 'vg_' + target.id,
-                    name: 'Size',
-                    sizeType: hasUkSizes ? 'UK Shoe Size' : 'Custom Size',
-                    values: topVars.map(v => {
-                      const cleanName = String(v.name || v.options?.Size || v.options?.['UK Size'] || '').replace(/^((Size|UK Size|Variant):\s*)+/gi, '').trim();
-                      const valCapacity = v.capacity ? formatBagCapacity(v.capacity) : '';
-
-                      return {
-                        id: v.id,
-                        name: cleanName,
-                        amount: v.price != null ? Math.round(v.price / 100) : '',
-                        image: v.image || '',
-                        stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
-                        sku: v.sku || '',
-                        status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
-                        capacity: valCapacity,
-                        subsets: (subsByParent[v.id] || []).map(sv => {
-                          let cleanSub = String(sv.name || sv.options?.Colour || sv.options?.Color || '').trim();
-                          if (cleanSub.includes('/')) {
-                            cleanSub = cleanSub.split('/').pop().trim();
-                          }
-                          cleanSub = cleanSub.replace(/^((Colour|Color|Sub\s*\d+):\s*)+/gi, '').trim();
-                          return {
-                            id: sv.id,
-                            name: cleanSub,
-                            amount: sv.price != null ? Math.round(sv.price / 100) : '',
-                            image: sv.image || '',
-                            stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
-                            sku: sv.sku || '',
-                            status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft')),
-                            capacity: sv.capacity ? formatBagCapacity(sv.capacity) : valCapacity
-                          };
-                        })
-                      };
-                    })
-                  }
-                ]);
-              }
+                    return {
+                      id: v.id || String(v._id),
+                      name: cleanName,
+                      amount: v.price != null ? Math.round(v.price / 100) : '',
+                      image: v.image || '',
+                      stock: v.availableStock !== undefined ? v.availableStock : (v.stock !== undefined ? v.stock : 0),
+                      sku: v.sku || '',
+                      status: v.hidden ? 'Hidden' : (v.published ? 'Published' : (v.status === 'active' ? 'Published' : 'Draft')),
+                      capacity: valCapacity,
+                      subsets: (subsByParent[v.id || String(v._id)] || []).map((sv) => {
+                        let cleanSub = String(sv.name || sv.options?.Colour || sv.options?.Color || '').trim();
+                        if (cleanSub.includes('/')) {
+                          cleanSub = cleanSub.split('/').pop().trim();
+                        }
+                        cleanSub = cleanSub.replace(/^((Colour|Color|Sub\s*\d+):\s*)+/gi, '').trim();
+                        return {
+                          id: sv.id || String(sv._id),
+                          name: cleanSub,
+                          amount: sv.price != null ? Math.round(sv.price / 100) : '',
+                          image: sv.image || '',
+                          stock: sv.availableStock !== undefined ? sv.availableStock : (sv.stock !== undefined ? sv.stock : 0),
+                          sku: sv.sku || '',
+                          status: sv.hidden ? 'Hidden' : (sv.published ? 'Published' : (sv.status === 'active' ? 'Published' : 'Draft')),
+                          capacity: sv.capacity ? formatBagCapacity(sv.capacity) : valCapacity
+                        };
+                      })
+                    };
+                  })
+                }
+              ]);
             }
           }
         } else {
+          // Creating a new product
           const catId = cats[0]?.id || '';
           const cat = cats.find((c) => c.id === catId);
           const code = (cat ? cat.name.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() : 'GEN').padEnd(3, 'X');
-          const newSku = `ZYL-${code}-${String(prods.length + 1).padStart(5, '0')}`;
-          setFormData(prev => ({ ...prev, sku: newSku, categoryId: catId }));
+          const randomSuffix = String(Math.floor(10000 + Math.random() * 90000));
+          const newSku = `ZYL-${code}-${randomSuffix}`;
+          setFormData((prev) => ({ ...prev, sku: newSku, categoryId: catId }));
         }
       } catch (err) {
         console.error('Failed to load product form data:', err);
+        if (!isCancelled) {
+          setFetchError(err.message || 'Product not found or failed to load.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     }
-    loadData();
+
+    loadProductData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [activeProductId]);
 
   const handleNameChange = (val) => {
@@ -864,7 +898,7 @@ export default function ProductForm({ productId = null }) {
       }
       const successMsg = shouldPublish ? 'Product published successfully.' : 'Product saved as draft.';
       showToast(successMsg);
-      router.push('/admin/products');
+      handleBackToList();
     } catch (apiErr) {
       const errMsg = apiErr.message || 'Error';
       const errDetails = apiErr.details ? (typeof apiErr.details === 'object' ? JSON.stringify(apiErr.details, null, 2) : String(apiErr.details)) : '';
@@ -969,10 +1003,44 @@ export default function ProductForm({ productId = null }) {
     );
   }
 
+  const varCount = (editingProd?.allVariants || editingProd?.variants || []).length;
   const editTitle = editingProd ? 'Edit master product' : 'New master product';
   const editSub = editingProd
-    ? `${formData.name || editingProd.name} · ${(variants || []).filter((v) => editingProd && v.productId === editingProd.id).length} variant(s)`
+    ? `${formData.name || editingProd.name} · ${varCount} variant(s)`
     : 'Central record. Define variants, amount, and optional subsets with frontend hide toggles.';
+
+  if (loading) {
+    return (
+      <div className="page" style={{ padding: '60px 20px', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card" style={{ maxWidth: '480px', width: '100%', padding: '36px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 500, margin: '0 0 8px' }}>Loading product details...</h2>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '13px', margin: 0 }}>Fetching master product and variant information.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="page" style={{ padding: '60px 20px', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card" style={{ maxWidth: '480px', width: '100%', padding: '36px', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 500, color: 'var(--danger)', margin: '0 0 10px' }}>
+            Product Not Found
+          </h2>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '13px', margin: '0 0 24px' }}>
+            {fetchError}
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleBackToList}
+          >
+            ← Back to master products
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -992,7 +1060,7 @@ export default function ProductForm({ productId = null }) {
             <button
               type="button"
               className="btn btn-sm"
-              onClick={() => router.push('/admin/products')}
+              onClick={handleBackToList}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               ← Back to master products
@@ -1005,7 +1073,7 @@ export default function ProductForm({ productId = null }) {
           <button
             type="button"
             className="btn btn-sm"
-            onClick={() => router.push('/admin/products')}
+            onClick={handleBackToList}
           >
             Back to list
           </button>

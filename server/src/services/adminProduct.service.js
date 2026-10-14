@@ -101,19 +101,30 @@ export async function findProduct(productId) {
 }
 
 export async function listAdminProducts(query = {}) {
-  const { q, category, status, page = 1, limit = 50 } = query;
+  const {
+    q,
+    search,
+    category,
+    categoryId,
+    status,
+    page = 1,
+    limit = 50,
+    all
+  } = query;
   const filter = { deletedAt: null };
 
   if (status && status !== 'all') {
     filter.status = status;
   }
 
-  if (category && category !== 'all') {
-    filter.categoryId = category;
+  const cat = category || categoryId;
+  if (cat && cat !== 'all') {
+    filter.categoryId = cat;
   }
 
-  if (q && q.trim()) {
-    const escaped = escapeRegex(q.trim());
+  const searchTerm = (search !== undefined && search !== null && search !== '') ? search : q;
+  if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
+    const escaped = escapeRegex(searchTerm.trim());
     filter.$or = [
       { name: { $regex: escaped, $options: 'i' } },
       { sku: { $regex: escaped, $options: 'i' } },
@@ -121,15 +132,48 @@ export async function listAdminProducts(query = {}) {
     ];
   }
 
-  const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
-  const take = parseInt(limit, 10);
+  const isAll = all === 'true' || all === true;
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  let limitNum = parseInt(limit, 10);
+  if (isNaN(limitNum) || limitNum < 1) limitNum = 50;
+  if (!isAll) {
+    limitNum = Math.min(100, limitNum);
+  }
 
-  const [products, total] = await Promise.all([
-    Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(take).lean(),
-    Product.countDocuments(filter)
+  const skip = isAll ? 0 : (pageNum - 1) * limitNum;
+  const take = isAll ? 0 : limitNum;
+
+  let queryBuilder = Product.find(filter).sort({ createdAt: -1, id: -1, _id: -1 });
+  if (!isAll) {
+    queryBuilder = queryBuilder.skip(skip).limit(take);
+  }
+
+  const [products, total, variantAgg] = await Promise.all([
+    queryBuilder.lean(),
+    Product.countDocuments(filter),
+    Product.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'variants',
+          localField: 'id',
+          foreignField: 'productId',
+          as: 'matchedVariants'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalVariants: { $sum: { $size: '$matchedVariants' } }
+        }
+      }
+    ])
   ]);
 
-  const productIds = products.map((p) => p.id);
+  const variantsTotal = variantAgg[0]?.totalVariants || 0;
+  const totalPages = total === 0 ? 0 : (isAll ? 1 : Math.ceil(total / limitNum));
+
+  const productIds = products.map((p) => p.id || p._id?.toString()).filter(Boolean);
   const [variants, inventories] = await Promise.all([
     Variant.find({ productId: { $in: productIds } }).lean(),
     Inventory.find({ archived: false }).lean()
@@ -205,12 +249,18 @@ export async function listAdminProducts(query = {}) {
   });
 
   return {
+    items: enrichedProducts,
     products: enrichedProducts,
+    total,
+    page: pageNum,
+    limit: isAll ? total : limitNum,
+    totalPages,
+    variantsTotal,
     pagination: {
       total,
-      page: parseInt(page, 10),
-      limit: take,
-      pages: Math.ceil(total / take)
+      page: pageNum,
+      limit: isAll ? total : limitNum,
+      pages: totalPages
     }
   };
 }
@@ -222,25 +272,43 @@ export async function getAdminProductById(productId) {
     throw ApiError.notFound(`Product with identifier '${productId}' not found.`);
   }
 
-  const allVariants = await Variant.find({ productId: product.id }).lean();
+  const pId = product.id || String(product._id);
+  const allVariants = await Variant.find({
+    $or: [
+      { productId: pId },
+      ...(product._id ? [{ product: product._id }, { productId: String(product._id) }] : [])
+    ]
+  }).lean();
+
   const topVariants = allVariants.filter((v) => !v.parentVariantId);
   const subVariants = allVariants.filter((v) => !!v.parentVariantId);
 
-  const variantIds = allVariants.map((v) => v.id);
+  const variantIds = allVariants.map((v) => v.id || String(v._id));
   const inventories = await Inventory.find({ variantId: { $in: variantIds }, archived: false }).lean();
 
   const invByVariantId = inventories.reduce((acc, inv) => {
-    if (!acc[inv.variantId]) acc[inv.variantId] = [];
-    acc[inv.variantId].push(inv);
+    if (inv.variantId) {
+      if (!acc[inv.variantId]) acc[inv.variantId] = [];
+      acc[inv.variantId].push(inv);
+    }
+    if (inv.id && inv.id !== inv.variantId) {
+      if (!acc[inv.id]) acc[inv.id] = [];
+      acc[inv.id].push(inv);
+    }
     return acc;
   }, {});
 
-  const enrichedSubvariants = (subVariants || []).map((sv) => ({
-    ...sv,
-    inventory: invByVariantId[sv.id] || [],
-    availableStock: (invByVariantId[sv.id] || []).reduce((sum, i) => sum + i.available, 0),
-    reservedStock: (invByVariantId[sv.id] || []).reduce((sum, i) => sum + i.reserved, 0)
-  }));
+  const enrichedSubvariants = (subVariants || []).map((sv) => {
+    const svId = sv.id || String(sv._id);
+    const invList = invByVariantId[svId] || [];
+    return {
+      ...sv,
+      id: svId,
+      inventory: invList,
+      availableStock: invList.reduce((sum, i) => sum + (Number(i.available) || 0), 0),
+      reservedStock: invList.reduce((sum, i) => sum + (Number(i.reserved) || 0), 0)
+    };
+  });
 
   const subVariantsByParent = enrichedSubvariants.reduce((acc, sv) => {
     if (!acc[sv.parentVariantId]) acc[sv.parentVariantId] = [];
@@ -249,15 +317,18 @@ export async function getAdminProductById(productId) {
   }, {});
 
   const enrichedVariants = (topVariants.length ? topVariants : allVariants).map((v) => {
-    const subs = subVariantsByParent[v.id] || [];
-    const directAvailable = (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.available, 0);
-    const directReserved = (invByVariantId[v.id] || []).reduce((sum, i) => sum + i.reserved, 0);
+    const vId = v.id || String(v._id);
+    const subs = subVariantsByParent[vId] || [];
+    const invList = invByVariantId[vId] || [];
+    const directAvailable = invList.reduce((sum, i) => sum + (Number(i.available) || 0), 0);
+    const directReserved = invList.reduce((sum, i) => sum + (Number(i.reserved) || 0), 0);
     const subsAvailable = subs.reduce((sum, s) => sum + (s.availableStock || 0), 0);
     const subsReserved = subs.reduce((sum, s) => sum + (s.reservedStock || 0), 0);
     return {
       ...v,
+      id: vId,
       subVariants: subs,
-      inventory: invByVariantId[v.id] || [],
+      inventory: invList,
       availableStock: subs.length > 0 ? subsAvailable : directAvailable,
       reservedStock: subs.length > 0 ? subsReserved : directReserved
     };
@@ -265,7 +336,12 @@ export async function getAdminProductById(productId) {
 
   return {
     ...(product.toObject ? product.toObject() : product),
-    variants: enrichedVariants
+    id: pId,
+    variants: enrichedVariants,
+    allVariants: allVariants.map((v) => ({
+      ...v,
+      id: v.id || String(v._id)
+    }))
   };
 }
 

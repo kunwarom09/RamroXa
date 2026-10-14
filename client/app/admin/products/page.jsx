@@ -1,23 +1,71 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { money, slugify, getProductThumbnail } from '../../../services/formatters';
 import { api } from '../../../services/apiClient';
 import Icon from '../../../components/admin/Icons';
 
-export default function AdminProductsListPage() {
+function getPageNumbers(currentPage, totalPages) {
+  if (!totalPages || totalPages <= 0) return [1];
+  if (totalPages <= 1) return [1];
+
+  const pagesToShow = new Set([
+    1,
+    totalPages,
+    Math.max(1, currentPage - 1),
+    currentPage,
+    Math.min(totalPages, currentPage + 1)
+  ]);
+
+  const sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
+  const result = [];
+
+  for (let i = 0; i < sortedPages.length; i++) {
+    const pageNum = sortedPages[i];
+    if (i > 0) {
+      const prev = sortedPages[i - 1];
+      if (pageNum - prev === 2) {
+        result.push(prev + 1);
+      } else if (pageNum - prev > 2) {
+        result.push('...');
+      }
+    }
+    result.push(pageNum);
+  }
+
+  return result;
+}
+
+function AdminProductsListContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [products, setProducts] = useState([]);
   const [variants, setVariants] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  // List view states
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  // Pagination states
+  const initialPage = Math.max(1, parseInt(searchParams?.get('page') || '1', 10));
+  const rawLimit = parseInt(searchParams?.get('limit') || '50', 10);
+  const initialLimit = [25, 50, 100].includes(rawLimit) ? rawLimit : 50;
+  const initialSearch = searchParams?.get('search') || searchParams?.get('q') || '';
+  const initialCategory = searchParams?.get('category') || '';
+  const initialStatus = searchParams?.get('status') || '';
+
+  const [page, setPage] = useState(initialPage);
+  const [limit, setLimit] = useState(initialLimit);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [variantsTotal, setVariantsTotal] = useState(0);
+
+  // List filter states
+  const [search, setSearch] = useState(initialSearch);
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [selectedIds, setSelectedIds] = useState([]);
   const [toastMsg, setToastMsg] = useState('');
 
@@ -27,23 +75,65 @@ export default function AdminProductsListPage() {
   const [selectedTagsForBulk, setSelectedTagsForBulk] = useState([]);
   const [newTagInput, setNewTagInput] = useState('');
 
+  const isFirstSearchRef = useRef(true);
+
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const refreshData = async () => {
-    setLoading(true);
-    try {
-      const [prodRes, catRes, tagRes] = await Promise.all([
-        api.get('/api/admin/products'),
-        api.get('/api/categories'),
-        api.get('/api/admin/products/tags').catch(() => ({ data: { tags: [] } }))
-      ]);
+  const updateUrl = (newPage, newLimit, newSearch, newCategory, newStatus) => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(newPage));
+    params.set('limit', String(newLimit));
 
-      const apiProds = prodRes.data?.products || prodRes.data?.data?.products || prodRes.data || [];
-      const apiCats = catRes.data?.categories || catRes.data?.data?.categories || catRes.data || [];
-      const fetchedTags = tagRes.data?.tags || tagRes.data?.data?.tags || [];
+    if (newSearch && newSearch.trim()) {
+      params.set('search', newSearch.trim());
+    } else {
+      params.delete('search');
+      params.delete('q');
+    }
+
+    if (newCategory && newCategory !== 'all') {
+      params.set('category', newCategory);
+    } else {
+      params.delete('category');
+    }
+
+    if (newStatus && newStatus !== 'all') {
+      params.set('status', newStatus);
+    } else {
+      params.delete('status');
+    }
+
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.pushState(null, '', newUrl);
+  };
+
+  const loadData = async (targetPage, targetLimit, targetSearch, targetCategory, targetStatus) => {
+    setIsFetching(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('page', String(targetPage));
+      params.set('limit', String(targetLimit));
+      if (targetSearch && targetSearch.trim()) params.set('search', targetSearch.trim());
+      if (targetCategory && targetCategory !== 'all') params.set('category', targetCategory);
+      if (targetStatus && targetStatus !== 'all') params.set('status', targetStatus);
+
+      const prodRes = await api.get(`/api/admin/products?${params.toString()}`);
+      const resData = prodRes.data || {};
+      const apiProds = resData.items || resData.products || prodRes.items || prodRes.products || [];
+      const fetchedTotal = resData.total ?? prodRes.total ?? apiProds.length;
+      const fetchedPages = resData.totalPages ?? prodRes.totalPages ?? (fetchedTotal === 0 ? 0 : Math.ceil(fetchedTotal / targetLimit));
+      const fetchedVariantsTotal = resData.variantsTotal ?? prodRes.variantsTotal ?? 0;
+
+      // Clamp if page is greater than totalPages
+      if (fetchedPages > 0 && targetPage > fetchedPages) {
+        setPage(fetchedPages);
+        updateUrl(fetchedPages, targetLimit, targetSearch, targetCategory, targetStatus);
+        return loadData(fetchedPages, targetLimit, targetSearch, targetCategory, targetStatus);
+      }
 
       const normalizedProds = apiProds.map((ap) => {
         const apId = ap.id || String(ap._id);
@@ -60,7 +150,7 @@ export default function AdminProductsListPage() {
       apiProds.forEach((p) => {
         const pId = p.id || String(p._id);
         if (p.allVariants && p.allVariants.length) {
-          extractedVars = [...extractedVars, ...p.allVariants.map(v => ({ ...v, productId: pId }))];
+          extractedVars = [...extractedVars, ...p.allVariants.map((v) => ({ ...v, productId: pId }))];
         } else if (p.variants && p.variants.length) {
           p.variants.forEach((v) => {
             extractedVars.push({ ...v, productId: pId });
@@ -73,42 +163,127 @@ export default function AdminProductsListPage() {
         }
       });
 
-      const tagSet = new Set(Array.isArray(fetchedTags) ? fetchedTags : []);
-      normalizedProds.forEach(p => {
-        if (Array.isArray(p.tags)) {
-          p.tags.forEach(t => { if (t && typeof t === 'string' && t.trim()) tagSet.add(t.trim()); });
-        }
-      });
-
       setProducts(normalizedProds);
       setVariants(extractedVars);
-      setCategories(apiCats);
-      setAvailableTags(Array.from(tagSet).sort((a, b) => a.localeCompare(b)));
+      setTotal(fetchedTotal);
+      setTotalPages(fetchedPages);
+      setVariantsTotal(fetchedVariantsTotal);
     } catch (e) {
       console.error('Failed to load products from API:', e);
+      showToast('Failed to load products: ' + (e.message || 'Error'));
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
   };
 
+  // Initial load
   useEffect(() => {
     setMounted(true);
-    refreshData();
+
+    Promise.all([
+      api.get('/api/categories').catch(() => ({ data: [] })),
+      api.get('/api/admin/products/tags').catch(() => ({ data: { tags: [] } }))
+    ]).then(([catRes, tagRes]) => {
+      const apiCats = catRes.data?.categories || catRes.data?.data?.categories || catRes.data || [];
+      const fetchedTags = tagRes.data?.tags || tagRes.data?.data?.tags || [];
+      setCategories(apiCats);
+      setAvailableTags(Array.from(new Set(Array.isArray(fetchedTags) ? fetchedTags : [])).sort((a, b) => a.localeCompare(b)));
+    });
+
+    loadData(initialPage, initialLimit, initialSearch, initialCategory, initialStatus);
   }, []);
 
-  const getVariantsOf = (masterId) => {
-    return variants.filter((v) => v.productId === masterId);
+  // Handle browser Back/Forward (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const p = Math.max(1, parseInt(params.get('page') || '1', 10));
+      const parsedLimit = parseInt(params.get('limit') || '50', 10);
+      const l = [25, 50, 100].includes(parsedLimit) ? parsedLimit : 50;
+      const s = params.get('search') || params.get('q') || '';
+      const c = params.get('category') || '';
+      const st = params.get('status') || '';
+
+      setPage(p);
+      setLimit(l);
+      setSearch(s);
+      setCategoryFilter(c);
+      setStatusFilter(st);
+      loadData(p, l, s, c, st);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    if (isFirstSearchRef.current) {
+      isFirstSearchRef.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setPage(1);
+      updateUrl(1, limit, search, categoryFilter, statusFilter);
+      loadData(1, limit, search, categoryFilter, statusFilter);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleCategoryChange = (val) => {
+    setCategoryFilter(val);
+    setPage(1);
+    updateUrl(1, limit, search, val, statusFilter);
+    loadData(1, limit, search, val, statusFilter);
   };
 
-  const getPublishedVariantCount = (masterId) => {
-    return getVariantsOf(masterId).filter((v) => v.published && v.status !== 'archived' && v.status !== 'discontinued').length;
+  const handleStatusChange = (val) => {
+    setStatusFilter(val);
+    setPage(1);
+    updateUrl(1, limit, search, categoryFilter, val);
+    loadData(1, limit, search, categoryFilter, val);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setPage(1);
+    updateUrl(1, newLimit, search, categoryFilter, statusFilter);
+    loadData(1, newLimit, search, categoryFilter, statusFilter);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || (totalPages > 0 && newPage > totalPages) || newPage === page) return;
+    setPage(newPage);
+    updateUrl(newPage, limit, search, categoryFilter, statusFilter);
+    loadData(newPage, limit, search, categoryFilter, statusFilter);
+  };
+
+  const getVariantsOf = (p) => {
+    if (p.allVariants && p.allVariants.length) return p.allVariants;
+    if (p.variants && p.variants.length) return p.variants;
+    const pId = p.id || String(p._id);
+    return variants.filter((v) => v.productId === pId);
+  };
+
+  const getPublishedVariantCount = (p) => {
+    return getVariantsOf(p).filter((v) => v.published && v.status !== 'archived' && v.status !== 'discontinued').length;
   };
 
   const handleDuplicate = async (id) => {
-    const src = products.find((p) => p.id === id || String(p._id) === id);
-    if (!src) return;
+    if (!id) return;
 
     try {
+      showToast('Fetching product details for duplication...');
+      const res = await api.get(`/api/admin/products/${encodeURIComponent(id)}`);
+      const src = res.data?.product || res.data || res.product;
+      if (!src) {
+        showToast('Product not found for duplication');
+        return;
+      }
+
       const copy = {
         name: src.name + ' (Copy)',
         slug: slugify(src.name + ' (Copy)'),
@@ -116,9 +291,9 @@ export default function AdminProductsListPage() {
         categoryId: src.categoryId || 'c_tops',
         brand: src.brand || 'Zylo',
         gender: src.gender || 'Unisex',
-        basePrice: (src.price || 1500) * 100,
-        mrp: (src.mrp || 2000) * 100,
-        cost: (src.cost || 700) * 100,
+        basePrice: src.basePrice || (src.price ? src.price * 100 : 150000),
+        mrp: src.mrp || 200000,
+        cost: src.cost || 70000,
         description: src.description || '',
         options: src.options || { Size: ['S', 'M', 'L'] },
         images: src.images || []
@@ -126,7 +301,7 @@ export default function AdminProductsListPage() {
 
       await api.post('/api/admin/products', copy);
       showToast('Product duplicated successfully in MongoDB');
-      refreshData();
+      loadData(page, limit, search, categoryFilter, statusFilter);
     } catch (err) {
       showToast('Failed to duplicate product: ' + (err.message || 'Error'));
     }
@@ -135,36 +310,40 @@ export default function AdminProductsListPage() {
   const handleDelete = async (id) => {
     if (!id) return;
 
-    const targetProd = products.find((p) =>
-      (p.id && (p.id === id || String(p.id) === String(id))) ||
-      (p._id && (p._id === id || String(p._id) === String(id))) ||
-      (p.sku && p.sku === id) ||
-      (p.slug && p.slug === id)
-    );
-
-    const targetId = targetProd?.id || targetProd?._id || id;
-    const prodName = targetProd?.name || 'this product';
+    let prodName = 'this product';
+    const localProd = products.find((p) => p.id === id || String(p._id) === id);
+    if (localProd && localProd.name) {
+      prodName = localProd.name;
+    }
 
     if (!confirm(`Delete product "${prodName}" from database?`)) return;
 
     try {
-      await api.delete(`/api/admin/products/${targetId}`);
+      await api.delete(`/api/admin/products/${encodeURIComponent(id)}`);
       showToast(`Product "${prodName}" deleted from MongoDB`);
-      refreshData();
+
+      // After deleting the last item on a page, go back to previous page
+      const isLastOnPage = products.length === 1 && page > 1;
+      const targetPage = isLastOnPage ? page - 1 : page;
+      if (isLastOnPage) {
+        setPage(targetPage);
+        updateUrl(targetPage, limit, search, categoryFilter, statusFilter);
+      }
+      loadData(targetPage, limit, search, categoryFilter, statusFilter);
     } catch (apiErr) {
       showToast(`Failed to delete product: ${apiErr.message || 'Error'}`);
     }
   };
 
-  const filtered = products.filter((p) => {
-    const matchSearch = (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.sku || '').toLowerCase().includes(search.toLowerCase());
-    const matchCategory = !categoryFilter || p.categoryId === categoryFilter;
-    const matchStatus = !statusFilter || p.status === statusFilter;
-    return matchSearch && matchCategory && matchStatus;
-  });
-
+  // Select-all checkbox applies to the CURRENT PAGE only
   const toggleSelectAll = (checked) => {
-    setSelectedIds(checked ? filtered.map((p) => p.id) : []);
+    if (checked) {
+      const pageIds = products.map((p) => p.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    } else {
+      const pageIds = new Set(products.map((p) => p.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    }
   };
 
   const toggleSelect = (id) => {
@@ -197,18 +376,25 @@ export default function AdminProductsListPage() {
     setLoading(true);
     try {
       for (const id of selectedIds) {
-        const prod = products.find((p) => p.id === id || String(p._id) === id);
-        const existingTags = Array.isArray(prod?.tags)
-          ? prod.tags
-          : (prod?.tags ? String(prod.tags).split(',').map((s) => s.trim()).filter(Boolean) : []);
+        let existingTags = [];
+        const localProd = products.find((p) => p.id === id || String(p._id) === id);
+        if (localProd && Array.isArray(localProd.tags)) {
+          existingTags = localProd.tags;
+        } else {
+          try {
+            const pRes = await api.get(`/api/admin/products/${encodeURIComponent(id)}`);
+            const pData = pRes.data?.product || pRes.data;
+            if (Array.isArray(pData?.tags)) existingTags = pData.tags;
+          } catch (e) {}
+        }
         const mergedTags = Array.from(new Set([...existingTags, ...selectedTagsForBulk])).filter(Boolean);
-        await api.put(`/api/admin/products/${id}`, { tags: mergedTags });
+        await api.put(`/api/admin/products/${encodeURIComponent(id)}`, { tags: mergedTags });
       }
       showToast(`Added ${selectedTagsForBulk.length} tag(s) to ${selectedIds.length} product(s) in MongoDB`);
       setShowTagModal(false);
       setSelectedTagsForBulk([]);
       setSelectedIds([]);
-      refreshData();
+      loadData(page, limit, search, categoryFilter, statusFilter);
     } catch (err) {
       showToast('Failed to apply tags: ' + (err.message || 'Error'));
     } finally {
@@ -233,25 +419,69 @@ export default function AdminProductsListPage() {
       } catch (e) { }
     }
     setSelectedIds([]);
-    refreshData();
+    loadData(page, limit, search, categoryFilter, statusFilter);
     showToast(`Bulk action "${action}" applied to MongoDB`);
   };
 
-  const exportCsv = () => {
-    const headers = ['Master', 'SKU', 'Brand', 'Category', 'Price', 'MRP', 'Cost', 'Variants', 'Published Variants', 'Status'];
-    const rows = filtered.map((p) => [
-      `"${p.name}"`, p.sku, `"${p.brand}"`, `"${categories.find((c) => c.id === p.categoryId)?.name || p.categoryId || ''}"`,
-      p.price, p.mrp || 0, p.cost || 0, getVariantsOf(p.id).length, getPublishedVariantCount(p.id), p.status
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'zylo-master-products.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // Export CSV exports ALL products matching current filters, not just the current page
+  const exportCsv = async () => {
+    try {
+      showToast('Preparing CSV export of all matching products...');
+      const params = new URLSearchParams();
+      params.set('all', 'true');
+      if (search && search.trim()) params.set('search', search.trim());
+      if (categoryFilter && categoryFilter !== 'all') params.set('category', categoryFilter);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
+
+      const res = await api.get(`/api/admin/products?${params.toString()}`);
+      const resData = res.data || {};
+      const allItems = resData.items || resData.products || res.items || res.products || [];
+
+      if (!allItems.length) {
+        showToast('No products match current filters to export');
+        return;
+      }
+
+      const headers = ['Master', 'SKU', 'Brand', 'Category', 'Price', 'MRP', 'Cost', 'Variants', 'Published Variants', 'Status'];
+      const rows = allItems.map((p) => {
+        const cat = categories.find((c) => c.id === p.categoryId)?.name || p.categoryId || '';
+        const allVars = p.allVariants || p.variants || [];
+        const pubCount = allVars.filter((v) => v.published && v.status !== 'archived' && v.status !== 'discontinued').length;
+        const normPrice = p.basePrice ? Math.round(p.basePrice / 100) : (p.price || 0);
+        const normMrp = p.mrp ? Math.round(p.mrp / 100) : 0;
+        const normCost = p.cost ? Math.round(p.cost / 100) : 0;
+
+        return [
+          `"${(p.name || '').replace(/"/g, '""')}"`,
+          `"${(p.sku || '').replace(/"/g, '""')}"`,
+          `"${(p.brand || '').replace(/"/g, '""')}"`,
+          `"${cat.replace(/"/g, '""')}"`,
+          normPrice,
+          normMrp,
+          normCost,
+          allVars.length,
+          pubCount,
+          `"${(p.status || '').replace(/"/g, '""')}"`
+        ];
+      });
+
+      const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `zylo-master-products-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Exported ${allItems.length} products to CSV`);
+    } catch (err) {
+      showToast('Failed to export CSV: ' + (err.message || 'Error'));
+    }
   };
+
+  const from = total > 0 ? (page - 1) * limit + 1 : 0;
+  const to = total > 0 ? Math.min(page * limit, total) : 0;
+  const pageNumbers = getPageNumbers(page, totalPages);
 
   return (
     <div>
@@ -268,7 +498,12 @@ export default function AdminProductsListPage() {
       <div className="page-head">
         <h2>Master products</h2>
         <p suppressHydrationWarning>
-          {mounted ? `${filtered.length} of ${products.length} master products · ${variants.length} variants total` : 'Loading master products...'}
+          {mounted ? (
+            <>
+              {`${from}–${to} of ${total} master products · ${variantsTotal} variants total`}
+              {isFetching && <span style={{ marginLeft: '10px', fontSize: '12px', color: 'var(--muted-foreground)' }}>Updating...</span>}
+            </>
+          ) : 'Loading master products...'}
         </p>
       </div>
 
@@ -280,23 +515,23 @@ export default function AdminProductsListPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: '230px' }}
         />
-        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+        <select value={categoryFilter} onChange={(e) => handleCategoryChange(e.target.value)}>
           <option value="">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <select value={statusFilter} onChange={(e) => handleStatusChange(e.target.value)}>
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
           <option value="archived">Archived</option>
         </select>
         <div className="spacer" />
-        <button className="btn" onClick={exportCsv}>
+        <button className="btn" onClick={exportCsv} title="Export all filtered products to CSV">
           <Icon name="download" size={15} /> Export CSV
         </button>
-        <Link href="/admin/products/new" className="btn btn-primary">
+        <Link href={`/admin/products/new${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`} className="btn btn-primary">
           + New master product
         </Link>
       </div>
@@ -457,13 +692,15 @@ export default function AdminProductsListPage() {
       )}
 
       <div className="card table-wrap">
-        <table>
+        <table style={{ opacity: isFetching ? 0.6 : 1, transition: 'opacity 0.15s ease' }}>
           <thead>
             <tr>
               <th style={{ width: '32px' }}>
                 <input
                   type="checkbox"
-                  checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                  title="Select all on this page"
+                  aria-label="Select all on this page"
+                  checked={products.length > 0 && products.every((p) => selectedIds.includes(p.id))}
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                 />
               </th>
@@ -479,12 +716,12 @@ export default function AdminProductsListPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length > 0 ? (
-              filtered.map((p) => {
+            {products.length > 0 ? (
+              products.map((p) => {
                 const isChecked = selectedIds.includes(p.id);
                 const cat = categories.find((c) => c.id === p.categoryId);
-                const vCount = getVariantsOf(p.id).length;
-                const pubCount = getPublishedVariantCount(p.id);
+                const vCount = getVariantsOf(p).length;
+                const pubCount = getPublishedVariantCount(p);
                 const imgUrl = getProductThumbnail(p);
 
                 return (
@@ -522,7 +759,7 @@ export default function AdminProductsListPage() {
                       </div>
                     </td>
                     <td>
-                      <Link href={`/admin/products/${p.id}`} style={{ fontWeight: 500 }}>
+                      <Link href={`/admin/products/${p.id}${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`} style={{ fontWeight: 500 }}>
                         {p.name}
                       </Link>
                       <div style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{p.brand || 'Zylo'}</div>
@@ -538,7 +775,7 @@ export default function AdminProductsListPage() {
                       </span>
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <Link href={`/admin/products/${p.id}`} className="icon-btn" title="Edit">
+                      <Link href={`/admin/products/${p.id}${typeof window !== 'undefined' && window.location.search ? window.location.search : ''}`} className="icon-btn" title="Edit">
                         <Icon name="edit" size={15} />
                       </Link>
                       <button className="icon-btn" title="Delete" onClick={() => handleDelete(p.id)}>
@@ -551,13 +788,134 @@ export default function AdminProductsListPage() {
             ) : (
               <tr>
                 <td colSpan="10">
-                  <div className="empty-state">No master products match your filter.</div>
+                  <div className="empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+                    {loading || isFetching ? 'Loading products...' : 'No master products match your filter.'}
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Bar */}
+      <div
+        className="pagination-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          marginTop: '16px',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '10px',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--muted-foreground)' }}>
+          <span>Rows per page:</span>
+          <select
+            value={limit}
+            onChange={(e) => handleLimitChange(Number(e.target.value))}
+            style={{
+              height: '32px',
+              padding: '0 8px',
+              borderRadius: '6px',
+              border: '1px solid var(--border)',
+              background: 'var(--canvas)',
+              color: 'var(--primary)',
+              fontSize: '13px',
+              cursor: 'pointer'
+            }}
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1 || isFetching || loading}
+            style={{
+              opacity: (page <= 1 || isFetching || loading) ? 0.4 : 1,
+              cursor: (page <= 1 || isFetching || loading) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Prev
+          </button>
+
+          {pageNumbers.map((p, idx) => {
+            if (p === '...') {
+              return (
+                <span
+                  key={`ellipsis-${idx}`}
+                  style={{
+                    padding: '0 4px',
+                    color: 'var(--muted-foreground)',
+                    fontSize: '13px',
+                    userSelect: 'none'
+                  }}
+                >
+                  …
+                </span>
+              );
+            }
+
+            const isCurrent = p === page;
+            return (
+              <button
+                key={`page-${p}`}
+                type="button"
+                className={`btn btn-sm ${isCurrent ? 'btn-primary' : ''}`}
+                onClick={() => handlePageChange(p)}
+                disabled={isFetching || (isCurrent && totalPages > 0) || totalPages === 0}
+                style={{
+                  minWidth: '32px',
+                  fontWeight: isCurrent ? 600 : 400,
+                  opacity: (totalPages === 0) ? 0.4 : 1,
+                  cursor: (totalPages === 0 || isCurrent) ? 'default' : 'pointer'
+                }}
+              >
+                {p}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= totalPages || totalPages === 0 || isFetching || loading}
+            style={{
+              opacity: (page >= totalPages || totalPages === 0 || isFetching || loading) ? 0.4 : 1,
+              cursor: (page >= totalPages || totalPages === 0 || isFetching || loading) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export default function AdminProductsListPage() {
+  return (
+    <Suspense fallback={
+      <div>
+        <div className="page-head">
+          <h2>Master products</h2>
+          <p>Loading master products...</p>
+        </div>
+      </div>
+    }>
+      <AdminProductsListContent />
+    </Suspense>
   );
 }

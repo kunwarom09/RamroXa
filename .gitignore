@@ -61,3 +61,8 @@ implementation_plan.md
 walkthrough.md
 .walkthrough.md
 scratch/
+# Import Catalog Manifests & Reports
+import-manifest-*.json
+import-report-*.json
+server/import-manifest-*.json
+server/import-report-*.json

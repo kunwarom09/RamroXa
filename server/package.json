@@ -16,7 +16,9 @@
     "email:test": "node src/scripts/testEmail.js",
     "migrate:up": "migrate-mongo up",
     "migrate:down": "migrate-mongo down",
-    "migrate:status": "migrate-mongo status"
+    "migrate:status": "migrate-mongo status",
+    "import:catalog:dry": "node scripts/import-catalog.js",
+    "import:catalog:apply": "node scripts/import-catalog.js --apply"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

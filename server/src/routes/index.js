@@ -11,6 +11,8 @@ import couponRoutes from './coupon.routes.js';
 import reviewRoutes from './review.routes.js';
 import wishlistRoutes from './wishlist.routes.js';
 import docsRoutes from './docs.routes.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { getProduct } from '../controllers/admin.controller.js';
 
 export const apiRouter = express.Router();
 
@@ -44,6 +46,7 @@ apiRouter.use('/payments', paymentRoutes);
 
 // Phase 5 Routes
 apiRouter.use('/admin', adminRoutes);
+apiRouter.get('/master-products/:id', requireAuth, requireAdmin, getProduct);
 
 // Phase 6 Routes
 apiRouter.use('/addresses', addressRoutes);
