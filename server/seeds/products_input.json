@@ -1,0 +1,6079 @@
+[
+  {
+    "name": "55L lightweight Outdoor hiking backpack +travelling Bag",
+    "slug": "55l-lightweight-outdoor-hiking-backpack-travelling-bag",
+    "sku": "HB202211",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Size: 55L Materials: 100% nylon and 100% polyester fiber Dimension: 38*19*72 cm Weight: 1.65kg",
+    "options": {
+      "Color": [
+        "Red"
+      ],
+      "Size": [
+        "55L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/55l-lightweight-outdoor-hiking-backpack-travelling-bag/01-hb202211-2.webp",
+        "alt": "55L lightweight Outdoor hiking backpack +travelling Bag",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1850000,
+    "price": 1850000,
+    "mrp": 1850000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "75L lightweight Outdoor hiking backpack +travelling Bag",
+    "slug": "75l-lightweight-outdoor-hiking-backpack-travelling-bag",
+    "sku": "HB202214",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Size: (65+10)L Material: 100% nylon and 100% polyester fiber Dimension: 32*23*80 cm",
+    "options": {},
+    "images": [
+      {
+        "url": "/uploads/products/75l-lightweight-outdoor-hiking-backpack-travelling-bag/01-hb202214-3.webp",
+        "alt": "75L lightweight Outdoor hiking backpack +travelling Bag",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/75l-lightweight-outdoor-hiking-backpack-travelling-bag/02-hb202214-1.webp",
+        "alt": "75L lightweight Outdoor hiking backpack +travelling Bag",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 195000,
+    "price": 195000,
+    "mrp": 195000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Best Hiking Shoes for men in Gray",
+    "slug": "best-hiking-shoes-for-men-in-gray",
+    "sku": "HUM-BEST-HIKING-SHOES-FO",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 40-46 Color : Dark gray Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Dark Gray"
+      ],
+      "Size": [
+        "40",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/best-hiking-shoes-for-men-in-gray/01-230914a-3.webp",
+        "alt": "Best Hiking Shoes for men in Gray",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1350000,
+    "price": 1350000,
+    "mrp": 1350000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Best Outdoor backpack",
+    "slug": "best-outdoor-backpack",
+    "sku": "HB202207",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Size: 30L Material: 100% nylon and 100% polyester fiber Dimension: 39*17*54 cm",
+    "options": {
+      "Color": [
+        "Denim Blue"
+      ],
+      "Size": [
+        "30L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/best-outdoor-backpack/01-hb202207-2.webp",
+        "alt": "Best Outdoor backpack",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 785000,
+    "price": 785000,
+    "mrp": 785000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Best Outdoor hiking shoes for men",
+    "slug": "best-outdoor-hiking-shoes-for-men",
+    "sku": "140419A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 41,42,43,44 and 45 Materials: Upper: Fabric +TPU Sole: EVA+ Rubber Feature: Light weight and breathable couple design, classic color matching combined with splicing mesh Three dimensional toothed nails strengthen grip and easily navigate complex environments dark grey color",
+    "options": {
+      "Color": [
+        "Maroon Black"
+      ],
+      "Size": [
+        "41",
+        "42",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/best-outdoor-hiking-shoes-for-men/01-140419a-2.webp",
+        "alt": "Best Outdoor hiking shoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/best-outdoor-hiking-shoes-for-men/02-140419a-3.webp",
+        "alt": "Best Outdoor hiking shoes for men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 822900,
+    "price": 822900,
+    "mrp": 822900,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+    "slug": "black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry",
+    "sku": "HB202508",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "MATERIAL: 100% nylon and 100% polyester fiber Dimention: 32*23*80 cm weight : 1.65kg",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry/01-hb202508-2.webp",
+        "alt": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry/02-hb202508-1.webp",
+        "alt": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1150000,
+    "price": 1150000,
+    "mrp": 1150000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+    "slug": "black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry-2",
+    "sku": "HUM-BLACK-BAG-HIKING-BAG",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "MATERIAL: 100% nylon and 100% polyester fiber Dimention: 32*23*80 cm weight : 1.65kg",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry-2/01-hb202508-2.webp",
+        "alt": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/black-bag-hiking-bag-trekking-bag-with-good-space-comfortable-carry-2/02-hb202508-1.webp",
+        "alt": "Black bag | Hiking bag | Trekking bag with good space | Comfortable Carry",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1150000,
+    "price": 1150000,
+    "mrp": 1150000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Blue color humtto Outdoor hiking shoes for men",
+    "slug": "blue-color-humtto-outdoor-hiking-shoes-for-men",
+    "sku": "120142",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 44 Materials: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments",
+    "options": {},
+    "images": [
+      {
+        "url": "/uploads/products/blue-color-humtto-outdoor-hiking-shoes-for-men/01-120142a-3.webp",
+        "alt": "Blue color humtto Outdoor hiking shoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 872500,
+    "price": 872500,
+    "mrp": 872500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Breathable Hiking shoes for men’s",
+    "slug": "breathable-hiking-shoes-for-mens",
+    "sku": "160120A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Material: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Double anti-collision toe with bottom to protect toes TPU splicing fabric upper, wear and breathable Non-slip rubber outsole, strong grip",
+    "options": {
+      "Color": [
+        "Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/breathable-hiking-shoes-for-mens/01-160120a-2.webp",
+        "alt": "Breathable Hiking shoes for men’s",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/breathable-hiking-shoes-for-mens/02-160120a-3.webp",
+        "alt": "Breathable Hiking shoes for men’s",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 985000,
+    "price": 985000,
+    "mrp": 985000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Dark gray Tranding River-tracing shoes/Watershoes for men",
+    "slug": "dark-gray-tranding-river-tracing-shoes-watershoes-for-men",
+    "sku": "340183A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 42,43 and 44 Materials: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments dark grey color",
+    "options": {
+      "Color": [
+        "Dark Gray"
+      ],
+      "Size": [
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/dark-gray-tranding-river-tracing-shoes-watershoes-for-men/01-340183a-2.webp",
+        "alt": "Dark gray Tranding River-tracing shoes/Watershoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 756500,
+    "price": 756500,
+    "mrp": 756500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "EVA+Leather Humtto Hiking shoes | Best shoes for boys and mens | Comfortable High sole shoes",
+    "slug": "evaleather-humtto-hiking-shoes-best-shoes-for-boys-and-mens-comfortable-high-sole-shoes",
+    "sku": "360314A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Ivory",
+        "Light Blue",
+        "Sky Grey"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/evaleather-humtto-hiking-shoes-best-shoes-for-boys-and-mens-comfortable-high-sole-shoes/01-360314a-1.webp",
+        "alt": "EVA+Leather Humtto Hiking shoes | Best shoes for boys and mens | Comfortable High sole shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/evaleather-humtto-hiking-shoes-best-shoes-for-boys-and-mens-comfortable-high-sole-shoes/02-360314a-4.webp",
+        "alt": "EVA+Leather Humtto Hiking shoes | Best shoes for boys and mens | Comfortable High sole shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/evaleather-humtto-hiking-shoes-best-shoes-for-boys-and-mens-comfortable-high-sole-shoes/03-360314a-2.webp",
+        "alt": "EVA+Leather Humtto Hiking shoes | Best shoes for boys and mens | Comfortable High sole shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1080000,
+    "price": 1080000,
+    "mrp": 1080000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Apex Outdoor Casual Half-Shoes",
+    "slug": "humtto-mens-apex-outdoor-casual-half-shoes",
+    "sku": "370394A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh Fabric and Synthetic Sole: Thick Cushioned Rubber Sizes: 39-44 Features: Breathable knit mesh upper Thick sole for comfortable shock absorption Secure lace system for a tight fit Lightweight build for running and walking Convenient heel pull tab Reliable grip for daily outdoor use",
+    "options": {
+      "Color": [
+        "Black",
+        "Ivory",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-apex-outdoor-casual-half-shoes/01-line2-black-png.png",
+        "alt": "HUMTTO Men’s Apex Outdoor Casual Half-Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-apex-outdoor-casual-half-shoes/02-line3-light-gray-to-dark-gray-png.png",
+        "alt": "HUMTTO Men’s Apex Outdoor Casual Half-Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-apex-outdoor-casual-half-shoes/03-line4-ivory-white-lemon-yellow-png.png",
+        "alt": "HUMTTO Men’s Apex Outdoor Casual Half-Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1029000,
+    "price": 1029000,
+    "mrp": 1029000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Explorer-Mule Performance Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+    "slug": "humtto-mens-explorer-mule-performance-hiking-half-shoes-slip-on-dial-system-trail-shoes",
+    "sku": "171443A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Cushioned Midsole with Gum Rubber Outsole Sizes: 39-44 Features: Breathable grey mesh upper with dark green overlays Quick dial lacing system for an easy, secure fit Protective front toe cap for trail safety Thick cushioned midsole for shock absorption Convenient heel pull tab for easy on and off Durable gum rubber traction tread for outdoor trails",
+    "options": {
+      "Color": [
+        "matcha green",
+        "silvergray",
+        "Wilderness Green"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-explorer-mule-performance-hiking-half-shoes-slip-on-dial-system-trail-shoes/01-line12-wilderness-green-png.png",
+        "alt": "HUMTTO Men’s Explorer-Mule Performance Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-explorer-mule-performance-hiking-half-shoes-slip-on-dial-system-trail-shoes/02-line13-silver-gray-blue-png.png",
+        "alt": "HUMTTO Men’s Explorer-Mule Performance Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-explorer-mule-performance-hiking-half-shoes-slip-on-dial-system-trail-shoes/03-line14-beige-matcha-green-png.png",
+        "alt": "HUMTTO Men’s Explorer-Mule Performance Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1299000,
+    "price": 1299000,
+    "mrp": 1299000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Hydro-Dial Slip-On Water Shoes",
+    "slug": "humtto-mens-hydro-dial-slip-on-water-shoes",
+    "sku": "670887A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Cushioned Midsole with Rubber Outsole Sizes: 39 to 44 Features: Breathable black mesh upper for ventilation Quick dial lacing system and top strap for a secure fit Midsole cutout holes for quick water drainage Protective front toe cap for outdoor safety Convenient heel pull tab for easy wear Rugged rubber traction tread for wet and dry surfaces",
+    "options": {
+      "Color": [
+        "Black",
+        "smoke gray",
+        "Wheat Green"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-hydro-dial-slip-on-water-shoes/01-line23-black-png.png",
+        "alt": "HUMTTO Men’s Hydro-Dial Slip-On Water Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-hydro-dial-slip-on-water-shoes/02-line24-wheat-green-png.png",
+        "alt": "HUMTTO Men’s Hydro-Dial Slip-On Water Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-hydro-dial-slip-on-water-shoes/03-line25-smoky-gray-sky-gray-png.png",
+        "alt": "HUMTTO Men’s Hydro-Dial Slip-On Water Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1279000,
+    "price": 1279000,
+    "mrp": 1279000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Hydro-Glide Amphibious Half-Shoes – Slip-On Outdoor Water Mules",
+    "slug": "humtto-mens-hydro-glide-amphibious-half-shoes-slip-on-outdoor-water-mules",
+    "sku": "670148A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Quick Dry Mesh and Synthetic Build Sole: Rugged Rubber with Water Drainage Sizes: 39 to 44 Features: Quick drying breathable mesh panels Convenient elastic bungee lacing system Protective rubber front toe cap Adjustable back heel strap for a secure fit Midsole cutout holes for fast water drainage High traction grip designed for wet and dry surfaces",
+    "options": {
+      "Color": [
+        "Gray",
+        "Light Gray",
+        "Orange"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-hydro-glide-amphibious-half-shoes-slip-on-outdoor-water-mules/01-line5-black-orange-png.png",
+        "alt": "HUMTTO Men’s Hydro-Glide Amphibious Half-Shoes – Slip-On Outdoor Water Mules",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-hydro-glide-amphibious-half-shoes-slip-on-outdoor-water-mules/02-line6-grey-png.png",
+        "alt": "HUMTTO Men’s Hydro-Glide Amphibious Half-Shoes – Slip-On Outdoor Water Mules",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-hydro-glide-amphibious-half-shoes-slip-on-outdoor-water-mules/03-line7-light-gray-to-dark-gray-blue-png.png",
+        "alt": "HUMTTO Men’s Hydro-Glide Amphibious Half-Shoes – Slip-On Outdoor Water Mules",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1039000,
+    "price": 1039000,
+    "mrp": 1039000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+    "slug": "humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes",
+    "sku": "110609A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Waterproof Design: Keeps your feet dry in wet conditions. Enhanced Traction: Rubber outsole for superior grip on all terrains. Comfortable Fit: Cushioned insole for all-day comfort. Stylish Look: Sleek dark grey and black color with reflective accents for visibility.",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "gray blue",
+        "Ivory",
+        "white blue"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/01-110609a-3.webp",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/02-110609a-2.webp",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/03-110609a-8.webp",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/04-line41-blue-gray-png.png",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/05-line42-white-blue-png.png",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/06-line39-dark-gray-orange-png.png",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/07-line40-black-png.png",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-lightweight-hiking-shoes-outdoor-trail-trekking-shoes/08-line43-sand-yellow-png.png",
+        "alt": "HUMTTO Men’s Lightweight Hiking Shoes – Outdoor Trail Trekking Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 835000,
+    "price": 835000,
+    "mrp": 835000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Stealth-Dial Outdoor Casual Half-Shoes – Slip-On Active Performance Shoes",
+    "slug": "humtto-mens-stealth-dial-outdoor-casual-half-shoes-slip-on-active-performance-shoes",
+    "sku": "370427A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Cushioned Midsole with Rubber Outsole Sizes: 39 to 44 Features: Breathable all black mesh upper for ventilation Quick dial lacing system for an easy secure fit Protective front toe cap for trail safety Thick cushioned midsole for impact absorption Convenient heel and tongue pull tabs for easy wear Rugged rubber traction tread for outdoor trails",
+    "options": {
+      "Color": [
+        "Black",
+        "Light Gray",
+        "smoke gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-stealth-dial-outdoor-casual-half-shoes-slip-on-active-performance-shoes/01-line17-black-png.png",
+        "alt": "HUMTTO Men’s Stealth-Dial Outdoor Casual Half-Shoes – Slip-On Active Performance Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-stealth-dial-outdoor-casual-half-shoes-slip-on-active-performance-shoes/02-line18-smoky-gray-sky-gray-png.png",
+        "alt": "HUMTTO Men’s Stealth-Dial Outdoor Casual Half-Shoes – Slip-On Active Performance Shoes",
+        "isFeatured": false,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-stealth-dial-outdoor-casual-half-shoes-slip-on-active-performance-shoes/03-line19-light-gray-dark-gray-blue-png.png",
+        "alt": "HUMTTO Men’s Stealth-Dial Outdoor Casual Half-Shoes – Slip-On Active Performance Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1279000,
+    "price": 1279000,
+    "mrp": 1279000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Summit-Mule Premium Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+    "slug": "humtto-mens-summit-mule-premium-hiking-half-shoes-slip-on-dial-system-trail-shoes",
+    "sku": "171304A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Rugged Cushioned Rubber Sizes: 39-44 Features: Breathable grey mesh upper for ventilation Quick dial lacing system for an easy, secure fit Protective front toe cap Cushioned midsole with yellow accent detailing Convenient heel and tongue pull tabs Rugged traction tread for outdoor trails",
+    "options": {
+      "Color": [
+        "Khaki",
+        "smoke ash"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-summit-mule-premium-hiking-half-shoes-slip-on-dial-system-trail-shoes/01-line10-smoke-ash-sky-gray-png.png",
+        "alt": "HUMTTO Men’s Summit-Mule Premium Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-summit-mule-premium-hiking-half-shoes-slip-on-dial-system-trail-shoes/02-line11-beige-khaki-png.png",
+        "alt": "HUMTTO Men’s Summit-Mule Premium Hiking Half-Shoes – Slip-On Dial-System Trail Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1289000,
+    "price": 1289000,
+    "mrp": 1289000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Terrain-Dial Hiking Half-Shoes",
+    "slug": "humtto-mens-terrain-dial-hiking-half-shoes",
+    "sku": "871272A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Cushioned Midsole with Rubber Outsole Sizes: 39 to 47 Features: Breathable beige and grey mesh upper for ventilation Quick dial lacing system for an easy secure fit Protective front toe cap for trail safety Thick cushioned midsole for impact absorption Convenient heel pull tab for easy wear Rugged black rubber traction tread for outdoor trails",
+    "options": {
+      "Color": [
+        "Beige",
+        "Orange"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-terrain-dial-hiking-half-shoes/01-line30-beige-matcha-green-png.png",
+        "alt": "HUMTTO Men’s Terrain-Dial Hiking Half-Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-terrain-dial-hiking-half-shoes/02-line31-orange-black-png.png",
+        "alt": "HUMTTO Men’s Terrain-Dial Hiking Half-Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1339000,
+    "price": 1339000,
+    "mrp": 1339000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Trail-Mule Performance Hiking Half-Shoes – Slip-On Outdoor Sports Shoes",
+    "slug": "humtto-mens-trail-mule-performance-hiking-half-shoes-slip-on-outdoor-sports-shoes",
+    "sku": "171037A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Rugged Cushioned Rubber Sizes: 39-44 Features: Breathable black mesh upper for ventilation Thick cushioned midsole for impact absorption Secure traditional lace up system Stylish silver side accents and Humtto branding Convenient heel pull tab for easy on and off Rugged traction tread built for outdoor trails",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-trail-mule-performance-hiking-half-shoes-slip-on-outdoor-sports-shoes/01-line8-black-png.png",
+        "alt": "HUMTTO Men’s Trail-Mule Performance Hiking Half-Shoes – Slip-On Outdoor Sports Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-trail-mule-performance-hiking-half-shoes-slip-on-outdoor-sports-shoes/02-line9-dark-gray-png.png",
+        "alt": "HUMTTO Men’s Trail-Mule Performance Hiking Half-Shoes – Slip-On Outdoor Sports Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1089000,
+    "price": 1089000,
+    "mrp": 1089000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Men’s Urban-Mule Performance Outdoor Casual Half-Shoes – Slip-On Active Lifestyle Shoes",
+    "slug": "humtto-mens-urban-mule-performance-outdoor-casual-half-shoes-slip-on-active-lifestyle-shoes",
+    "sku": "370172A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Breathable Mesh and Synthetic Sole: Cushioned Midsole with Rubber Outsole Sizes: 39-44 Features: Breathable navy blue mesh upper for ventilation Thick white cushioned midsole for impact absorption Secure traditional lace up system Lightweight build for running and daily walking Convenient heel pull tab for easy on and off Durable rubber traction tread for reliable grip",
+    "options": {
+      "Color": [
+        "Light Gray",
+        "midnight blue"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-urban-mule-performance-outdoor-casual-half-shoes-slip-on-active-lifestyle-shoes/01-line15-dark-blue-light-blue-png.png",
+        "alt": "HUMTTO Men’s Urban-Mule Performance Outdoor Casual Half-Shoes – Slip-On Active Lifestyle Shoes",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-urban-mule-performance-outdoor-casual-half-shoes-slip-on-active-lifestyle-shoes/02-line16-light-gray-dark-blue-png.png",
+        "alt": "HUMTTO Men’s Urban-Mule Performance Outdoor Casual Half-Shoes – Slip-On Active Lifestyle Shoes",
+        "isFeatured": false,
+        "format": "png"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1199000,
+    "price": 1199000,
+    "mrp": 1199000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO OUTDOOR SPORTS SHOES-HALF | Hiking shoes for men and boys",
+    "slug": "humtto-outdoor-sports-shoes-half-hiking-shoes-for-men-and-boys",
+    "sku": "250366A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 40-46 Features: Skin Friendly Breathable Breathable shoes Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ],
+      "Color": [
+        "Black",
+        "Khaki"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-sports-shoes-half-hiking-shoes-for-men-and-boys/01-250366a-1.webp",
+        "alt": "HUMTTO OUTDOOR SPORTS SHOES-HALF | Hiking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-sports-shoes-half-hiking-shoes-for-men-and-boys/02-250366a-2.webp",
+        "alt": "HUMTTO OUTDOOR SPORTS SHOES-HALF | Hiking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1289000,
+    "price": 1289000,
+    "mrp": 1289000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Outdoor Boots for Men Hiking Shoes Breathable Man Trekking Trainers Winter Men’s Sports Shoes Rubber Safety Work Sneakers",
+    "slug": "humtto-outdoor-boots-for-men-hiking-shoes-breathable-man-trekking-trainers-winter-mens-sports-shoes-rubber-safety-work-sneakers",
+    "sku": "250697A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric+ TPU Sole : EVA + TPU + Rubber Features: Lightweight Construction Durable and Breathable Upper Non-Slip Rubber Outsole Shock-Absorbing Midsole Ankle Support Design Versatile for All Seasons Low-Maintenance Materials",
+    "options": {
+      "Color": [
+        "Black",
+        "Light Blue"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-boots-for-men-hiking-shoes-breathable-man-trekking-trainers-winter-mens-sports-shoes-rubber-safety-work-sneakers/01-250697a-1.webp",
+        "alt": "HUMTTO Outdoor Boots for Men Hiking Shoes Breathable Man Trekking Trainers Winter Men’s Sports Shoes Rubber Safety Work ",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-boots-for-men-hiking-shoes-breathable-man-trekking-trainers-winter-mens-sports-shoes-rubber-safety-work-sneakers/02-250697a-4.webp",
+        "alt": "HUMTTO Outdoor Boots for Men Hiking Shoes Breathable Man Trekking Trainers Winter Men’s Sports Shoes Rubber Safety Work ",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1330000,
+    "price": 1330000,
+    "mrp": 1330000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO Waterproof Shoes for Men Leather Sports Climbing Hiking Boots Mens Luxury Designer Outdoor Trekking Hunting Male Sneakers",
+    "slug": "humtto-waterproof-shoes-for-men-leather-sports-climbing-hiking-boots-mens-luxury-designer-outdoor-trekking-hunting-male-sneakers",
+    "sku": "230914A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Fits true to size, take your normal size Cotton Fabric Genuine Leather leather upper with water resistance",
+    "options": {
+      "Color": [
+        "Brown",
+        "Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-waterproof-shoes-for-men-leather-sports-climbing-hiking-boots-mens-luxury-designer-outdoor-trekking-hunting-male-sneakers/01-230914a-4.webp",
+        "alt": "HUMTTO Waterproof Shoes for Men Leather Sports Climbing Hiking Boots Mens Luxury Designer Outdoor Trekking Hunting Male ",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-waterproof-shoes-for-men-leather-sports-climbing-hiking-boots-mens-luxury-designer-outdoor-trekking-hunting-male-sneakers/02-230914a-3-1.webp",
+        "alt": "HUMTTO Waterproof Shoes for Men Leather Sports Climbing Hiking Boots Mens Luxury Designer Outdoor Trekking Hunting Male ",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1350000,
+    "price": 1350000,
+    "mrp": 1350000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO- OUTDOOR SPORTS SHOES-FULL | Free walking Comfortable and shock absorption for mens and boys",
+    "slug": "humtto-outdoor-sports-shoes-full-free-walking-comfortable-and-shock-absorption-for-mens-and-boys",
+    "sku": "160283A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: non slip laces Skin Friendly Breathable Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Black",
+        "Light Gray"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-sports-shoes-full-free-walking-comfortable-and-shock-absorption-for-mens-and-boys/01-160283a-2.webp",
+        "alt": "HUMTTO- OUTDOOR SPORTS SHOES-FULL | Free walking Comfortable and shock absorption for mens and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-sports-shoes-full-free-walking-comfortable-and-shock-absorption-for-mens-and-boys/02-160283a-3.webp",
+        "alt": "HUMTTO- OUTDOOR SPORTS SHOES-FULL | Free walking Comfortable and shock absorption for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1110000,
+    "price": 1110000,
+    "mrp": 1110000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "HUMTTO- Outdoor shoes full with high hill sole for mens and boys",
+    "slug": "humtto-outdoor-shoes-full-with-high-hill-sole-for-mens-and-boys",
+    "sku": "260881A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-44 Features: non slip laces Skin Friendly Breathable Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ],
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Wheat Green"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-shoes-full-with-high-hill-sole-for-mens-and-boys/01-260881a-1.webp",
+        "alt": "HUMTTO- Outdoor shoes full with high hill sole for mens and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-shoes-full-with-high-hill-sole-for-mens-and-boys/02-260881a-2.webp",
+        "alt": "HUMTTO- Outdoor shoes full with high hill sole for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-shoes-full-with-high-hill-sole-for-mens-and-boys/03-260881a-4.webp",
+        "alt": "HUMTTO- Outdoor shoes full with high hill sole for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1180000,
+    "price": 1180000,
+    "mrp": 1180000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Hiking shoes for Men’s Best for Comfort",
+    "slug": "hiking-shoes-for-mens-best-for-comfort",
+    "sku": "130965A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 39-45 Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Brown",
+        "Gray",
+        "Maroon Black"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/hiking-shoes-for-mens-best-for-comfort/01-130965a-3.webp",
+        "alt": "Hiking shoes for Men’s Best for Comfort",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/hiking-shoes-for-mens-best-for-comfort/02-130965a-1.webp",
+        "alt": "Hiking shoes for Men’s Best for Comfort",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/hiking-shoes-for-mens-best-for-comfort/03-130965a-2.webp",
+        "alt": "Hiking shoes for Men’s Best for Comfort",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 927200,
+    "price": 927200,
+    "mrp": 927200,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto 30L Outdoor Travelling bag | lightweight and comfort for carrying | unisex bag",
+    "slug": "humtto-30l-outdoor-travelling-bag-lightweight-and-comfort-for-carrying-unisex-bag",
+    "sku": "HB202433",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials : Fabric: 100% nylon Lining materials: 100% Polyester giber Size: 30L Multicolor : Yes(Yellow and green) Lightweight Brand: Humtto Top Open mouth bag",
+    "options": {
+      "Color": [
+        "Olive Green",
+        "Yellow"
+      ],
+      "Size": [
+        "30L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-30l-outdoor-travelling-bag-lightweight-and-comfort-for-carrying-unisex-bag/01-hb202433-2.webp",
+        "alt": "Humtto 30L Outdoor Travelling bag | lightweight and comfort for carrying | unisex bag",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-30l-outdoor-travelling-bag-lightweight-and-comfort-for-carrying-unisex-bag/02-hb202433-1.webp",
+        "alt": "Humtto 30L Outdoor Travelling bag | lightweight and comfort for carrying | unisex bag",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 507500,
+    "price": 507500,
+    "mrp": 507500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Anti slip shoes for men’s and boys | Outdoor shoes | Stylish shoes",
+    "slug": "humtto-anti-slip-shoes-for-mens-and-boys-outdoor-shoes-stylish-shoes",
+    "sku": "250876A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric+ TPU Sole : EVA + TPU + Rubber Features: Lightweight Construction Durable and Breathable Upper Non-Slip Rubber Outsole Shock-Absorbing Midsole Ankle Support Design Versatile for All Seasons Low-Maintenance Materials",
+    "options": {
+      "Color": [
+        "Black",
+        "Polar Night Blue"
+      ],
+      "Size": [
+        "41",
+        "42"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-anti-slip-shoes-for-mens-and-boys-outdoor-shoes-stylish-shoes/01-250876a-1.webp",
+        "alt": "Humtto Anti slip shoes for men’s and boys | Outdoor shoes | Stylish shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-anti-slip-shoes-for-mens-and-boys-outdoor-shoes-stylish-shoes/02-250876a-3.webp",
+        "alt": "Humtto Anti slip shoes for men’s and boys | Outdoor shoes | Stylish shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1275000,
+    "price": 1275000,
+    "mrp": 1275000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Black shoe with Skin Friendly Breathable Free walking Comfortable and shock absorption for men and boys",
+    "slug": "humtto-black-shoe-with-skin-friendly-breathable-free-walking-comfortable-and-shock-absorption-for-men-and-boys",
+    "sku": "260937A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-44 Features: non slip laces Skin Friendly Breathable Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ],
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Light Gray"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-black-shoe-with-skin-friendly-breathable-free-walking-comfortable-and-shock-absorption-for-men-and-boys/01-260937a-1.webp",
+        "alt": "Humtto Black shoe with Skin Friendly Breathable Free walking Comfortable and shock absorption for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-black-shoe-with-skin-friendly-breathable-free-walking-comfortable-and-shock-absorption-for-men-and-boys/02-260937a-2.webp",
+        "alt": "Humtto Black shoe with Skin Friendly Breathable Free walking Comfortable and shock absorption for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-black-shoe-with-skin-friendly-breathable-free-walking-comfortable-and-shock-absorption-for-men-and-boys/03-260937a-4.webp",
+        "alt": "Humtto Black shoe with Skin Friendly Breathable Free walking Comfortable and shock absorption for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1239000,
+    "price": 1239000,
+    "mrp": 1239000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for men and boys",
+    "slug": "humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-men-and-boys",
+    "sku": "250460A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and TPU Sole: EVA + Rubber Sizes: 40-46 Features: The laces are strong and not easy to slip off Skin Friendly Breathable High elasticity Easy to adapt to all kinds of terrain free walking and comfort Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray",
+        "Olive Green"
+      ],
+      "Size": [
+        "41",
+        "42"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-men-and-boys/01-250460a-1.webp",
+        "alt": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-men-and-boys/02-250460a-3.webp",
+        "alt": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-men-and-boys/03-250460a-2.webp",
+        "alt": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1330000,
+    "price": 1330000,
+    "mrp": 1330000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for women and girls",
+    "slug": "humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-women-and-girls",
+    "sku": "250460B",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and TPU Sole: EVA + Rubber Sizes: 36-39 Features: The laces are strong and not easy to slip off Skin Friendly Breathable High elasticity Easy to adapt to all kinds of terrain free walking and comfort Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Purple"
+      ],
+      "Size": [
+        "36",
+        "37",
+        "38",
+        "39"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-women-and-girls/01-250460b-1.webp",
+        "alt": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for women and girls",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-breathable-and-comfort-shoes-outdoor-shoes-trekking-shoes-elasticity-shoes-for-women-and-girls/02-250460b-3.webp",
+        "alt": "Humtto Breathable and comfort shoes | Outdoor shoes | Trekking shoes | Elasticity shoes for women and girls",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1330000,
+    "price": 1330000,
+    "mrp": 1330000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Breathable tight grip Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+    "slug": "humtto-breathable-tight-grip-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys",
+    "sku": "250864A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 40-46 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-breathable-tight-grip-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys/01-250864a-2.webp",
+        "alt": "Humtto Breathable tight grip Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-breathable-tight-grip-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys/02-250864a-3.webp",
+        "alt": "Humtto Breathable tight grip Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1285000,
+    "price": 1285000,
+    "mrp": 1285000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Drainage and Breathable shoes | Outdoor shoes | casual shoes for men and boys",
+    "slug": "humtto-drainage-and-breathable-shoes-outdoor-shoes-casual-shoes-for-men-and-boys",
+    "sku": "150230A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: leather + synthetic leather + fabric Sole: EVA + Rubber Sizes: 36-39 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Large mesh drainage and breathable hole No need to tie shoelaces for easy easy on and off free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-drainage-and-breathable-shoes-outdoor-shoes-casual-shoes-for-men-and-boys/01-150230a-1.webp",
+        "alt": "Humtto Drainage and Breathable shoes | Outdoor shoes | casual shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-drainage-and-breathable-shoes-outdoor-shoes-casual-shoes-for-men-and-boys/02-150230a-2.webp",
+        "alt": "Humtto Drainage and Breathable shoes | Outdoor shoes | casual shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 995000,
+    "price": 995000,
+    "mrp": 995000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto New Breathable comfortable shoe Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+    "slug": "humtto-new-breathable-comfortable-shoe-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys",
+    "sku": "260647A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-new-breathable-comfortable-shoe-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys/01-260647a-1.webp",
+        "alt": "Humtto New Breathable comfortable shoe Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-new-breathable-comfortable-shoe-outdoor-shoes-hiking-shoes-and-trekking-shoes-for-men-and-boys/02-260647a-4.webp",
+        "alt": "Humtto New Breathable comfortable shoe Outdoor shoes | Hiking shoes and trekking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1299000,
+    "price": 1299000,
+    "mrp": 1299000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Nylon Bag for Outdoor | big space 38L bag pack",
+    "slug": "humtto-nylon-bag-for-outdoor-big-space-38l-bag-pack",
+    "sku": "HB202202",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Size: 38L Materials: 100% nylon and 100% polyester fiber Weight: 1.3kg",
+    "options": {
+      "Color": [
+        "Green",
+        "Red"
+      ],
+      "Size": [
+        "38L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-nylon-bag-for-outdoor-big-space-38l-bag-pack/01-hb202202-2.webp",
+        "alt": "Humtto Nylon Bag for Outdoor | big space 38L bag pack",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-nylon-bag-for-outdoor-big-space-38l-bag-pack/02-hb202202-3.webp",
+        "alt": "Humtto Nylon Bag for Outdoor | big space 38L bag pack",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 842500,
+    "price": 842500,
+    "mrp": 842500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Outdoor Half shoes | Sport Shoes | Black and Gray Shoes with Unique Design for mens and boys",
+    "slug": "humtto-outdoor-half-shoes-sport-shoes-black-and-gray-shoes-with-unique-design-for-mens-and-boys",
+    "sku": "160106A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Black",
+        "Gray"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-half-shoes-sport-shoes-black-and-gray-shoes-with-unique-design-for-mens-and-boys/01-160106a-1.webp",
+        "alt": "Humtto Outdoor Half shoes | Sport Shoes | Black and Gray Shoes with Unique Design for mens and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-half-shoes-sport-shoes-black-and-gray-shoes-with-unique-design-for-mens-and-boys/02-160106a-2.webp",
+        "alt": "Humtto Outdoor Half shoes | Sport Shoes | Black and Gray Shoes with Unique Design for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1220000,
+    "price": 1220000,
+    "mrp": 1220000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Outdoor best hiking Shoes | Mountain Climbing Shoes | Ankle Trekking Hiking Boots For Men",
+    "slug": "humtto-outdoor-best-hiking-shoes-mountain-climbing-shoes-ankle-trekking-hiking-boots-for-men",
+    "sku": "210416A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 40-44 Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Khaki"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-best-hiking-shoes-mountain-climbing-shoes-ankle-trekking-hiking-boots-for-men/01-210416a-1.webp",
+        "alt": "Humtto Outdoor best hiking Shoes | Mountain Climbing Shoes | Ankle Trekking Hiking Boots For Men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1488000,
+    "price": 1488000,
+    "mrp": 1488000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Outdoor hiking Shoes | Autumn and winter shoes for Men",
+    "slug": "humtto-outdoor-hiking-shoes-autumn-and-winter-shoes-for-men",
+    "sku": "210415A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 41-44 Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Khaki"
+      ],
+      "Size": [
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-autumn-and-winter-shoes-for-men/01-210415a-2.webp",
+        "alt": "Humtto Outdoor hiking Shoes | Autumn and winter shoes for Men",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-autumn-and-winter-shoes-for-men/02-210415a-1.webp",
+        "alt": "Humtto Outdoor hiking Shoes | Autumn and winter shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1328000,
+    "price": 1328000,
+    "mrp": 1328000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Shock absorbing shoes | Outdoor shoes | Hiking shoes for men and boys",
+    "slug": "humtto-shock-absorbing-shoes-outdoor-shoes-hiking-shoes-for-men-and-boys",
+    "sku": "150633A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: synthetic leather + fabric Sole: EVA + Rubber Sizes: 36-39 Features: The laces are strong and not easy to slip off Skin Friendly Breathable The spliced upper is wear resistant and comfortable Shock absorbing sole is soft and elastic Suitable for various Scenarios free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Black",
+        "Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-shock-absorbing-shoes-outdoor-shoes-hiking-shoes-for-men-and-boys/01-150633a-2.webp",
+        "alt": "Humtto Shock absorbing shoes | Outdoor shoes | Hiking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-shock-absorbing-shoes-outdoor-shoes-hiking-shoes-for-men-and-boys/02-150633a-3.webp",
+        "alt": "Humtto Shock absorbing shoes | Outdoor shoes | Hiking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-shock-absorbing-shoes-outdoor-shoes-hiking-shoes-for-men-and-boys/03-150633a-1.webp",
+        "alt": "Humtto Shock absorbing shoes | Outdoor shoes | Hiking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 941000,
+    "price": 941000,
+    "mrp": 941000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Sports shoes | casual shoes | Lightweight and breathable shoes for men and boys",
+    "slug": "humtto-sports-shoes-casual-shoes-lightweight-and-breathable-shoes-for-men-and-boys",
+    "sku": "350863A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and TPU Sole: EVA Sizes: 40-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Large mesh drainage and breathable hole Free walking Comfortable and shock absorption Grip non slip sole heel pull ring design Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Wheat Green"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-sports-shoes-casual-shoes-lightweight-and-breathable-shoes-for-men-and-boys/01-350863a-1.webp",
+        "alt": "Humtto Sports shoes | casual shoes | Lightweight and breathable shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-sports-shoes-casual-shoes-lightweight-and-breathable-shoes-for-men-and-boys/02-350863a-5.webp",
+        "alt": "Humtto Sports shoes | casual shoes | Lightweight and breathable shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 950000,
+    "price": 950000,
+    "mrp": 950000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Synthetic leather outsole soft and high elasticity light breathable casual shoes for men and boys",
+    "slug": "humtto-synthetic-leather-outsole-soft-and-high-elasticity-light-breathable-casual-shoes-for-men-and-boys",
+    "sku": "350819A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 40-43 Features: non slip laces Skin Friendly Breathable Large mesh drainage and breathable hole Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Polar Night Blue"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-synthetic-leather-outsole-soft-and-high-elasticity-light-breathable-casual-shoes-for-men-and-boys/01-350819a-1.webp",
+        "alt": "Humtto Synthetic leather outsole soft and high elasticity light breathable casual shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1065000,
+    "price": 1065000,
+    "mrp": 1065000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto Velcro design Outdoor Beach Sandal for men",
+    "slug": "humtto-velcro-design-outdoor-beach-sandal-for-men",
+    "sku": "750481A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-44 Features: Mesh surface Has Velcro design adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design",
+    "options": {
+      "Color": [
+        "Khaki",
+        "Sand"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-velcro-design-outdoor-beach-sandal-for-men/01-750481a-2.webp",
+        "alt": "Humtto Velcro design Outdoor Beach Sandal for men",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-velcro-design-outdoor-beach-sandal-for-men/02-750481a-3.webp",
+        "alt": "Humtto Velcro design Outdoor Beach Sandal for men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 676000,
+    "price": 676000,
+    "mrp": 676000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto automatic lacing shoes | comfortable shoes for men and boys",
+    "slug": "humtto-automatic-lacing-shoes-comfortable-shoes-for-men-and-boys",
+    "sku": "360306A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Beige",
+        "Black",
+        "Olive Green"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-automatic-lacing-shoes-comfortable-shoes-for-men-and-boys/01-360306a-3.webp",
+        "alt": "Humtto automatic lacing shoes | comfortable shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-automatic-lacing-shoes-comfortable-shoes-for-men-and-boys/02-360306a-1.webp",
+        "alt": "Humtto automatic lacing shoes | comfortable shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-automatic-lacing-shoes-comfortable-shoes-for-men-and-boys/03-360306a-4.webp",
+        "alt": "Humtto automatic lacing shoes | comfortable shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1219000,
+    "price": 1219000,
+    "mrp": 1219000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto brand black small side bag | crossbody bag for men",
+    "slug": "humtto-brand-black-side-bag-crossbody-bag-for-men",
+    "sku": "HB202445",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials : Fabric: 100% nylon Lining materials: 100% Polyester giber Size: free Multicolor : No Lightweight Brand: Humtto Type: Zip type",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "free size"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-brand-black-side-bag-crossbody-bag-for-men/01-hb202445-1.webp",
+        "alt": "Humtto brand black small side bag | crossbody bag for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 187500,
+    "price": 187500,
+    "mrp": 187500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto bucket bag Unique design and trendy bag | unisex bag | premium bag",
+    "slug": "humtto-bucket-bag-unique-design-and-trendy-bag-unisex-bag-premium-bag",
+    "sku": "HB202435",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials : Fabric: 100% nylon Lining materials: 100% Polyester giber Size: 10L Multicolor : Yes(Black and Beige) Lightweight Brand: Humtto Top Open mouth bag",
+    "options": {
+      "Color": [
+        "Beige",
+        "Black"
+      ],
+      "Size": [
+        "10L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-bucket-bag-unique-design-and-trendy-bag-unisex-bag-premium-bag/01-hb202435-1-1.webp",
+        "alt": "Humtto bucket bag Unique design and trendy bag | unisex bag | premium bag",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-bucket-bag-unique-design-and-trendy-bag-unisex-bag-premium-bag/02-hb202435-4-1.webp",
+        "alt": "Humtto bucket bag Unique design and trendy bag | unisex bag | premium bag",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 447500,
+    "price": 447500,
+    "mrp": 447500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto men’s boots for hiking | Breathable and comfortable shoes",
+    "slug": "humtto-mens-boots-for-hiking-breathable-and-comfortable-shoes",
+    "sku": "230078A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and TPU Sole: EVA + Rubber Sizes: 45&46 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Large mesh drainage and breathable hole free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Dark Gray"
+      ],
+      "Size": [
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-boots-for-hiking-breathable-and-comfortable-shoes/01-230078a-2.webp",
+        "alt": "Humtto men’s boots for hiking | Breathable and comfortable shoes",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1130000,
+    "price": 1130000,
+    "mrp": 1130000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto men’s casual shoes half comfortable, soft and high elasticity shoes for men and boys",
+    "slug": "humtto-mens-casual-shoes-half-comfortable-soft-and-high-elasticity-shoes-for-men-and-boys",
+    "sku": "350168A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA Sizes: 40-44 Features: Lacesfree shoe Skin Friendly Breathable Large mesh drainage and breathable hole Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-casual-shoes-half-comfortable-soft-and-high-elasticity-shoes-for-men-and-boys/01-350168a-1.webp",
+        "alt": "Humtto men’s casual shoes half comfortable, soft and high elasticity shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-casual-shoes-half-comfortable-soft-and-high-elasticity-shoes-for-men-and-boys/02-350168a-2.webp",
+        "alt": "Humtto men’s casual shoes half comfortable, soft and high elasticity shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 990000,
+    "price": 990000,
+    "mrp": 990000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto one side bag | Chest bag for men and boys | side cross body bag for outdoor | Outdoor casual fanny pack",
+    "slug": "humtto-one-side-bag-chest-bag-for-men-and-boys-side-cross-body-bag-for-outdoor-outdoor-casual-fanny-pack",
+    "sku": "HB17030",
+    "categoryId": "cat_bags",
+    "productType": "Bags",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "bags",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials : 100% Nylon multicolor : Yes Logo printed design: Yes",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Green",
+        "Light Blue",
+        "Orange"
+      ],
+      "Size": [
+        "3L"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-one-side-bag-chest-bag-for-men-and-boys-side-cross-body-bag-for-outdoor-outdoor-casual-fanny-pack/01-hb17030-11.webp",
+        "alt": "Humtto one side bag | Chest bag for men and boys | side cross body bag for outdoor | Outdoor casual fanny pack",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-one-side-bag-chest-bag-for-men-and-boys-side-cross-body-bag-for-outdoor-outdoor-casual-fanny-pack/02-hb17030-9.webp",
+        "alt": "Humtto one side bag | Chest bag for men and boys | side cross body bag for outdoor | Outdoor casual fanny pack",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-one-side-bag-chest-bag-for-men-and-boys-side-cross-body-bag-for-outdoor-outdoor-casual-fanny-pack/03-hb17030-8.webp",
+        "alt": "Humtto one side bag | Chest bag for men and boys | side cross body bag for outdoor | Outdoor casual fanny pack",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-one-side-bag-chest-bag-for-men-and-boys-side-cross-body-bag-for-outdoor-outdoor-casual-fanny-pack/04-hb17030-4.webp",
+        "alt": "Humtto one side bag | Chest bag for men and boys | side cross body bag for outdoor | Outdoor casual fanny pack",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 270000,
+    "price": 270000,
+    "mrp": 270000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto quick drying breathable outdoor shoes stream tracing shoes for Men",
+    "slug": "humtto-quick-drying-breathable-outdoor-shoes-stream-tracing-shoes-for-men",
+    "sku": "650221A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-44 Features: Mesh surface Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Light Gray",
+        "Sand"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-quick-drying-breathable-outdoor-shoes-stream-tracing-shoes-for-men/01-650221a-1.jpg",
+        "alt": "Humtto quick drying breathable outdoor shoes stream tracing shoes for Men",
+        "isFeatured": true,
+        "format": "jpg"
+      },
+      {
+        "url": "/uploads/products/humtto-quick-drying-breathable-outdoor-shoes-stream-tracing-shoes-for-men/02-650221a-2.jpg",
+        "alt": "Humtto quick drying breathable outdoor shoes stream tracing shoes for Men",
+        "isFeatured": false,
+        "format": "jpg"
+      },
+      {
+        "url": "/uploads/products/humtto-quick-drying-breathable-outdoor-shoes-stream-tracing-shoes-for-men/03-650221a-5.jpg",
+        "alt": "Humtto quick drying breathable outdoor shoes stream tracing shoes for Men",
+        "isFeatured": false,
+        "format": "jpg"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 858000,
+    "price": 858000,
+    "mrp": 858000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto stylish Functional Shoes | outdoor shoes | varity color trendy shoes for men and boys",
+    "slug": "humtto-stylish-functional-shoes-outdoor-shoes-varity-color-trendy-shoes-for-men-and-boys",
+    "sku": "850082A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and TPU + Synthetic leather Sole: EVA+ TPU + Rubber Sizes: 41-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Large mesh drainage and breathable hole Free walking Grip non slip sole heel pull ring design Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Gray"
+      ],
+      "Size": [
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-stylish-functional-shoes-outdoor-shoes-varity-color-trendy-shoes-for-men-and-boys/01-850082a-2.webp",
+        "alt": "Humtto stylish Functional Shoes | outdoor shoes | varity color trendy shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-stylish-functional-shoes-outdoor-shoes-varity-color-trendy-shoes-for-men-and-boys/02-850082a-3.webp",
+        "alt": "Humtto stylish Functional Shoes | outdoor shoes | varity color trendy shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1162500,
+    "price": 1162500,
+    "mrp": 1162500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto urban Outdoor shoes | Sports shoes | Casual shoes | Comfortable shoes for Men",
+    "slug": "humtto-urban-outdoor-shoes-sports-shoes-casual-shoes-comfortable-shoes-for-men",
+    "sku": "340737A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Fabric Sole: EVA Size : 39-44 Features: Anti -collision toe protection Breathable shoes anti slip shock absorption Lace-free system Easy to wear and take off adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time comfortable shoes",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-urban-outdoor-shoes-sports-shoes-casual-shoes-comfortable-shoes-for-men/01-340737a-1.webp",
+        "alt": "Humtto urban Outdoor shoes | Sports shoes | Casual shoes | Comfortable shoes for Men",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-urban-outdoor-shoes-sports-shoes-casual-shoes-comfortable-shoes-for-men/02-340737a-3.webp",
+        "alt": "Humtto urban Outdoor shoes | Sports shoes | Casual shoes | Comfortable shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 653000,
+    "price": 653000,
+    "mrp": 653000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto – Lightweight Gray color outdoor shoes | breathable shoes | sport shoes for men and boys",
+    "slug": "humtto-lightweight-gray-color-outdoor-shoes-breathable-shoes-sport-shoes-for-men-and-boys",
+    "sku": "360052A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-lightweight-gray-color-outdoor-shoes-breathable-shoes-sport-shoes-for-men-and-boys/01-360052a-3.webp",
+        "alt": "Humtto – Lightweight Gray color outdoor shoes | breathable shoes | sport shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1015000,
+    "price": 1015000,
+    "mrp": 1015000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto – Trendy comfortable shoes | Hiking shoes for men and boys",
+    "slug": "humtto-trendy-comfortable-shoes-hiking-shoes-for-men-and-boys",
+    "sku": "360572A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Black",
+        "Polar Night Blue"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-trendy-comfortable-shoes-hiking-shoes-for-men-and-boys/01-360572a-3.webp",
+        "alt": "Humtto – Trendy comfortable shoes | Hiking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-trendy-comfortable-shoes-hiking-shoes-for-men-and-boys/02-360572a-1.webp",
+        "alt": "Humtto – Trendy comfortable shoes | Hiking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-trendy-comfortable-shoes-hiking-shoes-for-men-and-boys/03-360572a-2.webp",
+        "alt": "Humtto – Trendy comfortable shoes | Hiking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 885000,
+    "price": 885000,
+    "mrp": 885000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Easy to Walk comfortable shoes | Hiking Materials shoes for men and boys",
+    "slug": "humtto-easy-to-walk-comfortable-shoes-hiking-materials-shoes-for-men-and-boys",
+    "sku": "260920A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Sky Grey"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-easy-to-walk-comfortable-shoes-hiking-materials-shoes-for-men-and-boys/01-260920a-2.webp",
+        "alt": "Humtto- Easy to Walk comfortable shoes | Hiking Materials shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-easy-to-walk-comfortable-shoes-hiking-materials-shoes-for-men-and-boys/02-260920a-1.webp",
+        "alt": "Humtto- Easy to Walk comfortable shoes | Hiking Materials shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1389000,
+    "price": 1389000,
+    "mrp": 1389000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- High Comfortable and shock absorption shoe with high hill sole for mens and boys",
+    "slug": "humtto-high-comfortable-and-shock-absorption-shoe-with-high-hill-sole-for-mens-and-boys",
+    "sku": "360456A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-44 Features: non slip laces Skin Friendly Breathable Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {},
+    "images": [
+      {
+        "url": "/uploads/products/humtto-high-comfortable-and-shock-absorption-shoe-with-high-hill-sole-for-mens-and-boys/01-360456a-1.webp",
+        "alt": "Humtto- High Comfortable and shock absorption shoe with high hill sole for mens and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-high-comfortable-and-shock-absorption-shoe-with-high-hill-sole-for-mens-and-boys/02-360456a-3.webp",
+        "alt": "Humtto- High Comfortable and shock absorption shoe with high hill sole for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-high-comfortable-and-shock-absorption-shoe-with-high-hill-sole-for-mens-and-boys/03-360456a-4.webp",
+        "alt": "Humtto- High Comfortable and shock absorption shoe with high hill sole for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 985000,
+    "price": 985000,
+    "mrp": 985000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- High sole comfortable walking shoes for men and boys | Running shoes",
+    "slug": "humtto-high-sole-comfortable-walking-shoes-for-men-and-boys-running-shoes",
+    "sku": "HUM-HUMTTO-HIGH-SOLE-COM",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-43 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-high-sole-comfortable-walking-shoes-for-men-and-boys-running-shoes/01-860092a-3.webp",
+        "alt": "Humtto- High sole comfortable walking shoes for men and boys | Running shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-high-sole-comfortable-walking-shoes-for-men-and-boys-running-shoes/02-860092a-2.webp",
+        "alt": "Humtto- High sole comfortable walking shoes for men and boys | Running shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1389000,
+    "price": 1389000,
+    "mrp": 1389000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Mens Best fabric shoes available for hiking and trekking",
+    "slug": "humtto-mens-best-fabric-shoes-available-for-hiking-and-trekking",
+    "sku": "260987A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-best-fabric-shoes-available-for-hiking-and-trekking/01-260987a-2.webp",
+        "alt": "Humtto- Mens Best fabric shoes available for hiking and trekking",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-best-fabric-shoes-available-for-hiking-and-trekking/02-260987a-3-1.webp",
+        "alt": "Humtto- Mens Best fabric shoes available for hiking and trekking",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-best-fabric-shoes-available-for-hiking-and-trekking/03-260987a-4.webp",
+        "alt": "Humtto- Mens Best fabric shoes available for hiking and trekking",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1299000,
+    "price": 1299000,
+    "mrp": 1299000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Men’s Outdoor high top Hiking Shoes",
+    "slug": "humtto-outdoor-high-top-hiking-shoes",
+    "sku": "230871A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 41 only Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Khaki"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-high-top-hiking-shoes/01-230871a-3.webp",
+        "alt": "Humtto- Men’s Outdoor high top Hiking Shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-high-top-hiking-shoes/02-230871a-2.webp",
+        "alt": "Humtto- Men’s Outdoor high top Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-high-top-hiking-shoes/03-230871a-1.webp",
+        "alt": "Humtto- Men’s Outdoor high top Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1130000,
+    "price": 1130000,
+    "mrp": 1130000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- New Outdoor Sports | Hiking Half-shoe waterproof | Breathable with unique Design | Multiple color for men and boys",
+    "slug": "humtto-new-outdoor-sports-hiking-half-shoe-waterproof-breathable-with-unique-design-multiple-color-for-men-and-boys",
+    "sku": "160705A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-new-outdoor-sports-hiking-half-shoe-waterproof-breathable-with-unique-design-multiple-color-for-men-and-boys/01-160705a-1.webp",
+        "alt": "Humtto- New Outdoor Sports | Hiking Half-shoe waterproof | Breathable with unique Design | Multiple color for men and bo",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-new-outdoor-sports-hiking-half-shoe-waterproof-breathable-with-unique-design-multiple-color-for-men-and-boys/02-160705a-2.webp",
+        "alt": "Humtto- New Outdoor Sports | Hiking Half-shoe waterproof | Breathable with unique Design | Multiple color for men and bo",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-new-outdoor-sports-hiking-half-shoe-waterproof-breathable-with-unique-design-multiple-color-for-men-and-boys/03-160705a-4.webp",
+        "alt": "Humtto- New Outdoor Sports | Hiking Half-shoe waterproof | Breathable with unique Design | Multiple color for men and bo",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1189000,
+    "price": 1189000,
+    "mrp": 1189000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- New Trendy Black Shoe Best for Hiking and running for men and boys",
+    "slug": "humtto-new-trendy-black-shoe-best-for-hiking-and-running-for-men-and-boys",
+    "sku": "860092A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-43 For: Male Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-new-trendy-black-shoe-best-for-hiking-and-running-for-men-and-boys/01-860092a-1.webp",
+        "alt": "Humtto- New Trendy Black Shoe Best for Hiking and running for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1389000,
+    "price": 1389000,
+    "mrp": 1389000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Outdoor hiking shoes for men in different color set",
+    "slug": "humtto-outdoor-hiking-shoes-for-men-in-different-color-set",
+    "sku": "140664A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Size: 40-44 Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Khaki",
+        "Sand"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men-in-different-color-set/01-140664a-1.webp",
+        "alt": "Humtto- Outdoor hiking shoes for men in different color set",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men-in-different-color-set/02-140664a-2.webp",
+        "alt": "Humtto- Outdoor hiking shoes for men in different color set",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men-in-different-color-set/03-140664a-3.webp",
+        "alt": "Humtto- Outdoor hiking shoes for men in different color set",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 898300,
+    "price": 898300,
+    "mrp": 898300,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock for mens and boys",
+    "slug": "humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-mens-and-boysabsorption-for",
+    "sku": "260336A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-44 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Khaki",
+        "Maroon Black",
+        "Sky Grey"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-mens-and-boysabsorption-for/01-260336a-2.webp",
+        "alt": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock fo",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-mens-and-boysabsorption-for/02-260336a-3.webp",
+        "alt": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock fo",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-mens-and-boysabsorption-for/03-260336a-4.webp",
+        "alt": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock fo",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1299000,
+    "price": 1299000,
+    "mrp": 1299000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock for womens and girls",
+    "slug": "humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-womens-and-girls",
+    "sku": "260336B",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 36-40 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking",
+    "options": {
+      "Color": [
+        "Dark Gray",
+        "Sky Grey"
+      ],
+      "Size": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-womens-and-girls/01-260336b-2.webp",
+        "alt": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock fo",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-skin-friendly-breathable-breathable-shoes-sporty-shoes-tight-laces-free-walking-comfortable-and-shock-for-womens-and-girls/02-260336b-1.webp",
+        "alt": "Humtto- Skin Friendly | Breathable Breathable shoes | Sporty shoes | Tight laces | Free walking Comfortable and shock fo",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1299000,
+    "price": 1299000,
+    "mrp": 1299000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Toe Protection | High Grip shoe lace | High sole for men and boys",
+    "slug": "humtto-toe-protection-high-grip-shoe-lace-high-sole-for-men-and-boys",
+    "sku": "260936A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Black",
+        "Sky Grey"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-toe-protection-high-grip-shoe-lace-high-sole-for-men-and-boys/01-260936a-1.webp",
+        "alt": "Humtto- Toe Protection | High Grip shoe lace | High sole for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-toe-protection-high-grip-shoe-lace-high-sole-for-men-and-boys/02-260936a-3.webp",
+        "alt": "Humtto- Toe Protection | High Grip shoe lace | High sole for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-toe-protection-high-grip-shoe-lace-high-sole-for-men-and-boys/03-260936a-4.webp",
+        "alt": "Humtto- Toe Protection | High Grip shoe lace | High sole for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1319000,
+    "price": 1319000,
+    "mrp": 1319000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Trendy unique design sandal | Breathable outdoor sandal for men and boys",
+    "slug": "humtto-trendy-unique-design-sandal-breathable-outdoor-sandal-for-men-and-boys",
+    "sku": "760137A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-43 Features: Mesh surface Anti-collision toe protection Lace-free system Easy to wear and take off adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design comfortable sandal",
+    "options": {
+      "Color": [
+        "Beige",
+        "Dark Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-trendy-unique-design-sandal-breathable-outdoor-sandal-for-men-and-boys/01-760137a-1.webp",
+        "alt": "Humtto- Trendy unique design sandal | Breathable outdoor sandal for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-trendy-unique-design-sandal-breathable-outdoor-sandal-for-men-and-boys/02-760137a-4.webp",
+        "alt": "Humtto- Trendy unique design sandal | Breathable outdoor sandal for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-trendy-unique-design-sandal-breathable-outdoor-sandal-for-men-and-boys/03-760137a-3.webp",
+        "alt": "Humtto- Trendy unique design sandal | Breathable outdoor sandal for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 822500,
+    "price": 822500,
+    "mrp": 822500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto- Unique design shoes | sports shoes for men and boys",
+    "slug": "humtto-unique-design-shoes-sports-shoes-for-men-and-boys",
+    "sku": "360519A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Beige",
+        "Silver"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-unique-design-shoes-sports-shoes-for-men-and-boys/01-360519a-3.webp",
+        "alt": "Humtto- Unique design shoes | sports shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-unique-design-shoes-sports-shoes-for-men-and-boys/02-360519a-2.webp",
+        "alt": "Humtto- Unique design shoes | sports shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 987500,
+    "price": 987500,
+    "mrp": 987500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Black Outdoor casual shoes for Men",
+    "slug": "humtto-black-outdoor-casual-shoes-for-men",
+    "sku": "340207A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 40 Materials: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments black color",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "40"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-black-outdoor-casual-shoes-for-men/01-340207a-1.webp",
+        "alt": "Humtto-Black Outdoor casual shoes for Men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 905200,
+    "price": 905200,
+    "mrp": 905200,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Breathable shoes | sock absorption shoe for men and boys",
+    "slug": "humtto-breathable-shoes-sock-absorption-shoe-for-men-and-boys",
+    "sku": "360974A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-43 For: Male Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Light Blue"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-breathable-shoes-sock-absorption-shoe-for-men-and-boys/01-360974a-1.webp",
+        "alt": "Humtto-Breathable shoes | sock absorption shoe for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-breathable-shoes-sock-absorption-shoe-for-men-and-boys/02-360974a-3.webp",
+        "alt": "Humtto-Breathable shoes | sock absorption shoe for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1079000,
+    "price": 1079000,
+    "mrp": 1079000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Men’s Size 10 Wide Width Black Leather Sport Classic Non Slip Shoe Brand: Humtto Grip Footwear",
+    "slug": "humtto-mens-size-10-wide-width-black-leather-sport-classic-non-slip-shoe-brand-humtto-grip-footwear",
+    "sku": "160905A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Quantity: 1/Each Shipping Weight: 3 lb. Closure: Laces Color: Black and white Features: Non-Slip Water-Resistant Fit Type: Comfort Ergonomic Size: 10 Wide Sole Material: Rubber Style: Sneaker Type: Women's Shoes Upper Material: Leather Usage: Athletic",
+    "options": {
+      "Color": [
+        "Black",
+        "White"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-mens-size-10-wide-width-black-leather-sport-classic-non-slip-shoe-brand-humtto-grip-footwear/01-160905a-2.webp",
+        "alt": "Humtto-Men’s Size 10 Wide Width Black Leather Sport Classic Non Slip Shoe Brand: Humtto Grip Footwear",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-mens-size-10-wide-width-black-leather-sport-classic-non-slip-shoe-brand-humtto-grip-footwear/02-160905a-1.webp",
+        "alt": "Humtto-Men’s Size 10 Wide Width Black Leather Sport Classic Non Slip Shoe Brand: Humtto Grip Footwear",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1059000,
+    "price": 1059000,
+    "mrp": 1059000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Outdoor Top Hiking Shoes-Full | Ankle support shoes | Free walking shoes for men and boys",
+    "slug": "humtto-outdoor-top-hiking-shoes-full-ankle-support-shoes-free-walking-shoes-for-men-and-boys",
+    "sku": "260712A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Khaki"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-top-hiking-shoes-full-ankle-support-shoes-free-walking-shoes-for-men-and-boys/01-260712a-1.webp",
+        "alt": "Humtto-Outdoor Top Hiking Shoes-Full | Ankle support shoes | Free walking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-top-hiking-shoes-full-ankle-support-shoes-free-walking-shoes-for-men-and-boys/02-260712a-4.webp",
+        "alt": "Humtto-Outdoor Top Hiking Shoes-Full | Ankle support shoes | Free walking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1599000,
+    "price": 1599000,
+    "mrp": 1599000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Outdoor hiking shoes for Men",
+    "slug": "humtto-outdoor-hiking-shoes-for-men",
+    "sku": "19066A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 39-44 Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Brown",
+        "Dark Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men/01-line38-dark-gray-orange-png.png",
+        "alt": "Humtto-Outdoor hiking shoes for Men",
+        "isFeatured": true,
+        "format": "png"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men/02-19066a-3.webp",
+        "alt": "Humtto-Outdoor hiking shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men/03-19066a-1.webp",
+        "alt": "Humtto-Outdoor hiking shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men/04-19066a-2.webp",
+        "alt": "Humtto-Outdoor hiking shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-outdoor-hiking-shoes-for-men/05-19066a-5-1.webp",
+        "alt": "Humtto-Outdoor hiking shoes for Men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1089000,
+    "price": 1089000,
+    "mrp": 1089000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Humtto-Trail Running vs. Hiking Shoes: Finding Your Perfect Fit for the Great Outdoors",
+    "slug": "humtto-trail-running-vs-hiking-shoes-finding-your-perfect-fit-for-the-great-outdoors",
+    "sku": "240760A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-46 Features: non slip laces Skin Friendly Breathable Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Sand"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/humtto-trail-running-vs-hiking-shoes-finding-your-perfect-fit-for-the-great-outdoors/01-240760a-1.webp",
+        "alt": "Humtto-Trail Running vs. Hiking Shoes: Finding Your Perfect Fit for the Great Outdoors",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/humtto-trail-running-vs-hiking-shoes-finding-your-perfect-fit-for-the-great-outdoors/02-240760a-4.webp",
+        "alt": "Humtto-Trail Running vs. Hiking Shoes: Finding Your Perfect Fit for the Great Outdoors",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1289000,
+    "price": 1289000,
+    "mrp": 1289000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Leather body with EVA sole | Breathable shoes for mens and boys – HUMTTO",
+    "slug": "leather-body-with-eva-sole-breathable-shoes-for-mens-and-boys-humtto",
+    "sku": "360515A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {},
+    "images": [
+      {
+        "url": "/uploads/products/leather-body-with-eva-sole-breathable-shoes-for-mens-and-boys-humtto/01-360515a-1.webp",
+        "alt": "Leather body with EVA sole | Breathable shoes for mens and boys – HUMTTO",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/leather-body-with-eva-sole-breathable-shoes-for-mens-and-boys-humtto/02-360515a-2.webp",
+        "alt": "Leather body with EVA sole | Breathable shoes for mens and boys – HUMTTO",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/leather-body-with-eva-sole-breathable-shoes-for-mens-and-boys-humtto/03-360515a-4.webp",
+        "alt": "Leather body with EVA sole | Breathable shoes for mens and boys – HUMTTO",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 852500,
+    "price": 852500,
+    "mrp": 852500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Leather with fabric Humtto outdoor casual shoes | breathable and wear resistant shoes for men and boys",
+    "slug": "leather-with-fabric-humtto-outdoor-casual-shoes-breathable-and-wear-resistant-shoes-for-men-and-boys",
+    "sku": "350420A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA + Rubber Sizes: 40-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Large mesh drainage and breathable hole Free walking Comfortable and shock absorption Grip non slip sole heel pull ring design Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/leather-with-fabric-humtto-outdoor-casual-shoes-breathable-and-wear-resistant-shoes-for-men-and-boys/01-350420a-1.webp",
+        "alt": "Leather with fabric Humtto outdoor casual shoes | breathable and wear resistant shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/leather-with-fabric-humtto-outdoor-casual-shoes-breathable-and-wear-resistant-shoes-for-men-and-boys/02-350420a-3.webp",
+        "alt": "Leather with fabric Humtto outdoor casual shoes | breathable and wear resistant shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1065000,
+    "price": 1065000,
+    "mrp": 1065000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Breathable River Tracing shoes",
+    "slug": "mens-breathable-river-tracing-shoes",
+    "sku": "660859A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Materials: Upper: fabric+tpu sole:eva+rubber Features: No-tie system for easy wear and removal. Large side drainage holes to prevent sand and water retention, ideal for amphibious Rubber sole with enhanced anti-slip blocks for better traction.",
+    "options": {
+      "Color": [
+        "Maroon Black",
+        "Wheat Green"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-breathable-river-tracing-shoes/01-660859a-2.webp",
+        "alt": "Men’s Breathable River Tracing shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-breathable-river-tracing-shoes/02-660859a-3.webp",
+        "alt": "Men’s Breathable River Tracing shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 892500,
+    "price": 892500,
+    "mrp": 892500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Breathable trail shoes",
+    "slug": "slipper-sandal",
+    "sku": "660801A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: UPPER: Synthetic leather+Fabric Sole: EVA + Rubber + TPU Features: The elastic stretch buckle of the shoe lace, adjusted according to different foot sizes, makes the foot and the shoe fit better The mesh upper is made of quick-drying and breathable fabric mesh, which is breathable and perspiration-expelling to keep the foot fresh at all times The two-way drainage and sand drainage holes on the side of the shoe are designed to drain out the water quickly. The two-way drainage holes on the side of the shoe are designed to drain the water quickly",
+    "options": {
+      "Color": [
+        "Gray",
+        "Sand"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/slipper-sandal/01-660801a-3-4.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/slipper-sandal/02-660801a-3-2.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/slipper-sandal/03-660801a-3-5.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/slipper-sandal/04-660801a-3-3.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/slipper-sandal/05-660801a-3-1.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/slipper-sandal/06-660801a-2.webp",
+        "alt": "Men’s Breathable trail shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 872500,
+    "price": 872500,
+    "mrp": 872500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s High Elastic casual shoes",
+    "slug": "mens-high-elastic-casual-shoes",
+    "sku": "360138A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Materials: Upper: Fabric +TPU Sole: EVA+ Rubbe & Plastic Features: TPU combined with breathable fabric, lightweight breathable, cushioned soft elastic comfort, light and guilt-free.",
+    "options": {
+      "Color": [
+        "Dark Beige",
+        "Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/01-360138a-3-2.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/02-360138a-3.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/03-360138a-3-6.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/04-360138a-3-5.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/05-360138a-3-4.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-high-elastic-casual-shoes/06-360138a-2.webp",
+        "alt": "Men’s High Elastic casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 892500,
+    "price": 892500,
+    "mrp": 892500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Non-Slip Hiking Shoes",
+    "slug": "mens-non-slip-hiking-shoes",
+    "sku": "160482A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Materials: upper: pig suede leather+synthetic leather+fabrics Sole: eva+rubber Features: Venient swivel buckle, quick lacing design Anatomic leather splicing fabric upper, wear-resistant And breathable. Non-slip rubber outsole, strong grip.",
+    "options": {
+      "Color": [
+        "Gray",
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/01-160482a-2-2.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/02-160482a-2-3.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/03-160482a-2-4.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/04-160482a-2-5.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/05-160482a-2-6.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/06-160482a-2.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/07-160482a-3-2.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/08-160482a-3-3.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/09-160482a-3-4.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/10-160482a-3-5.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/11-160482a-3-6.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-non-slip-hiking-shoes/12-160482a-3.webp",
+        "alt": "Men’s Non-Slip Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1245000,
+    "price": 1245000,
+    "mrp": 1245000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Outdoor Top Hiking Shoes-Full Ankle support | Atractive color best hiking shoes with non-slip grip",
+    "slug": "mens-outdoor-top-hiking-shoes-full-ankle-support-atractive-color-best-hiking-shoes-with-non-slip-grip",
+    "sku": "260370A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and synthetic leather Sole: EVA + Rubber Sizes: 39-44 Features: The laces are strong and not easy to slip off Skin Friendly Breathable Easy to adapt to all kinds of terrain free walking Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-outdoor-top-hiking-shoes-full-ankle-support-atractive-color-best-hiking-shoes-with-non-slip-grip/01-260370a-1.webp",
+        "alt": "Men’s Outdoor Top Hiking Shoes-Full Ankle support | Atractive color best hiking shoes with non-slip grip",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1359000,
+    "price": 1359000,
+    "mrp": 1359000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Outdoor hiking shoes",
+    "slug": "mens-outdoor-hiking-shoes",
+    "sku": "360038A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Material: Upper: pig leather + synthetic leather + fabric Sole: eva+ rubber Features: leather spliced fabric upper, more durable and scratch-resistant; rubber outsole provides better anti-slip and wear resistance.",
+    "options": {
+      "Color": [
+        "Beige",
+        "Dark Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/01-360038a-3-2.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/02-360038a-3.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/03-360038a-3-6.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/04-360038a-3-5.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/05-360038a-3-4.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/06-360038a-3-3.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/07-360038a-4.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/08-360038a-4-6.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/09-360038a-4-5.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/10-360038a-4-4.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/11-360038a-4-3.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-outdoor-hiking-shoes/12-360038a-4-2.webp",
+        "alt": "Men’s Outdoor hiking shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 985000,
+    "price": 985000,
+    "mrp": 985000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Slip-On Casual shoes",
+    "slug": "mens-slip-on-casual-shoes",
+    "sku": "360504A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Series: Urban leisure series Sizes: 39-46 Material: UPPER: Fabric +TPU Sole: EVA+ Rubber & Plastic Feature: TPU breathable fabric, combined with TPU printing to increase the three-dimensional sense of the upper, rubber outsole anti-slip wear.",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray",
+        "Wheat Green"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/01-360504a-1-4-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/02-360504a-1-6-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/03-360504a-1-2-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/04-360504a-1-1-2.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/05-360504a-1-3-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/06-360504a-3-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-slip-on-casual-shoes/07-360504a-4-1.webp",
+        "alt": "Men’s Slip-On Casual shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 792500,
+    "price": 792500,
+    "mrp": 792500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Soft Hiking Shoes",
+    "slug": "mens-soft-hiking-shoes",
+    "sku": "160112A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Materials: Upper: synthetic leather+fabric sole: eva+rubber Features: Double impact resistant toe with sole, protects toes. Synthetic leather spliced with fabric upper, Wear-resistant and breathable Non-slip rubber outsole with strong grip.",
+    "options": {
+      "Color": [
+        "Gray",
+        "White"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/01-160112a-2-2.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/02-160112a-5.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/03-160112a-5-6.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/04-160112a-5-5.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/05-160112a-5-4.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/06-160112a-5-3.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/07-160112a-5-2.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/08-160112a-2.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/09-160112a-2-6.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/10-160112a-2-5.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/11-160112a-2-4.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-hiking-shoes/12-160112a-2-3.webp",
+        "alt": "Men’s Soft Hiking Shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 985000,
+    "price": 985000,
+    "mrp": 985000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s Soft Trail Running shoes",
+    "slug": "mens-soft-trail-running-shoes",
+    "sku": "360617A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Material: UPPER: Fabric +TPU+ Synthetic leather SOLE: ETPU+ Rubber Features: Wear resistant breathable mesh material vamp, not easy to suffocate feet Thickened rubber sole to enhance anti-slip force Soft toe to protect ankle",
+    "options": {
+      "Color": [
+        "Gray",
+        "Ivory"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-soft-trail-running-shoes/01-360617a-2-1.webp",
+        "alt": "Men’s Soft Trail Running shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-trail-running-shoes/02-360617a-4.webp",
+        "alt": "Men’s Soft Trail Running shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-soft-trail-running-shoes/03-360617a-2.webp",
+        "alt": "Men’s Soft Trail Running shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 985000,
+    "price": 985000,
+    "mrp": 985000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Men’s casual outdoor shoes",
+    "slug": "mens-casual-outdoor-shoes",
+    "sku": "360890A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-46 Material: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: The upper is made of fabric and synthetic leather splice, and the whole eva outsole is soft and shock-absorbing, helping to move forward easily",
+    "options": {
+      "Color": [
+        "Gray",
+        "Silver"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/01-360890a-5-3.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/02-360890a-5.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/03-360890a-5-6.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/04-360890a-5-5.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/05-360890a-5-4.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/mens-casual-outdoor-shoes/06-360890a-2.webp",
+        "alt": "Men’s casual outdoor shoes",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 792500,
+    "price": 792500,
+    "mrp": 792500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "New Branded Outdoor Sport shoes | Comfortable shoes | Running shoes for mens and boys",
+    "slug": "new-branded-outdoor-sport-shoes-comfortable-shoes-running-shoes-for-mens-and-boys",
+    "sku": "360190A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: ETPU+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Black",
+        "Denim Blue",
+        "Sky Grey"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/new-branded-outdoor-sport-shoes-comfortable-shoes-running-shoes-for-mens-and-boys/01-360190a-1.webp",
+        "alt": "New Branded Outdoor Sport shoes | Comfortable shoes | Running shoes for mens and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-branded-outdoor-sport-shoes-comfortable-shoes-running-shoes-for-mens-and-boys/02-360190a-4.webp",
+        "alt": "New Branded Outdoor Sport shoes | Comfortable shoes | Running shoes for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-branded-outdoor-sport-shoes-comfortable-shoes-running-shoes-for-mens-and-boys/03-360190a-5.webp",
+        "alt": "New Branded Outdoor Sport shoes | Comfortable shoes | Running shoes for mens and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1079000,
+    "price": 1079000,
+    "mrp": 1079000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "New Design Automatic lacing shoes | High sole Comfortable design for mens and boys- HUMTTO",
+    "slug": "new-design-automatic-lacing-shoes-high-sole-comfortable-design-for-mens-and-boys-humtto",
+    "sku": "360413A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Dark Gray",
+        "Denim Blue",
+        "Olive Green"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/new-design-automatic-lacing-shoes-high-sole-comfortable-design-for-mens-and-boys-humtto/01-360413a-2.webp",
+        "alt": "New Design Automatic lacing shoes | High sole Comfortable design for mens and boys- HUMTTO",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-design-automatic-lacing-shoes-high-sole-comfortable-design-for-mens-and-boys-humtto/02-360413a-4.webp",
+        "alt": "New Design Automatic lacing shoes | High sole Comfortable design for mens and boys- HUMTTO",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-design-automatic-lacing-shoes-high-sole-comfortable-design-for-mens-and-boys-humtto/03-360413a-5.webp",
+        "alt": "New Design Automatic lacing shoes | High sole Comfortable design for mens and boys- HUMTTO",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1179000,
+    "price": 1179000,
+    "mrp": 1179000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "New Humtto Branded Outdoor sport shoes half | Hiking shoes | Trekking shoes for men and boys",
+    "slug": "new-humtto-branded-outdoor-sport-shoes-half",
+    "sku": "250486A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-45 Features: Skin Friendly Breathable Breathable shoes Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45"
+      ],
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Khaki",
+        "Sand"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/new-humtto-branded-outdoor-sport-shoes-half/01-250486a-1.webp",
+        "alt": "New Humtto Branded Outdoor sport shoes half | Hiking shoes | Trekking shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-humtto-branded-outdoor-sport-shoes-half/02-250486a-2.webp",
+        "alt": "New Humtto Branded Outdoor sport shoes half | Hiking shoes | Trekking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-humtto-branded-outdoor-sport-shoes-half/03-250486a-3.webp",
+        "alt": "New Humtto Branded Outdoor sport shoes half | Hiking shoes | Trekking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-humtto-branded-outdoor-sport-shoes-half/04-250486a-5.webp",
+        "alt": "New Humtto Branded Outdoor sport shoes half | Hiking shoes | Trekking shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1280000,
+    "price": 1280000,
+    "mrp": 1280000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "New trendy Half Sport shoes -Humtto",
+    "slug": "new-trendy-half-sport-shoes-humtto",
+    "sku": "360820A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ],
+      "Color": [
+        "Black",
+        "Dark Gray",
+        "Denim Blue"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/new-trendy-half-sport-shoes-humtto/01-360820a-5.webp",
+        "alt": "New trendy Half Sport shoes -Humtto",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-trendy-half-sport-shoes-humtto/02-360820a-3.webp",
+        "alt": "New trendy Half Sport shoes -Humtto",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/new-trendy-half-sport-shoes-humtto/03-360820a-4.webp",
+        "alt": "New trendy Half Sport shoes -Humtto",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1060000,
+    "price": 1060000,
+    "mrp": 1060000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "River-tracing shoes/Watershoes – black shoes for men",
+    "slug": "river-tracing-shoes-watershoes-black-shoes-for-men",
+    "sku": "640254A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Size: 36-40 Color: Black Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/river-tracing-shoes-watershoes-black-shoes-for-men/01-640254a.webp",
+        "alt": "River-tracing shoes/Watershoes – black shoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 743100,
+    "price": 743100,
+    "mrp": 743100,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Strong Sole Sandal for monsoons season | Breathable Outdoor sandals for men and boys",
+    "slug": "strong-sole-sandal-for-monsoons-season-breathable-outdoor-sandals-for-men-and-boys",
+    "sku": "760289A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-43 Features: Mesh surface Anti-collision toe protection Lace-free system Easy to wear and take off adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design comfortable sandal",
+    "options": {
+      "Color": [
+        "Gray",
+        "Khaki"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/strong-sole-sandal-for-monsoons-season-breathable-outdoor-sandals-for-men-and-boys/01-760289a-2.webp",
+        "alt": "Strong Sole Sandal for monsoons season | Breathable Outdoor sandals for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/strong-sole-sandal-for-monsoons-season-breathable-outdoor-sandals-for-men-and-boys/02-760289a-3.webp",
+        "alt": "Strong Sole Sandal for monsoons season | Breathable Outdoor sandals for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 798000,
+    "price": 798000,
+    "mrp": 798000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Summer Outdoor Sandal for men | Flexible sandal with unique design",
+    "slug": "summer-outdoor-sandal-for-men-flexible-sandal-with-unique-design",
+    "sku": "750756A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-44 Features: Mesh surface Anti -collision toe protection Lace-free system Easy to wear and take off adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design comfortable sandal",
+    "options": {
+      "Color": [
+        "Black",
+        "Gray",
+        "Light Blue"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/summer-outdoor-sandal-for-men-flexible-sandal-with-unique-design/01-750756a-1.webp",
+        "alt": "Summer Outdoor Sandal for men | Flexible sandal with unique design",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/summer-outdoor-sandal-for-men-flexible-sandal-with-unique-design/02-750756a-2.webp",
+        "alt": "Summer Outdoor Sandal for men | Flexible sandal with unique design",
+        "isFeatured": false,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/summer-outdoor-sandal-for-men-flexible-sandal-with-unique-design/03-750756a-4.webp",
+        "alt": "Summer Outdoor Sandal for men | Flexible sandal with unique design",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 745000,
+    "price": 745000,
+    "mrp": 745000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Synthetic Leather body with EVA rubber sole | Breathable shoes for mens and boys – HUMTTO",
+    "slug": "synthetic-leather-body-with-eva-rubber-sole-breathable-shoes-for-mens-and-boys-humtto",
+    "sku": "360210A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric and Synthetic Leather Sole: EVA+ rubber Sizes: 39-43 Features: Skin Friendly Breathable Breathable shoes Sporty shoes Tight laces Free walking Comfortable and shock absorption Grip non slip sole Fashion Brand logo Soft toe upper comfortable protection",
+    "options": {
+      "Color": [
+        "Black"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/synthetic-leather-body-with-eva-rubber-sole-breathable-shoes-for-mens-and-boys-humtto/01-360210a-1.webp",
+        "alt": "Synthetic Leather body with EVA rubber sole | Breathable shoes for mens and boys – HUMTTO",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1259000,
+    "price": 1259000,
+    "mrp": 1259000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trail running shoes (swivel buckle) for men",
+    "slug": "trail-running-shoes-swivel-buckle-for-men",
+    "sku": "320828A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 44 Materials: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments blue color",
+    "options": {
+      "Color": [
+        "Denim Blue"
+      ],
+      "Size": [
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trail-running-shoes-swivel-buckle-for-men/01-320828a-1.webp",
+        "alt": "Trail running shoes (swivel buckle) for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 891500,
+    "price": 891500,
+    "mrp": 891500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trail running shoes for Men-Humtto shoes",
+    "slug": "trail-running-shoes-for-men-humtto-shoes",
+    "sku": "840090A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 44 Materials: UPPER: Fabric +TPU Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments Couples can choose multiple colors",
+    "options": {
+      "Color": [
+        "Orange"
+      ],
+      "Size": [
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trail-running-shoes-for-men-humtto-shoes/01-840090a-2.webp",
+        "alt": "Trail running shoes for Men-Humtto shoes",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 898300,
+    "price": 898300,
+    "mrp": 898300,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trail running shoes for men",
+    "slug": "trail-running-shoes-for-men",
+    "sku": "840200A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Leather + Fabric+ Rubber Sole: EVA + Rubber Sizes: 36-40 Color : orange and gray Features: The Upper is wear-resistant and tear-resistant, and the heel is reinforced to prevent sprains. EVA midsole lightweight materials",
+    "options": {
+      "Color": [
+        "Denim Blue",
+        "Sky Grey"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "43",
+        "44"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trail-running-shoes-for-men/01-840200a-3.webp",
+        "alt": "Trail running shoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/trail-running-shoes-for-men/02-840200a-4.webp",
+        "alt": "Trail running shoes for men",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1238500,
+    "price": 1238500,
+    "mrp": 1238500,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trendy Autumn urban leisure sports shoes Outdoor hiking shoes for men",
+    "slug": "trendy-autumn-urban-leisure-sports-shoes-outdoor-hiking-shoes",
+    "sku": "340524A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 39-43 Materials: Fabric+ Brovine Split Leathe Sole: EVA+ Rubber Features: Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments Couples can choose multiple colors",
+    "options": {
+      "Color": [
+        "Light Gray"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trendy-autumn-urban-leisure-sports-shoes-outdoor-hiking-shoes/01-340524a-4.webp",
+        "alt": "Trendy Autumn urban leisure sports shoes Outdoor hiking shoes for men",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 920700,
+    "price": 920700,
+    "mrp": 920700,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trendy Fashion splicing wear- resistant design outdoor shoes for men and boys",
+    "slug": "trendy-fashion-splicing-wear-resistant-design-outdoor-shoes-for-men-and-boys",
+    "sku": "250332A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Materials: Fabric+ TPU Sole : EVA + TPU + Rubber Sizes: 41-43 Features: Lightweight Construction Durable and Breathable Upper Non-Slip Rubber Outsole Shock-Absorbing Midsole Ankle Support Design Versatile for All Seasons Low-Maintenance Materials",
+    "options": {
+      "Color": [
+        "Gray",
+        "Sky Grey"
+      ],
+      "Size": [
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trendy-fashion-splicing-wear-resistant-design-outdoor-shoes-for-men-and-boys/01-250332a-3.webp",
+        "alt": "Trendy Fashion splicing wear- resistant design outdoor shoes for men and boys",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/trendy-fashion-splicing-wear-resistant-design-outdoor-shoes-for-men-and-boys/02-250332a-4.webp",
+        "alt": "Trendy Fashion splicing wear- resistant design outdoor shoes for men and boys",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 1330000,
+    "price": 1330000,
+    "mrp": 1330000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trendy Outdoor Sandal for men | Breathable sandal with unique design",
+    "slug": "trendy-outdoor-sandal-for-men",
+    "sku": "750545A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Material: Synthetic leather+ Fabric Sole: EVA + Rubber Size : 39-46 Features: Mesh surface Lace-free system Easy to wear and take off adjustable tightness Made of Quick drying breathable fabric which makes feet fresh all the time Shoe two side drainage hole design comfortable sandal",
+    "options": {
+      "Color": [
+        "Gray",
+        "Olive Green"
+      ],
+      "Size": [
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trendy-outdoor-sandal-for-men/01-750545a-2.webp",
+        "alt": "Trendy Outdoor Sandal for men | Breathable sandal with unique design",
+        "isFeatured": true,
+        "format": "webp"
+      },
+      {
+        "url": "/uploads/products/trendy-outdoor-sandal-for-men/02-750545a-1.webp",
+        "alt": "Trendy Outdoor Sandal for men | Breathable sandal with unique design",
+        "isFeatured": false,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 783000,
+    "price": 783000,
+    "mrp": 783000,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  },
+  {
+    "name": "Trendy Outdoor hiking shoes for men with leather and soft anti collision toe",
+    "slug": "trendy-outdoor-hiking-shoes-for-men-with-leather-and-soft-anti-collision-toe",
+    "sku": "140121A",
+    "categoryId": "cat_footwear",
+    "productType": "Footwear",
+    "brand": "Humtto",
+    "gender": "Men",
+    "season": "SS26",
+    "tags": [
+      "footwear",
+      "humtto",
+      "men"
+    ],
+    "description": "Sizes: 40-43 Material:Leather and fabric Sole: EVA+ Rubber Features: Anti-collision toe wear-resistant shoelaces and stretch-resistance thik soft toe Lightweight and breathable couple design, classic color matching combined with splicing mesh Three-dimensional toothed nails strengthen grip and easily navigate complex environments",
+    "options": {
+      "Color": [
+        "Gray"
+      ],
+      "Size": [
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    "images": [
+      {
+        "url": "/uploads/products/trendy-outdoor-hiking-shoes-for-men-with-leather-and-soft-anti-collision-toe/01-140121a-1.webp",
+        "alt": "Trendy Outdoor hiking shoes for men with leather and soft anti collision toe",
+        "isFeatured": true,
+        "format": "webp"
+      }
+    ],
+    "status": "draft",
+    "labels": {
+      "featured": false,
+      "trending": false,
+      "newArrival": false,
+      "bestSelling": false
+    },
+    "basePrice": 942600,
+    "price": 942600,
+    "mrp": 942600,
+    "cost": 0,
+    "ratingAvg": 0,
+    "ratingCount": 0,
+    "deletedAt": null
+  }
+]

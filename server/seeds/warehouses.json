@@ -1,0 +1,20 @@
+[
+  {
+    "id": "w1",
+    "address": "",
+    "code": "WH-KTM-01",
+    "createdAt": "2026-09-12T06:10:40.030Z",
+    "isDefault": true,
+    "name": "Kathmandu Central Fulfillment",
+    "updatedAt": "2026-09-12T06:10:40.030Z"
+  },
+  {
+    "id": "w2",
+    "address": "",
+    "code": "WH-PKR-02",
+    "createdAt": "2026-09-12T06:10:40.110Z",
+    "isDefault": false,
+    "name": "Pokhara Regional Hub",
+    "updatedAt": "2026-09-12T06:10:40.110Z"
+  }
+]

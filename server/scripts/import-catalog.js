@@ -329,11 +329,20 @@ export function checkOptionConsistency(products, variants) {
   return discrepancies;
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // --- File Locators ---
 
 export function locateInputFiles(productsArg, variantsArg) {
   const candidateProducts = [
     productsArg,
+    path.resolve(__dirname, '../seeds/products_input.json'),
+    path.resolve(__dirname, '../seeds/products.json'),
+    path.resolve(process.cwd(), 'seeds/products_input.json'),
+    path.resolve(process.cwd(), 'seeds/products.json'),
+    path.resolve(process.cwd(), 'server/seeds/products_input.json'),
+    path.resolve(process.cwd(), 'server/seeds/products.json'),
     path.resolve('/home/om/scrapper/products_new.json'),
     path.resolve(process.cwd(), '../scrapper/products_new.json'),
     path.resolve(process.cwd(), 'products_new.json')
@@ -341,6 +350,12 @@ export function locateInputFiles(productsArg, variantsArg) {
 
   const candidateVariants = [
     variantsArg,
+    path.resolve(__dirname, '../seeds/variants_input.json'),
+    path.resolve(__dirname, '../seeds/variants.json'),
+    path.resolve(process.cwd(), 'seeds/variants_input.json'),
+    path.resolve(process.cwd(), 'seeds/variants.json'),
+    path.resolve(process.cwd(), 'server/seeds/variants_input.json'),
+    path.resolve(process.cwd(), 'server/seeds/variants.json'),
     path.resolve('/home/om/scrapper/variants_new.json'),
     path.resolve(process.cwd(), '../scrapper/variants_new.json'),
     path.resolve(process.cwd(), 'variants_new.json')

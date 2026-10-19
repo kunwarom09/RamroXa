@@ -28,18 +28,22 @@ npm install
 
 You do **not** need to install or configure a separate MongoDB instance manually. 
 - When you run `npm run dev` in the `server` directory, the backend will **automatically start and connect to a persistent local MongoDB instance** on port `27017` with disk storage in `server/data/db`.
-- On first launch, it will **auto-seed** all default categories, warehouses, products (including dedicated UK-size footwear variants), stock inventory, and the Super Admin account.
+- On first launch, it will **auto-seed** the full master catalog from tracked repository seeds in `server/seeds/`, including all default categories, warehouses, master products (including dedicated UK-size footwear and bag capacity variants), stock inventory across fulfillment hubs, and the Super Admin account.
 
 ### Useful Database Commands (in `server/` directory):
 ```bash
-# Re-seed missing products and categories
+# Seed or restore complete catalog from server/seeds/
 npm run db:seed
 
-# Reset the entire database and restore clean initial state
+# Reset the entire database and restore clean initial seeded state
 npm run db:reset
 
 # Create or restore Super Admin user
 npm run db:create-admin
+
+# Re-import or validate catalog files
+npm run import:catalog:dry
+npm run import:catalog:apply
 ```
 
 ---

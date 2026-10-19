@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { Product, Variant, Inventory, StockMove, Warehouse, Category, Order, User, Review } from '../models/index.js';
@@ -965,16 +968,20 @@ export async function populate20ProductsWithVariantsAndOrders(force = false) {
     }
   }
 
-  logger.info('🚀 Starting catalog population with 20 master products, variants (S/M/L/XL), inventory, and orders...');
+  logger.info('🚀 Starting catalog population...');
+
+  const candidateSeeds = [
+    path.resolve(process.cwd(), 'seeds/products.json'),
+    path.resolve(process.cwd(), 'server/seeds/products.json'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../seeds/products.json')
+  ];
+  const seedsProductsPath = candidateSeeds.find((p) => fs.existsSync(p));
 
   // Ensure default categories & warehouses exist
   const defaultWarehouses = [
     { id: 'w1', name: 'Kathmandu Central Fulfillment', code: 'WH-KTM-01', location: 'Kathmandu, Bagmati', isDefault: true, isActive: true },
     { id: 'w2', name: 'Pokhara Regional Hub', code: 'WH-PKR-02', location: 'Pokhara, Gandaki', isDefault: false, isActive: true }
   ];
-  for (const wh of defaultWarehouses) {
-    await Warehouse.findOneAndUpdate({ id: wh.id }, wh, { upsert: true, new: true });
-  }
 
   const defaultCategories = [
     { id: 'c_men', name: 'Men', slug: 'men', parentId: null, sortOrder: 0, featured: true, visible: true, status: 'active', description: 'Menswear' },
@@ -986,7 +993,31 @@ export async function populate20ProductsWithVariantsAndOrders(force = false) {
     { id: 'c_acc', name: 'Accessories', slug: 'accessories', parentId: null, sortOrder: 1, featured: true, visible: true, status: 'active', description: 'Caps, socks and small goods' },
     { id: 'c_bags', name: 'Bags', slug: 'bags', parentId: null, sortOrder: 2, featured: false, visible: true, status: 'active', description: 'Backpacks and totes' }
   ];
-  for (const cat of defaultCategories) {
+
+  let warehousesToSeed = defaultWarehouses;
+  let categoriesToSeed = defaultCategories;
+  let seedsDir = null;
+
+  if (seedsProductsPath) {
+    seedsDir = path.dirname(seedsProductsPath);
+    const whPath = path.join(seedsDir, 'warehouses.json');
+    if (fs.existsSync(whPath)) {
+      try {
+        warehousesToSeed = JSON.parse(fs.readFileSync(whPath, 'utf8'));
+      } catch (e) {}
+    }
+    const catPath = path.join(seedsDir, 'categories.json');
+    if (fs.existsSync(catPath)) {
+      try {
+        categoriesToSeed = JSON.parse(fs.readFileSync(catPath, 'utf8'));
+      } catch (e) {}
+    }
+  }
+
+  for (const wh of warehousesToSeed) {
+    await Warehouse.findOneAndUpdate({ id: wh.id }, wh, { upsert: true, new: true });
+  }
+  for (const cat of categoriesToSeed) {
     await Category.findOneAndUpdate({ id: cat.id }, cat, { upsert: true, new: true });
   }
 
@@ -998,103 +1029,143 @@ export async function populate20ProductsWithVariantsAndOrders(force = false) {
     StockMove.deleteMany({})
   ]);
 
-  const allVariantsToInsert = [];
-  const allInventoryToInsert = [];
+  let totalProductsCount = 0;
+  let totalVariantsCount = 0;
+  let totalInventoryCount = 0;
 
-  for (const p of sampleProducts20) {
-    await Product.create({
-      ...p,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+  if (seedsProductsPath) {
+    logger.info(`📦 Seeding complete catalog from tracked seeds at: ${seedsDir}...`);
+    const seedProds = JSON.parse(fs.readFileSync(path.join(seedsDir, 'products.json'), 'utf8'));
+    const seedVars = JSON.parse(fs.readFileSync(path.join(seedsDir, 'variants.json'), 'utf8'));
+    const seedInvs = JSON.parse(fs.readFileSync(path.join(seedsDir, 'inventory.json'), 'utf8'));
 
-    const options = p.options || { Size: ['S', 'M', 'L', 'XL'] };
-    const sizes = options.Size || ['S', 'M', 'L', 'XL'];
-    const colours = options.Colour || ['Default'];
+    const createdProds = await Product.insertMany(seedProds);
+    const prodMap = new Map();
+    for (const p of createdProds) {
+      if (p.id) prodMap.set(p.id, p._id);
+    }
 
-    let varIdx = 0;
-    for (const size of sizes) {
-      for (const colour of colours) {
-        varIdx++;
-        const cleanSizeStr = size.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanColStr = colour.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const vId = `v_${p.id}_${cleanSizeStr}_${cleanColStr}`;
-        const sku = `${p.sku}-${size.replace(/\s+/g, '').toUpperCase()}-${colour.slice(0, 3).toUpperCase()}`;
-        const barcode = `890${String(Date.now()).slice(-6)}${String(varIdx).padStart(3, '0')}`;
+    const varsWithRefs = seedVars.map((v) => ({
+      ...v,
+      product: prodMap.get(v.productId) || undefined
+    }));
+    const createdVars = await Variant.insertMany(varsWithRefs);
+    const varMap = new Map();
+    for (const v of createdVars) {
+      if (v.id) varMap.set(v.id, v._id);
+    }
 
-        allVariantsToInsert.push({
-          id: vId,
-          productId: p.id,
-          sku,
-          barcode,
-          options: { Size: size, Colour: colour },
-          price: p.basePrice,
-          cost: p.cost,
-          weight: 350,
-          published: true,
-          status: 'active',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+    const invsWithRefs = seedInvs.map((inv) => ({
+      ...inv,
+      variant: varMap.get(inv.variantId) || undefined
+    }));
+    await Inventory.insertMany(invsWithRefs);
 
-        // Calculate available stock (with exact example counts for UK 3 and UK 5)
-        let initialQty = 15;
-        if (p.productType === 'Footwear' || p.categoryId === 'c_footwear') {
-          if (size === 'UK 3' && colour === 'Blue') initialQty = 3;
-          else if (size === 'UK 3' && colour === 'Red') initialQty = 5;
-          else if (size === 'UK 5' && colour === 'Blue') initialQty = 7;
-          else if (size === 'UK 5' && colour === 'Purple') initialQty = 3;
-          else if (size === 'UK 5' && colour === 'Red') initialQty = 4;
-          else if (size === 'UK 4') initialQty = 6;
-          else if (size === 'UK 6') initialQty = 8;
-          else if (size === 'UK 7') initialQty = 10;
-          else if (size === 'UK 8') initialQty = 5;
-        } else {
-          initialQty = 20 + ((varIdx * 7) % 30);
+    totalProductsCount = createdProds.length;
+    totalVariantsCount = createdVars.length;
+    totalInventoryCount = invsWithRefs.length;
+    logger.info(`✅ Successfully seeded ${totalProductsCount} master products, ${totalVariantsCount} variants, and ${totalInventoryCount} inventory documents.`);
+  } else {
+    logger.info('Falling back to built-in 20 master products catalog...');
+    const allVariantsToInsert = [];
+    const allInventoryToInsert = [];
+
+    for (const p of sampleProducts20) {
+      await Product.create({
+        ...p,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      const options = p.options || { Size: ['S', 'M', 'L', 'XL'] };
+      const sizes = options.Size || ['S', 'M', 'L', 'XL'];
+      const colours = options.Colour || ['Default'];
+
+      let varIdx = 0;
+      for (const size of sizes) {
+        for (const colour of colours) {
+          varIdx++;
+          const cleanSizeStr = size.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const cleanColStr = colour.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const vId = `v_${p.id}_${cleanSizeStr}_${cleanColStr}`;
+          const sku = `${p.sku}-${size.replace(/\s+/g, '').toUpperCase()}-${colour.slice(0, 3).toUpperCase()}`;
+          const barcode = `890${String(Date.now()).slice(-6)}${String(varIdx).padStart(3, '0')}`;
+
+          allVariantsToInsert.push({
+            id: vId,
+            productId: p.id,
+            sku,
+            barcode,
+            options: { Size: size, Colour: colour },
+            price: p.basePrice,
+            cost: p.cost,
+            weight: 350,
+            published: true,
+            status: 'active',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
+          let initialQty = 15;
+          if (p.productType === 'Footwear' || p.categoryId === 'c_footwear') {
+            if (size === 'UK 3' && colour === 'Blue') initialQty = 3;
+            else if (size === 'UK 3' && colour === 'Red') initialQty = 5;
+            else if (size === 'UK 5' && colour === 'Blue') initialQty = 7;
+            else if (size === 'UK 5' && colour === 'Purple') initialQty = 3;
+            else if (size === 'UK 5' && colour === 'Red') initialQty = 4;
+            else if (size === 'UK 4') initialQty = 6;
+            else if (size === 'UK 6') initialQty = 8;
+            else if (size === 'UK 7') initialQty = 10;
+            else if (size === 'UK 8') initialQty = 5;
+          } else {
+            initialQty = 20 + ((varIdx * 7) % 30);
+          }
+
+          allInventoryToInsert.push({
+            id: `inv_${vId}_w1`,
+            variantId: vId,
+            warehouseId: 'w1',
+            available: initialQty,
+            reserved: 0,
+            damaged: 0,
+            returned: 0,
+            reorderLevel: 5,
+            minStock: 2,
+            maxStock: 100,
+            archived: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
+          allInventoryToInsert.push({
+            id: `inv_${vId}_w2`,
+            variantId: vId,
+            warehouseId: 'w2',
+            available: 20 + (varIdx * 3 % 15),
+            reserved: 0,
+            damaged: 0,
+            returned: 0,
+            reorderLevel: 5,
+            minStock: 2,
+            maxStock: 50,
+            archived: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
         }
-
-        // Stock in Warehouse 1 (Kathmandu Central)
-        allInventoryToInsert.push({
-          id: `inv_${vId}_w1`,
-          variantId: vId,
-          warehouseId: 'w1',
-          available: initialQty,
-          reserved: 0,
-          damaged: 0,
-          returned: 0,
-          reorderLevel: 5,
-          minStock: 2,
-          maxStock: 100,
-          archived: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-
-        // Stock in Warehouse 2 (Pokhara Hub)
-        allInventoryToInsert.push({
-          id: `inv_${vId}_w2`,
-          variantId: vId,
-          warehouseId: 'w2',
-          available: 20 + (varIdx * 3 % 15),
-          reserved: 0,
-          damaged: 0,
-          returned: 0,
-          reorderLevel: 5,
-          minStock: 2,
-          maxStock: 50,
-          archived: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
       }
     }
-  }
 
-  if (allVariantsToInsert.length) {
-    await Variant.insertMany(allVariantsToInsert);
-  }
-  if (allInventoryToInsert.length) {
-    await Inventory.insertMany(allInventoryToInsert);
+    if (allVariantsToInsert.length) {
+      await Variant.insertMany(allVariantsToInsert);
+    }
+    if (allInventoryToInsert.length) {
+      await Inventory.insertMany(allInventoryToInsert);
+    }
+
+    totalProductsCount = sampleProducts20.length;
+    totalVariantsCount = allVariantsToInsert.length;
+    totalInventoryCount = allInventoryToInsert.length;
   }
 
   // Create sample customer profiles
@@ -1388,9 +1459,9 @@ export async function populate20ProductsWithVariantsAndOrders(force = false) {
   logger.info(`✅ Created ${sampleReviews.length} customer reviews and updated ratings.`);
 
   return {
-    productsCount: sampleProducts20.length,
-    variantsCount: allVariantsToInsert.length,
-    inventoryCount: allInventoryToInsert.length,
+    productsCount: totalProductsCount,
+    variantsCount: totalVariantsCount,
+    inventoryCount: totalInventoryCount,
     customersCount: createdCustomers.length,
     ordersCount: sampleOrders.length,
     reviewsCount: sampleReviews.length
