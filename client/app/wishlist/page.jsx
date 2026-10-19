@@ -1,8 +1,14 @@
-'use client';
-import dynamic from 'next/dynamic';
+import React from 'react';
+import WishlistClient from './WishlistClient';
+import { SITE_NAME, constructMetadata } from '../../config/seoConfig';
 
-const StoreApp = dynamic(() => import('../../components/StoreApp'), { ssr: false });
+export const metadata = constructMetadata({
+  title: `Your Saved Wishlist | ${SITE_NAME}`,
+  description: 'View and manage your saved outdoor items, shoes, and backpacks.',
+  path: '/wishlist',
+  noIndex: true
+});
 
 export default function WishlistPage() {
-  return <StoreApp initialView="wishlist" />;
+  return <WishlistClient />;
 }

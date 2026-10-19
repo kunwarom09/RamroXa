@@ -4482,10 +4482,43 @@ export default class StoreApp extends React.Component {
           &larr; Back to all products
         </button>
 
+        {/* Semantic Accessible Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb" className="zylo-breadcrumb-nav" style={{ marginBottom: 18, fontSize: 13, color: '#666' }}>
+          <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <li>
+              <span
+                onClick={() => this.goToView('home')}
+                style={{ cursor: 'pointer', color: '#555', textDecoration: 'none' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#000'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#555'; }}
+              >
+                Home
+              </span>
+            </li>
+            <li aria-hidden="true" style={{ color: '#bbb' }}>/</li>
+            <li>
+              <span
+                onClick={() => this.goToView('collections', { filterCategory: p.categoryId === 'c_bags' ? 'c_bags' : 'c_footwear', colFilter: 'all' })}
+                style={{ cursor: 'pointer', color: '#555', textDecoration: 'none' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#000'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#555'; }}
+              >
+                {p.categoryId === 'c_bags' ? 'Bags & Backpacks' : 'Footwear & Shoes'}
+              </span>
+            </li>
+            <li aria-hidden="true" style={{ color: '#bbb' }}>/</li>
+            <li aria-current="page" style={{ color: '#111', fontWeight: 500 }}>
+              {p.name}
+            </li>
+          </ol>
+        </nav>
+
         <div className="zylo-detail-grid">
           {/* Left Column: Images */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div
+              role="img"
+              aria-label={`${p.name} in ${currentColor || 'Default'} - Primary View`}
               style={{
                 aspectRatio: '368/420',
                 width: '100%',
@@ -4499,6 +4532,11 @@ export default class StoreApp extends React.Component {
                 overflow: 'hidden'
               }}
             >
+              <img
+                src={activeImg}
+                alt={`${p.name} - ${currentColor || 'Default'} View`}
+                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+              />
               <button
                 type="button"
                 className={`rmx-wishlist-heart-btn ${this.isWishlisted(p) ? 'active' : ''}`}
@@ -4517,6 +4555,8 @@ export default class StoreApp extends React.Component {
                   <div
                     key={i}
                     onClick={() => this.setState({ selImg: i })}
+                    role="img"
+                    aria-label={`${p.name} thumbnail ${i + 1}`}
                     style={{
                       width: 68,
                       height: 78,
@@ -4541,9 +4581,9 @@ export default class StoreApp extends React.Component {
               <div style={{ fontSize: 11, letterSpacing: 3, color: '#888', textTransform: 'uppercase' }}>
                 {p.tag || 'BEST SELLER'}
               </div>
-              <h2 style={{ margin: 0, fontSize: 34, fontWeight: 300, letterSpacing: 0.5, lineHeight: 1.2 }}>
+              <h1 className="zylo-product-h1" style={{ margin: 0, fontSize: 34, fontWeight: 300, letterSpacing: 0.5, lineHeight: 1.2 }}>
                 {p.name}
-              </h2>
+              </h1>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 4 }}>
                 <span style={{ fontSize: 24, fontWeight: 600 }}>{rs(p.price)}</span>
                 {p.compare > p.price && (

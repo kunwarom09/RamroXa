@@ -1,8 +1,14 @@
-'use client';
-import dynamic from 'next/dynamic';
+import React from 'react';
+import AccountOrdersClient from './AccountOrdersClient';
+import { SITE_NAME, constructMetadata } from '../../../config/seoConfig';
 
-const StoreApp = dynamic(() => import('../../../components/StoreApp'), { ssr: false });
+export const metadata = constructMetadata({
+  title: `My Orders | ${SITE_NAME}`,
+  description: 'View your orders and shipments.',
+  path: '/account/orders',
+  noIndex: true
+});
 
 export default function AccountOrdersPage() {
-  return <StoreApp initialView="account" initialAccountTab="orders" />;
+  return <AccountOrdersClient />;
 }

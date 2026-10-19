@@ -1,0 +1,12 @@
+/* TEAM */
+Brand: RamroXa Nepal
+Engineering: RamroXa Technical Team
+Location: Kathmandu, Nepal
+Site: https://ramroxa.com
+
+/* SITE */
+Standards: HTML5, CSS3, ES2024, Next.js 14, Node.js
+Components: React 18
+Software: Google Cloud, Vercel
+Language: English
+Doctype: HTML5

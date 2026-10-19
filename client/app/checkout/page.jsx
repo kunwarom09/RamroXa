@@ -1,8 +1,14 @@
-'use client';
-import dynamic from 'next/dynamic';
+import React from 'react';
+import CheckoutClient from './CheckoutClient';
+import { SITE_NAME, constructMetadata } from '../../config/seoConfig';
 
-const StoreApp = dynamic(() => import('../../components/StoreApp'), { ssr: false });
+export const metadata = constructMetadata({
+  title: `Secure Checkout | ${SITE_NAME}`,
+  description: 'Complete your order securely with Cash on Delivery or digital payment in Nepal.',
+  path: '/checkout',
+  noIndex: true
+});
 
 export default function CheckoutPage() {
-  return <StoreApp initialView="checkout" />;
+  return <CheckoutClient />;
 }
