@@ -1,0 +1,19 @@
+# Dependencies & build outputs
+node_modules
+client/node_modules
+server/node_modules
+.next
+client/.next
+server/data
+data
+
+# Local environment & databases
+server/data/db
+*.log
+.DS_Store
+.git
+.github
+*.mp4
+client/public/uploads/*.mp4
+client/public/videos/*.mp4
+

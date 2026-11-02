@@ -1,0 +1,7 @@
+node_modules
+.next
+*.log
+.env.local
+**/*.mp4
+public/videos
+public/uploads/178*
