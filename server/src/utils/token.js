@@ -43,12 +43,13 @@ export function getCookieOptions(isRefresh = false) {
   const isProd = env.NODE_ENV === 'production';
   const devAccessExpiryMs = 7 * 24 * 60 * 60 * 1000;
   const prodAccessExpiryMs = 15 * 60 * 1000;
+  const sameSite = process.env.COOKIE_SAME_SITE || (isProd ? (env.COOKIE_DOMAIN && env.COOKIE_DOMAIN !== 'localhost' ? 'lax' : 'none') : 'lax');
 
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
-    domain: env.COOKIE_DOMAIN === 'localhost' ? undefined : env.COOKIE_DOMAIN,
+    sameSite,
+    domain: (!env.COOKIE_DOMAIN || env.COOKIE_DOMAIN === 'localhost') ? undefined : env.COOKIE_DOMAIN,
     path: '/',
     maxAge: isRefresh
       ? REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000
@@ -58,11 +59,12 @@ export function getCookieOptions(isRefresh = false) {
 
 export function getCsrfCookieOptions() {
   const isProd = env.NODE_ENV === 'production';
+  const sameSite = process.env.COOKIE_SAME_SITE || (isProd ? (env.COOKIE_DOMAIN && env.COOKIE_DOMAIN !== 'localhost' ? 'lax' : 'none') : 'lax');
   return {
     httpOnly: false, // Must be readable by client JS to send in X-CSRF-Token header
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
-    domain: env.COOKIE_DOMAIN === 'localhost' ? undefined : env.COOKIE_DOMAIN,
+    sameSite,
+    domain: (!env.COOKIE_DOMAIN || env.COOKIE_DOMAIN === 'localhost') ? undefined : env.COOKIE_DOMAIN,
     path: '/',
     maxAge: 24 * 60 * 60 * 1000
   };
