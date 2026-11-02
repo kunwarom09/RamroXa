@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch-path=.env --watch-path=src/routes --watch-path=src/controllers --watch-path=src/services --watch-path=src/models --watch-path=src/middleware src/server.js",
+    "build": "node src/scripts/deploySeed.js",
+    "prestart": "node src/scripts/deploySeed.js",
     "start": "node src/server.js",
+    "deploy:seed": "node src/scripts/deploySeed.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

@@ -100,6 +100,8 @@ export async function seedDatabase() {
   await connectDB();
   const { populate20ProductsWithVariantsAndOrders } = await import('../services/populateCatalog.service.js');
   await populate20ProductsWithVariantsAndOrders(true);
+  const { createAdminUser } = await import('./createAdmin.js');
+  await createAdminUser('admin@zylo.com.np', 'AdminPassword123!', 'Super Admin');
   logger.info('✅ Seeding completed.');
 }
 
