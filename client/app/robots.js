@@ -5,7 +5,7 @@ export default function robots() {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/shop', '/product/', '/contact', '/ramroxa-logo.png', '/uploads/'],
+        allow: ['/', '/shop', '/product/', '/contact', '/ramroxa-logo.png', '/icon-192.png', '/icon-512.png', '/favicon-32.png', '/apple-icon.png', '/uploads/'],
         disallow: [
           '/admin/',
           '/api/',

@@ -1,0 +1,12 @@
+{
+  "name": "ramroxa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RamroXa Full-Stack E-Commerce Platform",
+  "scripts": {
+    "build": "npm --prefix client run build",
+    "build:client": "npm --prefix client run build",
+    "build:server": "npm --prefix server run build",
+    "start": "npm --prefix client run start"
+  }
+}

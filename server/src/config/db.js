@@ -64,8 +64,8 @@ export async function connectDB(uri = env.MONGODB_URI) {
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2000,
-      autoIndex: true
+      serverSelectionTimeoutMS: process.env.MONGODB_TIMEOUT_MS ? parseInt(process.env.MONGODB_TIMEOUT_MS, 10) : 5000,
+      autoIndex: env.NODE_ENV !== 'production'
     });
     isConnected = true;
     if (env.NODE_ENV !== 'test' && !process.env.VITEST && !uri.includes('memory')) {
