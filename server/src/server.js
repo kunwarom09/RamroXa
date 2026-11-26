@@ -12,9 +12,9 @@ async function startServer() {
   try {
     // Validate email configuration on startup
     const emailValidation = validateEmailConfig();
-    if (!emailValidation.valid && env.NODE_ENV === 'production') {
-      logger.fatal(emailValidation.error);
-      process.exit(1);
+    if (!emailValidation.valid) {
+      logger.warn(emailValidation.error);
+      logger.warn('⚠️ Email configuration pending. Outbound emails will be disabled until SMTP is configured in .env.');
     }
 
     server = app.listen(env.PORT, () => {
