@@ -24,11 +24,12 @@ npm install
 
 ---
 
-## 🗄️ Database Setup (Zero-Config)
+## 🗄️ Database Setup
 
-You do **not** need to install or configure a separate MongoDB instance manually. 
-- When you run `npm run dev` in the `server` directory, the backend will **automatically start and connect to a persistent local MongoDB instance** on port `27017` with disk storage in `server/data/db`.
-- On first launch, it will **auto-seed** the full master catalog from tracked repository seeds in `server/seeds/`, including all default categories, warehouses, master products (including dedicated UK-size footwear and bag capacity variants), stock inventory across fulfillment hubs, and the Super Admin account.
+Configure your MongoDB instance connection string via `MONGODB_URI` in `server/.env` (or via your production deployment environment variables).
+- **Development**: Connect to a local MongoDB instance (`mongodb://localhost:27017/zylo_ecommerce`) or cloud database.
+- **Production**: Provide your external MongoDB Atlas connection URI (e.g. `mongodb+srv://<user>:<password>@cluster0.xxx.mongodb.net/ramroxa?retryWrites=true&w=majority`).
+- On first launch, the backend will **auto-seed** the catalog from repository seeds in `server/seeds/` if the database is empty, including default categories, warehouses, products, inventory, and the initial Super Admin account.
 
 ### Useful Database Commands (in `server/` directory):
 ```bash

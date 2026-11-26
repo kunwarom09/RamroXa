@@ -8,3 +8,6 @@ npm-debug.log
 coverage
 tests
 .system_generated
+data
+server/data
+

@@ -4,10 +4,11 @@ services:
     image: mongo:7.0
     container_name: zylo-mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    # Kept internal to docker network for VPS security (prevent public port scans)
+    expose:
+      - "27017"
     environment:
-      MONGO_INITDB_DATABASE: zylo_db
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-zylo_db}
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -24,15 +25,34 @@ services:
     container_name: zylo-api
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "127.0.0.1:${API_PORT:-5000}:5000"
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGODB_URI: mongodb://mongodb:27017/zylo_db
-      FRONTEND_URL: http://localhost:3000
-      JWT_ACCESS_SECRET: zylo-production-jwt-access-secret-key-32-chars-minimum!
-      JWT_REFRESH_SECRET: zylo-production-jwt-refresh-secret-key-32-chars-minimum!
-      COOKIE_DOMAIN: localhost
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/zylo_db}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-zylo-production-jwt-access-secret-key-32-chars-minimum!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-zylo-production-jwt-refresh-secret-key-32-chars-minimum!}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+      AUTO_SEED: ${AUTO_SEED:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@zylo.com.np}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-AdminPassword123!}
+      ADMIN_NAME: ${ADMIN_NAME:-Super Admin}
+      SMTP_SERVICE: ${SMTP_SERVICE:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_FROM: ${SMTP_FROM:-"Ramroxa" <noreply@ramroxa.com>}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      ESEWA_MERCHANT_CODE: ${ESEWA_MERCHANT_CODE:-EPAYTEST}
+      ESEWA_SECRET: ${ESEWA_SECRET:-8gBm/:&EnhH.1/q}
+      FONEPAY_MERCHANT_CODE: ${FONEPAY_MERCHANT_CODE:-FPAYTEST}
+      FONEPAY_SECRET: ${FONEPAY_SECRET:-fonepay_secret_test}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -50,10 +70,12 @@ services:
     container_name: zylo-client
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${CLIENT_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+      PORT: 3000
+      BACKEND_URL: http://api:5000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     depends_on:
       api:
         condition: service_healthy
